@@ -25,4 +25,5 @@ class MinioLoader(AbstractLoader):
             )
             self.logger.info(f"Object loaded : {'/'.join([bucket_name, object_name])}")
         except Exception as e:
-            self.logger.error(f" Error MinIO loader : {e}")
+            self.logger.error(f"Error MinIO loader : {e}.")
+            raise
