@@ -17,12 +17,12 @@ class MinIOConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=MINIO_ENV_PATH, env_file_encoding="utf-8"
     )
-    MINIO_ROOT_USER: SecretStr
-    MINIO_ROOT_PASSWORD: SecretStr
+    MINIO_ROOT_USER: str  # SecretStr
+    MINIO_ROOT_PASSWORD: str  # SecretStr
     MINIO_ENDPOINT: str
-    BUCKET_BRONZE: str
-    BUCKET_SILVER: str
-    BUCKET_GOLD: str
+    BUCKET_BRONZE: str = "bronze"
+    BUCKET_SILVER: str = "silver"
+    BUCKET_GOLD: str = "gold"
 
 
 minio_config = MinIOConfig()
@@ -51,13 +51,7 @@ class ETLConfig(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> Tuple[PydanticBaseSettingsSource, ...]:
         yaml_settings = YamlConfigSettingsSource(settings_cls)
-        return (
-            init_settings,
-            env_settings,
-            dotenv_settings,
-            file_secret_settings,
-            yaml_settings,
-        )
+        return (yaml_settings,)
 
 
 etl_config = ETLConfig()
