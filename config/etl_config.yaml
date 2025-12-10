@@ -1,0 +1,4 @@
+api:
+  base_url: http://api.example.com
+  timeout: 30
+  retry: 3
