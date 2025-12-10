@@ -1,6 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
 
+import pandas as pd
+
 from src.extractors.abstract_extractor import AbstractExtractor
 from src.loaders.abstract_loader import AbstractLoader
 from src.transformers.abstract_transformer import AbstractTransformer
@@ -31,19 +33,19 @@ class AbstractETLPipeline(ABC):
             self.logger.info("=" * 50)
 
             self.logger.info("[1/3] Extraction.")
-            data = self._extract()
+            df: pd.DataFrame = self._extract()
 
             self.logger.info("[2/3] Transformation.")
-            data_transformed = self._transform(data)
+            df_transformed: pd.DataFrame = self._transform(df)
 
             self.logger.info("[3/3] Loading.")
-            self._load(data_transformed)
+            self._load(df_transformed)
 
             self.logger.info("=" * 50)
             self.logger.info("Pipeline completed successfully.")
             self.logger.info("=" * 50)
         except Exception as e:
-            self.logger.error(f"\n Pipeline Failed : {e}")
+            self.logger.error(f"Pipeline Failed : {e}.")
 
     @abstractmethod
     def _extract(self):
@@ -51,11 +53,11 @@ class AbstractETLPipeline(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _transform(self, data):
+    def _transform(self, df: pd.DataFrame):
         """Transformation process."""
         raise NotImplementedError
 
     @abstractmethod
-    def _load(self, data):
+    def _load(self, df: pd.DataFrame):
         """Loading process."""
         raise NotImplementedError
