@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Tuple, Type
 
-from pydantic import AnyHttpUrl, BaseModel, PositiveInt, SecretStr
+from pydantic import AnyHttpUrl, BaseModel, PositiveInt
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -10,16 +10,12 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
-# MINIO_ENV_PATH = Path("./config/minio.env")
 ETL_SETTINGS_PATH = Path("/app/config/etl_config.yaml")
 
 
 class MinIOConfig(BaseSettings):
-    # model_config = SettingsConfigDict(
-    #     env_file=MINIO_ENV_PATH, env_file_encoding="utf-8"
-    # )
-    MINIO_ROOT_USER: str  # SecretStr
-    MINIO_ROOT_PASSWORD: str  # SecretStr
+    MINIO_ROOT_USER: str
+    MINIO_ROOT_PASSWORD: str
     MINIO_ENDPOINT: str
     BUCKET_BRONZE: str
     BUCKET_SILVER: str
