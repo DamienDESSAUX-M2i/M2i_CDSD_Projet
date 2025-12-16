@@ -1,3 +1,7 @@
+# ===
+# ETL
+# ===
+
 # log
 etl/logs/*
 
@@ -5,6 +9,28 @@ etl/logs/*
 etl/data/raw/*
 etl/data/processed/*
 etl/data/output/*
+
+# ===
+# MinIO
+# ===
+
+minio/volume/*
+
+# ===
+# postgreSQL
+# ===
+
+postgresql/volume/*
+
+# ===
+# pgadmin
+# ===
+
+pgadmin/volume/*
+
+# ===
+# Python
+# ===
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

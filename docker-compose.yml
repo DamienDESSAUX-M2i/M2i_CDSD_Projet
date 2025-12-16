@@ -15,12 +15,53 @@ services:
       - 9000:9000
       - 9001:9001
     volumes:
-      - volume_minio:/data
+      - ./minio/volume:/data
     networks:
       - network_app
     command: ["server", "/data", "--console-address" ,":9001"]
 
+  pgdb:
+    image: postgres
+    container_name: pgdb
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgresql/volume:/var/lib/postgresql
+      - ./postgresql/initdb:/docker-entrypoint-initdb.d
+    networks:
+      - network_app
+      - network_pgdb
+
+  pgadmin:
+    depends_on:
+      - pgdb
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    env_file:
+      - ./.env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    restart: unless-stopped
+    ports:
+      - 8080:80
+    volumes:
+      - ./pgadmin/volume:/var/lib/pgadmin
+      - ./pgadmin/storage:/var/lib/pgadmin/storage
+    networks:
+      - network_pgdb
+
   etl:
+    depends_on:
+      - minio
+      - pgdb
     container_name: etl
     build: ./etl
     env_file:
@@ -32,6 +73,7 @@ services:
       - BUCKET_BRONZE=${BUCKET_BRONZE}
       - BUCKET_SILVER=${BUCKET_SILVER}
       - BUCKET_GOLD=${BUCKET_GOLD}
+    restart: unless-stopped
     ports:
       - 5000:5000
     volumes:
@@ -39,8 +81,6 @@ services:
     networks:
       - network_app
 
-volumes:
-  volume_minio:
-
 networks:
   network_app:
+  network_pgdb:
