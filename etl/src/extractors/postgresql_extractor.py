@@ -1,11 +1,7 @@
-from pathlib import Path
-
 import psycopg
 
 from src.extractors.abstract_extractor import AbstractExtractor
-from src.utils import postgresql
-
-DSN = ""
+from src.utils.config import postgresql_config
 
 
 class PostgreSQLExtractor(AbstractExtractor):
@@ -19,18 +15,18 @@ class PostgreSQLExtractor(AbstractExtractor):
         """
         try:
             self.logger.info("Attempting to connect to the PostgreSQL service.")
-            with psycopg.connect(DSN, row_factory=psycopg.rows.dict_row) as connection:
+            with psycopg.connect(
+                postgresql_config.connection_string, row_factory=psycopg.rows.dict_row
+            ) as connection:
                 self.logger.info("Connecting to the PostgreSQL service.")
                 with connection.cursor() as cursor:
-                    self.logger.info(
-                        f"Attempting to download everything from : {table_name}."
-                    )
+                    self.logger.info(f"Attempting extraction from : {table_name}.")
                     cursor.execute(
                         "SELECT * FROM %s;",
                         (table_name,),
                     )
                 rows = cursor.fetchall()
-                self.logger.info(f"Number of rows downloaded : {len(rows)}.")
+                self.logger.info(f"Number of rows extracted : {len(rows)}.")
                 return rows
         except Exception as e:
             self.logger.error(f"Error PostgreSQL extractor: {e}.")

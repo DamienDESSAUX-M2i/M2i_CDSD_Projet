@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Tuple, Type
 
-from pydantic import AnyHttpUrl, BaseModel, PositiveInt
+from pydantic import AnyHttpUrl, BaseModel, PositiveInt, PostgresDsn
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -29,6 +29,27 @@ minio_config = MinIOConfig(
     BUCKET_BRONZE=os.getenv("BUCKET_BRONZE", "bronze"),
     BUCKET_SILVER=os.getenv("BUCKET_SILVER", "silver"),
     BUCKET_GOLD=os.getenv("BUCKET_GOLD", "gold"),
+)
+
+
+class PostgreSQLConfig(BaseSettings):
+    user: str
+    password: str
+    host: str
+    port: int
+    dbname: str
+
+    @property
+    def connection_string(self) -> PostgresDsn:
+        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}"
+
+
+postgresql_config = PostgreSQLConfig(
+    user=os.getenv("POSTGRES_USER"),
+    password=os.getenv("POSTGRES_PASSWORD"),
+    host=os.getenv("POSTGRES_HOST", "localhost"),
+    port=os.getenv("POSTGRES_PORT", 5432),
+    dbname=os.getenv("POSTGRES_DB"),
 )
 
 
