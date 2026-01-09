@@ -6,7 +6,9 @@ LOGGER_DIR_PATH = Path("/app/logs")
 LOGGER_NAME = os.getenv("LOGGER_NAME", "app")
 
 
-def set_up_logger(name: str, path: Path = None, level=logging.INFO) -> logging.Logger:
+def set_up_logger(
+    name: str, logger_file_path: Path = None, level=logging.INFO
+) -> logging.Logger:
     """Set up a logger.
 
     Args:
@@ -30,8 +32,10 @@ def set_up_logger(name: str, path: Path = None, level=logging.INFO) -> logging.L
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    if path:
-        file_handler = logging.FileHandler(path, mode="wt", encoding="utf-8")
+    if logger_file_path:
+        file_handler = logging.FileHandler(
+            logger_file_path, mode="wt", encoding="utf-8"
+        )
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
@@ -42,4 +46,6 @@ def initialize_logger() -> bool:
     if not LOGGER_DIR_PATH.exists():
         LOGGER_DIR_PATH.mkdir()
 
-    set_up_logger(name=LOGGER_NAME, path=LOGGER_DIR_PATH / "f{LOGGER_NAME}.log")
+    set_up_logger(
+        name=LOGGER_NAME, logger_file_path=LOGGER_DIR_PATH / "f{LOGGER_NAME}.log"
+    )
