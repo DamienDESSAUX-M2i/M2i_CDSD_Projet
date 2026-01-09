@@ -1,7 +1,7 @@
 import io
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from config import minio_config
 
