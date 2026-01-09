@@ -5,8 +5,8 @@ from pydantic_settings import BaseSettings
 
 class MinIOConfig(BaseSettings):
     minio_endpoint: str = os.getenv("MINIO_ENDPOINT", "minio:9000")
-    minio_root_user: str = os.getenv("MINIO_USER", "admin")
-    minio_root_password: str = os.getenv("MINIO_PASSWORD", "admin0000")
+    minio_user: str = os.getenv("MINIO_USER", "admin")
+    minio_password: str = os.getenv("MINIO_PASSWORD", "admin0000")
     minio_secure: bool = os.getenv("MINIO_SECURE", False)
     bucket_raw: str = os.getenv("BUCKET_BRONZE", "raw")
     bucket_processed: str = os.getenv("BUCKET_SILVER", "processed")
