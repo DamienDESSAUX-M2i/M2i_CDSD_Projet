@@ -17,10 +17,16 @@ etl/data/output/*
 minio/volume/*
 
 # ===
-# postgreSQL
+# Mongo
 # ===
 
-postgresql/volume/*
+mongo/volume/*
+
+# ===
+# Postgres
+# ===
+
+postgres/volume/*
 
 # ===
 # pgadmin
