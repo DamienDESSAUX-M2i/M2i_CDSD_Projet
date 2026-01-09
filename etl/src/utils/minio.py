@@ -1,20 +1,20 @@
 import logging
 
-from minio import Minio
+from config import minio_config
 
-from src.utils.config import minio_config
+from minio import Minio
 
 
 def get_client() -> Minio:
     return Minio(
-        endpoint=minio_config.MINIO_ENDPOINT,
-        access_key=minio_config.MINIO_ROOT_USER,
-        secret_key=minio_config.MINIO_ROOT_PASSWORD,
-        secure=False,
+        endpoint=minio_config.minio_endpoint,
+        access_key=minio_config.minio_root_user,
+        secret_key=minio_config.minio_root_password,
+        secure=minio_config.minio_secure,
     )
 
 
-def make_buckeks(logger: logging.Logger) -> None:
+def make_buckets(logger: logging.Logger) -> None:
     try:
         logger.info("Attempting to connect to the MinIO service.")
         client: Minio = get_client()
@@ -22,9 +22,9 @@ def make_buckeks(logger: logging.Logger) -> None:
 
         logger.info("Attempting to create buckets.")
         for bucket_name in [
-            minio_config.BUCKET_BRONZE,
-            minio_config.BUCKET_SILVER,
-            minio_config.BUCKET_GOLD,
+            minio_config.bucket_raw,
+            minio_config.bucket_processed,
+            minio_config.bucket_output,
         ]:
             if not client.bucket_exists(bucket_name=bucket_name):
                 client.make_bucket(bucket_name=bucket_name)

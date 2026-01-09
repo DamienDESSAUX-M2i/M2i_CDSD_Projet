@@ -1,7 +1,7 @@
 import psycopg
+from config import postgres_config
 
 from src.extractors.abstract_extractor import AbstractExtractor
-from src.utils.config import postgresql_config
 
 
 class PostgreSQLExtractor(AbstractExtractor):
@@ -16,7 +16,7 @@ class PostgreSQLExtractor(AbstractExtractor):
         try:
             self.logger.info("Attempting to connect to the PostgreSQL service.")
             with psycopg.connect(
-                postgresql_config.connection_string, row_factory=psycopg.rows.dict_row
+                postgres_config.connection_string, row_factory=psycopg.rows.dict_row
             ) as connection:
                 self.logger.info("Connecting to the PostgreSQL service.")
                 with connection.cursor() as cursor:
