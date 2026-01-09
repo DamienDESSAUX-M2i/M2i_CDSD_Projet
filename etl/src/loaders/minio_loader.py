@@ -1,11 +1,14 @@
+import logging
 from pathlib import Path
 
-from src.loaders.abstract_loader import AbstractLoader
-from src.utils import minio
+from src.utils import LOGGER_NAME, minio
 
 
-class MinioLoader(AbstractLoader):
+class MinioLoader:
     """Loader for MinIO."""
+
+    def __init__(self):
+        self.logger = logging.getLogger(LOGGER_NAME)
 
     def load(self, bucket_name: str, object_name: str, file_path: Path) -> None:
         """Load data to MinIO.

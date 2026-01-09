@@ -1,8 +1,12 @@
 import logging
+import os
 from pathlib import Path
 
+LOGGER_DIR_PATH = Path("/app/logs")
+LOGGER_NAME = os.getenv("LOGGER_NAME", "app")
 
-def setup_logger(name: str, path: Path = None, level=logging.INFO) -> logging.Logger:
+
+def set_up_logger(name: str, path: Path = None, level=logging.INFO) -> logging.Logger:
     """Set up a logger.
 
     Args:
@@ -11,13 +15,13 @@ def setup_logger(name: str, path: Path = None, level=logging.INFO) -> logging.Lo
         level (_type_, optional): Level of the logger. Defaults to logging.INFO.
 
     Returns:
-        logging.Logger: A configurated logger.
+        logging.Logger: A configured logger.
     """
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
     formatter = logging.Formatter(
-        "{asctime} - {name} - {levelname} - {message}",
+        "{asctime} - {name} - {funcName} - {levelname} - {message}",
         style="{",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -32,3 +36,10 @@ def setup_logger(name: str, path: Path = None, level=logging.INFO) -> logging.Lo
         logger.addHandler(file_handler)
 
     return logger
+
+
+def initialize_logger() -> bool:
+    if not LOGGER_DIR_PATH.exists():
+        LOGGER_DIR_PATH.mkdir()
+
+    set_up_logger(name=LOGGER_NAME, path=LOGGER_DIR_PATH / "f{LOGGER_NAME}.log")

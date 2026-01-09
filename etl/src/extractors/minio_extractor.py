@@ -1,11 +1,14 @@
+import logging
 from pathlib import Path
 
-from src.extractors.abstract_extractor import AbstractExtractor
-from src.utils import minio
+from src.utils import LOGGER_NAME, minio
 
 
-class MinioExtractor(AbstractExtractor):
+class MinioExtractor:
     """Extractor for MinIO."""
+
+    def __init__(self):
+        self.logger = logging.getLogger(LOGGER_NAME)
 
     def extract(self, bucket_name: str, object_name: str, file_path: Path) -> None:
         """Extract data from MinIO.

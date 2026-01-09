@@ -1,12 +1,16 @@
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from src.loaders.abstract_loader import AbstractLoader
+from src.utils import LOGGER_NAME
 
 
-class ExcelLoader(AbstractLoader):
+class ExcelLoader:
     """Loader for a EXCEL file."""
+
+    def __init__(self):
+        self.logger = logging.getLogger(LOGGER_NAME)
 
     def load(self, dict_dataframes: dict[str, pd.DataFrame], file_path: Path, **kwargs):
         """Load DataFrame to a Excel file.

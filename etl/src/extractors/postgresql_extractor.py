@@ -1,11 +1,16 @@
+import logging
+
 import psycopg
 from config import postgres_config
 
-from src.extractors.abstract_extractor import AbstractExtractor
+from src.utils import LOGGER_NAME
 
 
-class PostgreSQLExtractor(AbstractExtractor):
+class PostgreSQLExtractor:
     """Extractor for PostgreSQL."""
+
+    def __init__(self):
+        self.logger = logging.getLogger(LOGGER_NAME)
 
     def extract(self, table_name: str) -> list[dict]:
         """Extract data from PostgreSQL.

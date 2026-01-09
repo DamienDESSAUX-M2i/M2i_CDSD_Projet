@@ -1,12 +1,16 @@
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from src.loaders.abstract_loader import AbstractLoader
+from src.utils import LOGGER_NAME
 
 
-class CSVLoader(AbstractLoader):
+class CSVLoader:
     """Loader for a CSV file."""
+
+    def __init__(self):
+        self.logger = logging.getLogger(LOGGER_NAME)
 
     def load(self, df: pd.DataFrame, file_path: Path, **kwargs) -> None:
         """Load DataFrame to a CSV file.

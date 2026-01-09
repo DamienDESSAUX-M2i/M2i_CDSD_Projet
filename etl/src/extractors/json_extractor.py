@@ -1,12 +1,16 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
-from src.extractors.abstract_extractor import AbstractExtractor
+from src.utils import LOGGER_NAME
 
 
-class JSONExtractor(AbstractExtractor):
+class JSONExtractor:
     """Extractor for a CSV file."""
+
+    def __init__(self):
+        self.logger = logging.getLogger(LOGGER_NAME)
 
     def extract(self, file_path: Path, **kwargs) -> list[dict[str, Any]]:
         """Extract data from a JSON file.

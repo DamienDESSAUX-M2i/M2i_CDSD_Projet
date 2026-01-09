@@ -1,12 +1,16 @@
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from src.extractors.abstract_extractor import AbstractExtractor
+from src.utils import LOGGER_NAME
 
 
-class ExcelExtractor(AbstractExtractor):
+class ExcelExtractor:
     """Extractor for a Excel file."""
+
+    def __init__(self):
+        self.logger = logging.getLogger(LOGGER_NAME)
 
     def extract(self, file_path: Path, **kwargs) -> dict[str, pd.DataFrame]:
         """Extract data from a Exel file.

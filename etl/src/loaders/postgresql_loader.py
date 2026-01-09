@@ -1,11 +1,16 @@
+import logging
+
 import psycopg
 from config import postgres_config
 
-from src.loaders.abstract_loader import AbstractLoader
+from src.utils import LOGGER_NAME
 
 
-class PostgreSQLLoader(AbstractLoader):
+class PostgreSQLLoader:
     """Extractor for PostgreSQL."""
+
+    def __init__(self):
+        self.logger = logging.getLogger(LOGGER_NAME)
 
     def load(self, table_name: str, data: str) -> list[dict]:
         """Load data into PostgreSQL.

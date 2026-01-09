@@ -1,12 +1,16 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
-from src.loaders.abstract_loader import AbstractLoader
+from src.utils import LOGGER_NAME
 
 
-class JSONLoader(AbstractLoader):
+class JSONLoader:
     """Loader for a JSON file."""
+
+    def __init__(self):
+        self.logger = logging.getLogger(LOGGER_NAME)
 
     def load(self, data: list[dict[str, Any]], file_path: Path, **kwargs) -> None:
         """Load dictionary to a JSON file.

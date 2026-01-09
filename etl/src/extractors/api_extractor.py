@@ -5,28 +5,27 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-from src.extractors.abstract_extractor import AbstractExtractor
+from src.utils import LOGGER_NAME
 
 
-class APIExtractor(AbstractExtractor):
+class APIExtractor:
     """Loader API REST."""
 
     def __init__(
         self,
-        logger: logging.Logger,
         base_url: str,
         api_key: str = None,
         timeout: int = 30,
         retry_strategy: Retry = Retry(total=3, backoff_factor=1),
     ):
-        super().__init__(logger)
+        self.logger = logging.getLogger(LOGGER_NAME)
         self.base_url = base_url
         self.api_key = api_key
         self.timeout = timeout
         self.retry_strategy = retry_strategy
 
     def extract(self, endpoint, params: dict[str, Any] = {}) -> requests.Response:
-        """Extrait données d'une API"""
+        """Extract data from API REST"""
         try:
             self.logger.info(f"Attempting request {self.base_url}/{endpoint}.")
 
