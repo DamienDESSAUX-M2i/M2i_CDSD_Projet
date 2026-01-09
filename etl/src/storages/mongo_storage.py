@@ -157,3 +157,4 @@ class MongoStorage:
     def close(self) -> None:
         """Close the connection"""
         self.client.close()
+        self.logger("Mongo connection closed.")
