@@ -1,4 +1,4 @@
-name: projet_dcsd
+name: projet_audio_midi
 
 services:
   minio:
@@ -7,10 +7,10 @@ services:
     env_file:
       - ./.env
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_ROOT_USER=${MINIO_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-    restart: unless-stopped
+    restart: always
     ports:
       - 9000:9000
       - 9001:9001
@@ -20,59 +20,109 @@ services:
       - network_app
     command: ["server", "/data", "--console-address" ,":9001"]
 
-  pgdb:
+  mongo:
+    image: mongo
+    container_name: mongo
+    env_file:
+      - ./.env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DBNAME}
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo/volume:/data/db
+    networks:
+      - network_app
+      - network_mongo
+
+  mongo-express:
+    depends_on:
+      - mongo
+    image: mongo-express
+    container_name: mongo-express
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./.env
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_PORTE: 27017
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD}
+    restart: always
+    networks:
+      - network_mongo
+
+  postgres:
     image: postgres
-    container_name: pgdb
+    container_name: postgres
     env_file:
       - ./.env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    restart: unless-stopped
+      POSTGRES_DB: ${POSTGRES_DBNAME}
+    restart: always
     ports:
       - 5432:5432
     volumes:
-      - ./postgresql/volume:/var/lib/postgresql
-      - ./postgresql/initdb:/docker-entrypoint-initdb.d
+      - ./postgres/volume:/var/lib/postgresql
+      - ./postgres/initdb:/docker-entrypoint-initdb.d
     networks:
       - network_app
-      - network_pgdb
+      - network_postgres
 
   pgadmin:
     depends_on:
-      - pgdb
+      - postgres
     image: dpage/pgadmin4
     container_name: pgadmin
     env_file:
       - ./.env
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    restart: unless-stopped
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    restart: always
     ports:
       - 8080:80
     volumes:
       - ./pgadmin/volume:/var/lib/pgadmin
       - ./pgadmin/storage:/var/lib/pgadmin/storage
     networks:
-      - network_pgdb
+      - network_postgres
 
   etl:
     depends_on:
       - minio
-      - pgdb
+      - mongo
+      - postgres
     container_name: etl
     build: ./etl
     env_file:
       - ./.env
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_USER=${MINIO_USER}
+      - MINIO_PASSWORD=${MINIO_PASSWORD}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-      - BUCKET_BRONZE=${BUCKET_BRONZE}
-      - BUCKET_SILVER=${BUCKET_SILVER}
-      - BUCKET_GOLD=${BUCKET_GOLD}
+      - MINIO_SECURE=${MINIO_SECURE}
+      - BUCKET_RAW=${BUCKET_RAW}
+      - BUCKET_PROCESSED=${BUCKET_PROCESSED}
+      - BUCKET_OUTPUT=${BUCKET_OUTPUT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DBNAME=${POSTGRES_DBNAME}
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_HOST=${MONGO_HOST}
+      - MONGO_PORT=${MONGO_PORT}
+      - MONGO_DBNAME=${MONGO_DBNAME}
     restart: unless-stopped
     ports:
       - 5000:5000
@@ -83,4 +133,5 @@ services:
 
 networks:
   network_app:
-  network_pgdb:
+  network_mongo:
+  network_postgres:

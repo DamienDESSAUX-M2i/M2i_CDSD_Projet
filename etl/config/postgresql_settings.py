@@ -9,7 +9,7 @@ class PostgresConfig(BaseSettings):
     password: str = os.getenv("POSTGRES_PASSWORD")
     host: str = os.getenv("POSTGRES_HOST", "localhost")
     port: int = os.getenv("POSTGRES_PORT", 5432)
-    dbname: str = os.getenv("POSTGRES_DB")
+    dbname: str = os.getenv("POSTGRES_DBNAME")
 
     @property
     def connection_string(self) -> PostgresDsn:
