@@ -3,6 +3,7 @@ import json
 import logging
 from datetime import timedelta
 
+import jams
 from config import minio_config
 
 from minio import Minio
@@ -121,24 +122,24 @@ class MinIOStorage:
             content_type="application/xml",
         )
 
-    # TODO
     def upload_jams(
-        self, bucket_name: str, file_name: str, jams_content: str
+        self, bucket_name: str, file_name: str, jam: jams.JAMS
     ) -> str | None:
         """Upload a JAMS file.
 
         Args:
             bucket_name (str): Bucket name.
             file_name (str): File name.
-            jams_content (str): JAMS content.
+            jam (jams.JAMS): JAMS class.
 
         Returns:
             str | None: URI MinIO or None.
         """
+        jam_bytes = jam.dumps().encode("utf-8")
         return self.upload_export(
             bucket_name=bucket_name,
             file_name=file_name,
-            data=jams_content.encode("utf-8"),
+            data=jam_bytes,
             content_type="application/jams",
         )
 
