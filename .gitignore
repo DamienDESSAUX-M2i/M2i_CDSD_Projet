@@ -12,6 +12,7 @@ etl/data/output/*
 
 # experiments
 etl/experiments
+etl/main_xp.py
 
 # ===
 # MinIO
