@@ -10,6 +10,9 @@ etl/data/raw/*
 etl/data/processed/*
 etl/data/output/*
 
+# experiments
+etl/experiments
+
 # ===
 # MinIO
 # ===
