@@ -1,9 +1,9 @@
 import os
+from dataclasses import dataclass
 
-from pydantic_settings import BaseSettings
 
-
-class MinIOConfig(BaseSettings):
+@dataclass
+class MinIOConfig:
     minio_endpoint: str = os.getenv("MINIO_ENDPOINT", "minio:9000")
     minio_user: str = os.getenv("MINIO_USER", "admin")
     minio_password: str = os.getenv("MINIO_PASSWORD", "admin0000")

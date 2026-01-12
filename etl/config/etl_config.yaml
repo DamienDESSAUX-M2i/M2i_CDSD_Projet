@@ -1,6 +1,0 @@
-api:
-  base_url: https://jsonplaceholder.typicode.com
-  endpoint: posts
-  delay: 1.0
-  timeout: 30
-  max_retries: 3
