@@ -1,6 +1,7 @@
 import io
 import json
 import logging
+import xml.etree.ElementTree as etree
 from datetime import timedelta
 
 import jams
@@ -101,24 +102,26 @@ class MinIOStorage:
             content_type="application/json",
         )
 
-    # TODO
     def upload_xml(
-        self, bucket_name: str, file_name: str, xml_content: str
+        self, bucket_name: str, file_name: str, tree: etree.ElementTree
     ) -> str | None:
         """Upload a XML file.
 
         Args:
             bucket_name (str): Bucket name.
             file_name (str): File name.
-            xml_content (str): XML content.
+            tree (etree.ElementTree): Tree to load.
 
         Returns:
             str | None: URI MinIO or None.
         """
+        xml_bytes = etree.tostring(
+            tree.getroot(), encoding="utf-8", xml_declaration=True
+        )
         return self.upload_export(
             bucket_name=bucket_name,
             file_name=file_name,
-            data=xml_content.encode("utf-8"),
+            data=xml_bytes,
             content_type="application/xml",
         )
 
