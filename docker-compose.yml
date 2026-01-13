@@ -10,7 +10,7 @@ services:
       - MINIO_ROOT_USER=${MINIO_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-    restart: always
+    restart: unless-stopped
     ports:
       - 9000:9000
       - 9001:9001
@@ -29,7 +29,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
       MONGO_INITDB_DATABASE: ${MONGO_DBNAME}
-    restart: always
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
@@ -54,7 +54,7 @@ services:
       ME_CONFIG_MONGODB_PORTE: 27017
       ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER}
       ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD}
-    restart: always
+    restart: unless-stopped
     networks:
       - network_mongo
 
@@ -67,7 +67,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DBNAME}
-    restart: always
+    restart: unless-stopped
     ports:
       - 5432:5432
     volumes:
@@ -87,7 +87,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-    restart: always
+    restart: unless-stopped
     ports:
       - 8080:80
     volumes:
