@@ -5,7 +5,10 @@ import xml.etree.ElementTree as etree
 from datetime import timedelta
 
 import jams
+import numpy as np
+import soundfile as sf
 from config import minio_config
+from minio.error import S3Error
 
 from minio import Minio
 from src.utils import LOGGER_NAME
@@ -77,7 +80,7 @@ class MinIOStorage:
             self.logger.info(f"Export uploaded: {uri}")
             return uri
 
-        except Exception as e:
+        except S3Error as e:
             self.logger.error(f"Upload failed: {e}")
             return None
 
@@ -138,7 +141,7 @@ class MinIOStorage:
         Returns:
             str | None: URI MinIO or None.
         """
-        jam_bytes = jam.dumps().encode("utf-8")
+        jam_bytes = jam.dumps(indent=4).encode("utf-8")
         return self.upload_export(
             bucket_name=bucket_name,
             file_name=file_name,
@@ -177,44 +180,75 @@ class MinIOStorage:
             self.logger.info(f"Image uploaded: {uri}")
             return uri
 
-        except Exception as e:
+        except S3Error as e:
             self.logger.error(f"Image upload failed: {e}")
             return None
 
-    # TODO
     def upload_audio(
         self,
         bucket_name: str,
         file_name: str,
-        audio_data: bytes,
+        audio_data: np.ndarray,
+        sample_rate: int,
         content_type: str = "audio/wav",
     ) -> str | None:
-        """Upload an image.
+        """Upload audio data as a WAV object to a MinIO bucket.
 
         Args:
-            bucket_name (str): Bucket name.
-            file_name (str): File name.
-            audio_data (bytes): Audio to upload.
-            content_type (str, optional): MINE type. Defaults to "audio/wav".
+            bucket_name (str): Target MinIO bucket name.
+            file_name (str): Object name in the bucket (must end with .wav).
+            audio_data (np.ndarray): Audio signal data. Shape must be (n_samples,) or (n_samples, n_channels).
+            sample_rate (int): Sampling rate in Hz.
+            content_type (str | None): MINE type. Defaults to "audio/wav".
 
         Returns:
             str | None: MinIO URI or None.
         """
         try:
+            if not file_name.lower().endswith(".wav"):
+                file_name = f"{file_name}.wav"
+
+            buffer = io.BytesIO()
+
+            sf.write(
+                file=buffer,
+                data=audio_data,
+                samplerate=sample_rate,
+                format="WAV",
+            )
+
+            buffer.seek(0)  # Moves the buffer cursor to the beginning.
+            data_size = buffer.getbuffer().nbytes
+
             self.client.put_object(
                 bucket_name=bucket_name,
                 object_name=file_name,
-                data=io.BytesIO(audio_data),
-                length=len(audio_data),
+                data=buffer,
+                length=data_size,
                 content_type=content_type,
             )
 
             uri = f"minio://{bucket_name}/{file_name}"
-            self.logger.info(f"Audio uploaded: {uri}")
+            self.logger.info(
+                f"Uploading audio data to MinIO: {uri}",
+                extra={
+                    "bucket_name": bucket_name,
+                    "object_name": file_name,
+                    "sample_rate": sample_rate,
+                    "shape": audio_data.shape,
+                    "bytes": data_size,
+                },
+            )
             return uri
 
-        except Exception as e:
-            self.logger.error(f"Audio upload failed: {e}")
+        except S3Error as e:
+            self.logger.error(
+                f"Audio upload failed: {e}",
+                extra={
+                    "bucket_name": bucket_name,
+                    "object_name": file_name,
+                },
+            )
             return None
 
     def get_object(self, bucket_name: str, file_name: str) -> bytes | None:
@@ -236,9 +270,29 @@ class MinIOStorage:
                 f"Object get: uri=minio://{bucket_name}/{file_name} size={len(data) // 8} octets"
             )
             return data
-        except Exception as e:
+        except S3Error as e:
             self.logger.info(f"Get object failed: {e}")
             return None
+
+    def get_audio(
+        self, bucket_name: str, file_name: str
+    ) -> tuple[np.ndarray, int] | None:
+        """Gets an audio from a bucket using its file name.
+
+        Args:
+            bucket_name (str): Bucket name.
+            file_name (str): File name.
+
+        Returns:
+            tuple[np.ndarray, int] | None: A tuple containing audio_data, a numpy array of shape (n_samples,) or (n_samples, n_channels), and sample_rate, a sampling rate in Hz or None.
+        """
+        audio_bytes = self.get_object(
+            bucket_name=bucket_name,
+            file_name=file_name,
+        )
+        if len(audio_bytes) > 0:
+            return sf.read(io.BytesIO(audio_bytes))
+        return None
 
     def list_objects(self, bucket_name: str, prefix: str = "") -> list[dict]:
         """List of information about the objects in a bucket based on a prefix.
@@ -278,7 +332,7 @@ class MinIOStorage:
             self.client.remove_object(bucket_name, file_name)
             self.logger.info(f"Object removed: minio://{bucket_name}/{file_name}")
             return True
-        except Exception as e:
+        except S3Error as e:
             self.logger.error(f"Object remove error: {e}")
             return False
 
@@ -305,7 +359,7 @@ class MinIOStorage:
                 f"Get presigned URL from minio://{bucket_name}/{file_name}"
             )
             return url
-        except Exception as e:
+        except S3Error as e:
             self.logger.error(f"Get presigned URL failed: {e}")
             return None
 
