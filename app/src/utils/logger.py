@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path
 
-LOGGER_DIR_PATH = Path("/app/logs")
+LOGGER_DIR_PATH = Path("./logs")  # /app/logs in container
 LOGGER_NAME = os.getenv("LOGGER_NAME", "app")
 
 
@@ -47,5 +47,5 @@ def initialize_logger() -> bool:
         LOGGER_DIR_PATH.mkdir(parents=True, exist_ok=True)
 
     set_up_logger(
-        name=LOGGER_NAME, logger_file_path=LOGGER_DIR_PATH / "f{LOGGER_NAME}.log"
+        name=LOGGER_NAME, logger_file_path=LOGGER_DIR_PATH / f"{LOGGER_NAME}.log"
     )
