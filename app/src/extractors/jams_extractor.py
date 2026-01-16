@@ -36,7 +36,7 @@ class JAMSExtractor(AbstractExtractor):
                     "path": str(file_path),
                 },
             )
-            jam = jams.load(path_or_file=file_path, **kwargs)
+            jam = jams.load(path_or_file=str(file_path), **kwargs)
             self.logger.info(
                 "JAMS extraction completed",
                 extra={
