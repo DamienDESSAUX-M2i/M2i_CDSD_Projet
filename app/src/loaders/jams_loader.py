@@ -26,7 +26,7 @@ class JAMSLoader(AbstractLoader):
             RuntimeError: If writing the JAMS file fails.
         """
         self._validate_inputs(jam=jam, file_path=file_path)
-        self._ensure_parent_directory(parent_dir=file_path.parent)
+        self._ensure_parent_directory(parent_directory_path=file_path.parent)
 
         try:
             self.logger.info(
