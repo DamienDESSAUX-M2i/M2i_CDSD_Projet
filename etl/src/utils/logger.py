@@ -44,7 +44,7 @@ def set_up_logger(
 
 def initialize_logger() -> bool:
     if not LOGGER_DIR_PATH.exists():
-        LOGGER_DIR_PATH.mkdir()
+        LOGGER_DIR_PATH.mkdir(parents=True, exist_ok=True)
 
     set_up_logger(
         name=LOGGER_NAME, logger_file_path=LOGGER_DIR_PATH / "f{LOGGER_NAME}.log"
