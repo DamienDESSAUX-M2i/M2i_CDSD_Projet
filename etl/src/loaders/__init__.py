@@ -1,3 +1,4 @@
+from .abstract_loader import AbstractLoader
 from .csv_loader import CSVLoader
 from .excel_loader import ExcelLoader
 from .jams_loader import JAMSLoader
@@ -6,10 +7,11 @@ from .wav_loader import WAVLoader
 from .xml_loader import XMLLoader
 
 __all__ = [
+    "AbstractLoader",
     "CSVLoader",
     "ExcelLoader",
-    "JSONLoader",
     "JAMSLoader",
-    "XMLLoader",
+    "JSONLoader",
     "WAVLoader",
+    "XMLLoader",
 ]
