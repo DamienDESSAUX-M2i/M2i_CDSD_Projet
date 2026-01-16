@@ -1,15 +1,14 @@
-import logging
 from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-from src.utils import LOGGER_NAME
+from src.extractors import AbstractExtractor
 
 
-class APIExtractor:
-    """Loader API REST."""
+class APIExtractor(AbstractExtractor):
+    """Extractor API REST."""
 
     def __init__(
         self,
@@ -18,7 +17,7 @@ class APIExtractor:
         timeout: int = 30,
         retry_strategy: Retry = Retry(total=3, backoff_factor=1),
     ):
-        self.logger = logging.getLogger(LOGGER_NAME)
+        super().__init__()
         self.base_url = base_url
         self.api_key = api_key
         self.timeout = timeout
@@ -51,6 +50,6 @@ class APIExtractor:
 
             self.logger.info(f"Extraction completed : {len(data)} entries.")
             return data
-        except Exception as e:
-            self.logger.error(f"API Extractor Error : {e}")
-            raise
+        except Exception as exc:
+            self.logger.error(f"API Extractor Error : {exc}")
+            raise RuntimeError("API Extractor failed") from exc

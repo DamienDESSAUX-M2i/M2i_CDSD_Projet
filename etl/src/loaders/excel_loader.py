@@ -38,7 +38,7 @@ class ExcelLoader(AbstractLoader):
                 "Writing WAV file",
                 extra={
                     "path": str(file_path),
-                    "sheet_names": dict_dataframes.keys(),
+                    "sheet_names": list(dict_dataframes.keys()),
                     "shapes": [df.shape for df in dict_dataframes.values()],
                 },
             )

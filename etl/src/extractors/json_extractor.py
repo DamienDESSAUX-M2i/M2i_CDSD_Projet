@@ -1,32 +1,53 @@
 import json
-import logging
 from pathlib import Path
 from typing import Any
 
-from src.utils import LOGGER_NAME
+from src.extractors import AbstractExtractor
 
 
-class JSONExtractor:
-    """Extractor for a CSV file."""
+class JSONExtractor(AbstractExtractor):
+    """
+    JSON file extractor.
+    Extract data from a JSON file using the pandas backend.
+    """
 
-    def __init__(self):
-        self.logger = logging.getLogger(LOGGER_NAME)
-
-    def extract(self, file_path: Path, **kwargs) -> list[dict[str, Any]]:
+    def extract(self, file_path: Path, **kwargs: Any) -> Any:
         """Extract data from a JSON file.
 
         Args:
-            file_path (Path): Path of the JSON file.
+            file_path (Path): Path of the Json file. Must end with '.json'.
+            **kwargs: Additional keyword arguments forwarded to 'json.loads'.
+
+        Raises:
+            FileNotFoundError: If the JSON file does not exist.
+            ValueError: If inputs are invalid.
+            RuntimeError: If reading the JSON file fails.
 
         Returns:
-            list[dict[str, Any]]: Data extract from the JSON file.
+            Any: Data extract from the JSON file.
         """
+        self._validate_file_path(file_path=file_path, suffix=".json")
+
         try:
-            self.logger.info(f"Attempting to extract data from {file_path}.")
-            with open(file=file_path, mode="r", encoding="utf-8") as file:
-                dict_data = json.load(fp=file, **kwargs)
-            self.logger.info(f"Extraction completed : {len(dict_data)} data extract.")
+            self.logger.info(
+                "Reading JSON file",
+                extra={
+                    "path": str(file_path),
+                },
+            )
+            dict_data = json.loads(fp=file_path.read_text(encoding="utf-8"), **kwargs)
+            self.logger.info(
+                "JSON extraction completed",
+                extra={
+                    "path": str(file_path),
+                },
+            )
             return dict_data
-        except Exception as e:
-            self.logger.error(f"Error JSON extractor: {e}.")
-            raise
+        except Exception as exc:
+            self.logger.exception(
+                "Failed to load JSON file.",
+                extra={
+                    "path": str(file_path),
+                },
+            )
+            raise RuntimeError("JSON extraction failed") from exc
