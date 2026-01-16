@@ -96,13 +96,13 @@ services:
     networks:
       - network_postgres
 
-  etl:
+  app:
     depends_on:
       - minio
       - mongo
       - postgres
-    container_name: etl
-    build: ./etl
+    container_name: app
+    build: ./app
     env_file:
       - ./.env
     environment:
@@ -127,7 +127,7 @@ services:
     ports:
       - 5000:5000
     volumes:
-      - ./etl:/app
+      - ./app:/app
     networks:
       - network_app
 

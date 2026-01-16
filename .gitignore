@@ -1,18 +1,18 @@
 # ===
-# ETL
+# app
 # ===
 
 # log
-etl/logs/*
+app/logs/*
 
 # data
-etl/data/raw/*
-etl/data/processed/*
-etl/data/output/*
+app/data/raw/*
+app/data/processed/*
+app/data/output/*
 
 # experiments
-etl/experiments
-etl/main_xp.py
+app/experiments
+app/main_xp.py
 
 # ===
 # MinIO
