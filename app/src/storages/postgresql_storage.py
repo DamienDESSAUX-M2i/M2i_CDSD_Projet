@@ -3,6 +3,7 @@ import logging
 import psycopg
 from config import postgres_config
 
+from src.extractors.jams_extractor import JAMSMetadata
 from src.utils import LOGGER_NAME
 
 
@@ -20,9 +21,9 @@ class PostgresStorage:
         self.logger.info("Connecting to the Mongo service.")
         return connection
 
-    # CRUD
+    # CRUD Metadata
 
-    def select(self, id_item: int) -> dict | None:
+    def select_metadata(self, id_item: int) -> dict | None:
         try:
             self.cursor.execute(
                 "SELECT id_item FROM table WHERE id_item=%s;",
@@ -33,21 +34,35 @@ class PostgresStorage:
             self.logger.error(f"select_author_failed: {e}")
             return None
 
-    def insert_into(self, item: str) -> dict | None:
+    def insert_into_metadata(self, metadata: JAMSMetadata) -> dict | None:
         try:
             self.cursor.execute(
-                "INSERT INTO table (item) VALUES (%s) RETURNING *;",
-                (item,),
+                """
+                INSERT INTO metadata (dataset_name, guitarist_id, title, style, tempo, scale, mode, playing_version, duration)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING *;
+                """,
+                (
+                    metadata.dataset_name,
+                    metadata.guitarist_id,
+                    metadata.title,
+                    metadata.style,
+                    metadata.tempo,
+                    metadata.scale,
+                    metadata.mode,
+                    metadata.version,
+                    metadata.duration,
+                ),
             )
             self.connection.commit()
             result = self.cursor.fetchone()
-            self.logger.debug(f"Insertion: {result}")
+            self.logger.info(f"Insertion: {result}")
             return result
         except Exception as e:
-            self.logger.error(f"Insertion failed: {e}")
+            self.logger.error(f"Insertion has failed: {e}")
             return None
 
-    def update(self, id_item: int, item: str) -> dict | None:
+    def update_metadata(self, id_item: int, item: str) -> dict | None:
         try:
             self.cursor.execute(
                 """
@@ -66,7 +81,7 @@ class PostgresStorage:
             self.logger.error(f"Updating failed: {e}")
             return None
 
-    def delete(self, id_item: int) -> dict | None:
+    def delete_metadata(self, id_item: int) -> dict | None:
         try:
             self.cursor.execute(
                 "DELETE FROM table WHERE id_item=%s RETURNING *;",

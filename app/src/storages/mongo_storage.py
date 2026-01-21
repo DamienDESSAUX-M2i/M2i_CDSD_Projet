@@ -14,7 +14,7 @@ class MongoStorage:
         self.client = self._get_client()
         self.db = self.client[mongo_config.dbname]
         self.collection = self.db["collection"]
-        self._create_indexes()
+        # self._create_indexes()
 
     def _get_client(self) -> MongoClient:
         self.logger.info("Attempting to connect to the Mongo service.")
@@ -157,4 +157,4 @@ class MongoStorage:
     def close(self) -> None:
         """Close the connection"""
         self.client.close()
-        self.logger("Mongo connection closed.")
+        self.logger.info("Mongo connection closed.")

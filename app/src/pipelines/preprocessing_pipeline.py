@@ -1,24 +1,18 @@
-import logging
-
-from config import etl_config
-
-from src.utils import LOGGER_NAME
+from src.pipelines import AbstractPipeline
 
 
-class PreprocessingPipeline:
-    """ETL Pipeline."""
+class PreprocessingPipeline(AbstractPipeline):
+    """Preprocessing Pipeline."""
 
-    def __init__(self):
-        self.logger = logging.getLogger(LOGGER_NAME)
+    def run(self):
+        """Run pipeline.
 
-    def _extract(self):
-        """Extraction process."""
-        pass
-
-    def _transform(self, data):
-        """Transformation process."""
-        pass
-
-    def _load(self, data_transformed):
-        """Loading process."""
-        pass
+        Raises:
+            RuntimeError: If pipeline failed.
+        """
+        try:
+            self.logger.info("Preprocessing pipeline stars.")
+            self.logger.info("Preprocessing pipeline ends successfully.")
+        except Exception as exc:
+            self.logger.info("Preprocessing pipeline failed.")
+            raise RuntimeError("Preprocessing pipeline failed") from exc

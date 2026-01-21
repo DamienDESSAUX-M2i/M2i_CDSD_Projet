@@ -23,7 +23,7 @@ def set_up_logger(
     logger.setLevel(level)
 
     formatter = logging.Formatter(
-        "{asctime} - {name} - {funcName} - {levelname} - {message}",
+        "{asctime} - {levelname} - {module} - {funcName} - {message}",
         style="{",
         datefmt="%Y-%m-%d %H:%M:%S",
     )

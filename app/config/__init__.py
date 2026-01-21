@@ -1,6 +1,11 @@
-from .etl_settings import etl_config
+from .ingestion_pipelines_settings import guitar_set_ingestion_pipeline_config
 from .minio_settings import minio_config
 from .mongodb_settings import mongo_config
 from .postgresql_settings import postgres_config
 
-__all__ = ["minio_config", "postgres_config", "mongo_config", "etl_config"]
+__all__ = [
+    "ingestion_pipeline_config",
+    "minio_config",
+    "mongo_config",
+    "postgres_config",
+]
