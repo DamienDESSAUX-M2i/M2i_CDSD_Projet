@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,13 +14,20 @@ from config import (
 from src.extractors import JAMSExtractor, WAVExtractor
 from src.pipelines import AbstractPipeline
 
+TITLE_REGEX = re.compile(
+    r"(?P<title>\d{2}_[A-Za-z0-9]+-\d+-[A-G](?:b|\#)?_[A-Za-z]+)",
+    re.VERBOSE,
+)
+
 
 @dataclass
 class GuitarSetIngestionPipelineStatistics:
     jams_loaded: int = 0
     jams_uploaded: int = 0
     jams_metadata_inserted: int = 0
+    jams_metadata_updated: int = 0
     jams_annotation_inserted: int = 0
+    jams_annotation_updated: int = 0
     jams_error: int = 0
     wav_loaded: int = 0
     wav_uploaded: int = 0
@@ -73,10 +81,10 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             jam_file_path (Path): Path of the JAMS file
         """
         try:
-            jam = self.jams_extractor.load(file_path=jam_file_path)
+            jam = self.jams_extractor.read(file_path=jam_file_path)
             self.statistics.jams_loaded += 1
 
-            self.minio_storage.upload_jams(
+            self.minio_storage.put_jams(
                 bucket_name=minio_config.bucket_raw,
                 file_name=f"{guitar_set_ingestion_pipeline_config.dataset_name}/{jam_file_path.stem}/annotation.jams",
                 jam=jam,
@@ -84,11 +92,53 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             self.statistics.jams_uploaded += 1
 
             jam_metadata = self.jams_extractor.extract_metadata(jam=jam)
-            self.postgres_storage.insert_into_metadata(metadata=jam_metadata)
-            self.statistics.jams_metadata_inserted += 1
+            id_metadata = self.postgres_storage.select_metadata_title(
+                title=jam_metadata.title
+            )
+            if id_metadata:
+                result = self.postgres_storage.update_metadata(
+                    id_metadata=id_metadata, metadata=jam_metadata
+                )
+                if result:
+                    self.statistics.jams_metadata_updated += 1
+                else:
+                    self.statistics.jams_error += 1
+            else:
+                result = self.postgres_storage.insert_into_metadata(
+                    metadata=jam_metadata
+                )
+                if result:
+                    self.statistics.jams_metadata_inserted += 1
+                else:
+                    self.statistics.jams_error += 1
 
-            jam_annotation = self.jams_extractor.extract_annotation(jam=jam)
-            self.statistics.jams_annotation_inserted += 1
+            annotations = self.jams_extractor.extract_annotation(jam=jam)
+            dict_annotation = annotations.to_dict()
+
+            result = self.mongo_storage.insert_pitch_contour(
+                pitch_contour=dict_annotation["pitch_contour"]
+            )
+            self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
+            self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
+            self.statistics.jams_error += 1 if result == "errors" else 0
+
+            self.mongo_storage.insert_note_midi(note_midi=dict_annotation["note_midi"])
+            self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
+            self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
+            self.statistics.jams_error += 1 if result == "errors" else 0
+
+            self.mongo_storage.insert_beat_position(
+                beat_position=dict_annotation["beat_position"]
+            )
+            self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
+            self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
+            self.statistics.jams_error += 1 if result == "errors" else 0
+
+            self.mongo_storage.insert_chord(chord=dict_annotation["chord"])
+            self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
+            self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
+            self.statistics.jams_error += 1 if result == "errors" else 0
+
         except Exception as exception:
             self.statistics.jams_error += 1
             self.logger.error(f"JAMS processing has failed: {exception}")
@@ -122,9 +172,13 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             )
             self.statistics.wav_loaded += 1
 
-            self.minio_storage.upload_audio(
+            title = TITLE_REGEX.match(wav_file_path.stem)
+            if not title:
+                raise RuntimeError(f"No title found: title = {title}")
+
+            self.minio_storage.put_audio(
                 bucket_name=minio_config.bucket_raw,
-                file_name=f"{guitar_set_ingestion_pipeline_config.dataset_name}/{wav_file_path.stem}/audio_mono_pickup_mix.wav",
+                file_name=f"{guitar_set_ingestion_pipeline_config.dataset_name}/{title.group('title')}/audio_mono_pickup_mix.wav",
                 audio_data=audio_data,
                 sample_rate=sample_rate,
             )

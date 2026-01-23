@@ -1,126 +1,29 @@
-import enum
-from dataclasses import dataclass
+import re
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any
 
 import jams
 import pandas as pd
 
 from src.extractors import AbstractExtractor
+from src.models import (
+    SCALE_MAP,
+    BeatPositionDict,
+    ChordDict,
+    JAMSAnnotation,
+    JAMSMetadata,
+    Mode,
+    NoteMidiDict,
+    PitchContourDict,
+    PlayingVersion,
+    Scale,
+    Style,
+)
 
-SCALE_MAP = {"Gb": "F#", "Db": "C#", "Cb": "B"}
-
-
-class Style(enum.StrEnum):
-    """Enumeration representing the possible styles."""
-
-    BOSSA_NOVA1 = "BN1"
-    BOSSA_NOVA2 = "BN2"
-    BOSSA_NOVA3 = "BN3"
-    FUNK1 = "Funk1"
-    FUNK2 = "Funk2"
-    FUNK3 = "Funk3"
-    JAZZ1 = "Jazz1"
-    JAZZ2 = "Jazz2"
-    JAZZ3 = "Jazz3"
-    ROCK1 = "Rock1"
-    ROCK2 = "Rock2"
-    ROCK3 = "Rock3"
-    SINGER_SONGWRITER1 = "SS1"
-    SINGER_SONGWRITER2 = "SS2"
-    SINGER_SONGWRITER3 = "SS3"
-
-
-class Scale(enum.StrEnum):
-    """Enumeration representing the possible scales."""
-
-    A = "A"
-    A_FLAT = "Ab"
-    B = "B"  # Cb
-    B_FLAT = "Bb"
-    C = "C"
-    C_SHARP = "C#"  # Db
-    D = "D"
-    E = "E"
-    E_FLAT = "Eb"
-    F = "F"
-    F_SHARP = "F#"  # Gb
-    G = "G"
-
-
-class Version(enum.StrEnum):
-    """Enumeration representing the possible versions."""
-
-    COMPING = "comp"
-    SOLO = "solo"
-
-
-class Mode(enum.StrEnum):
-    """Enumeration representing the scale mode."""
-
-    MAJOR = "major"
-    MINOR = "minor"
-
-
-@dataclass
-class JAMSMetadata:
-    dataset_name: str
-    guitarist_id: str
-    title: str
-    style: Style
-    tempo: int
-    scale: Scale
-    mode: Mode
-    version: Version
-    duration: float
-
-    def to_dict(self) -> dict:
-        return {
-            "dataset_name": self.dataset_name,
-            "guitarist_id": self.guitarist_id,
-            "title": self.title,
-            "style": self.style.value,
-            "tempo": self.tempo,
-            "scale": self.scale.value,
-            "mode": self.mode,
-            "version": self.version.value,
-            "duration": self.duration,
-        }
-
-
-class NoteMidi(TypedDict):
-    data_source: str
-    time: float
-    duration: float
-    value: float
-
-
-class PitchContour(TypedDict):
-    data_source: str
-    time: float
-    frequency: float
-
-
-class BeatPosition(TypedDict):
-    time: float
-    position: int
-    beat_units: int
-    measure: int
-    num_beats: int
-
-
-class Chord(TypedDict):
-    time: float
-    duration: float
-    value: str
-
-
-@dataclass
-class JAMSAnnotation:
-    pitch_contour: pd.DataFrame
-    note_midi: pd.DataFrame
-    beat_position: pd.DataFrame
-    chord: pd.DataFrame
+TITLE_REGEX = re.compile(
+    r"^(?P<guitarist_id>\d{2})_(?P<style>[A-Za-z0-9]+)-(?P<tempo>\d+)-(?P<scale>[A-G](?:b|\#)?)_(?P<playing_version>[A-Za-z]+)$",
+    re.VERBOSE,
+)
 
 
 class JAMSExtractor(AbstractExtractor):
@@ -129,9 +32,8 @@ class JAMSExtractor(AbstractExtractor):
     Extract data from a JAMS file using jams backend.
     """
 
-    def load(self, file_path: Path, **kwargs: Any) -> jams.JAMS:
+    def read(self, file_path: Path, **kwargs: Any) -> jams.JAMS:
         """Load data from a JAMS file.
-
 
         Args:
             file_path (Path): Path of the JAMS file. Must end with '.jams'.
@@ -163,14 +65,15 @@ class JAMSExtractor(AbstractExtractor):
                 },
             )
             return jam
-        except Exception as exc:
+        except Exception as exception:
             self.logger.exception(
                 "Failed to load JAMS file.",
+                exc_info=exception,
                 extra={
                     "path": str(file_path),
                 },
             )
-            raise RuntimeError("JAMS extraction failed") from exc
+            raise RuntimeError("JAMS extraction failed") from exception
 
     def extract_metadata(
         self, jam: jams.JAMS, dataset_name: str = "GuitarSet"
@@ -179,6 +82,7 @@ class JAMSExtractor(AbstractExtractor):
 
         Args:
             jam (jams.JAMS): A jams.JAMS.
+            dataset_name (str) : Name of the dataset. Default "GuitarSet".
 
         Raises:
             RunTimeError: If JAMS metadata extraction fails.
@@ -188,20 +92,48 @@ class JAMSExtractor(AbstractExtractor):
         """
         try:
             self.logger.info("Extracting JAMS metadata...")
+
             title = jam.file_metadata.title
-            # Parse the title
-            guitarist_id, style_tempo_scale, version = title.split("_")
-            style, tempo, scale = style_tempo_scale.split("-")
-            tempo = int(tempo)
-            style = Style(style)
-            scale = Scale(SCALE_MAP[scale] if scale not in Scale else scale)
-            for jam_annotation in jam.annotations:
-                if jam_annotation["namespace"] == "key_mode":
-                    mode = Mode(jam_annotation["data"][0].value.split(":")[1])
+            if not title:
+                raise RuntimeError("JAMS title is missing")
+
+            title_match = TITLE_REGEX.match(title)
+            if not title_match:
+                raise RuntimeError(f"Invalid title format: {title}")
+
+            guitarist_id = int(title_match.group("guitarist_id"))
+            style_str = title_match.group("style")
+            tempo = int(title_match.group("tempo"))
+            scale_str = title_match.group("scale")
+            playing_version_str = title_match.group("playing_version")
+
+            mode_str = None
+            for annotation in jam.annotations:
+                if annotation.namespace == "key_mode":
+                    try:
+                        mode_str = annotation.data[0].value.split(":")[1]
+                    except (IndexError, ValueError) as exception:
+                        raise RuntimeError("Invalid key_mode annotation") from exception
                     break
-            version = Version(version)
-            duration = jam.file_metadata.duration
-            jams_metadata = JAMSMetadata(
+
+            if mode_str is None:
+                raise RuntimeError("No key_mode annotation found")
+
+            duration = float(jam.file_metadata.duration)
+
+            # enum cast
+            try:
+                style = Style(style_str)
+                scale = Scale(SCALE_MAP.get(scale_str, scale_str))
+                mode = Mode(mode_str)
+                playing_version = PlayingVersion(playing_version_str)
+            except ValueError as exception:
+                raise RuntimeError(
+                    f"enum cast has failed: style={style_str}, scale={scale_str}, mode={mode_str}, playing_version={playing_version_str}"
+                ) from exception
+
+            self.logger.info("JAMS metadata extracted", extra={"title": title})
+            return JAMSMetadata(
                 dataset_name=dataset_name,
                 guitarist_id=guitarist_id,
                 title=title,
@@ -209,16 +141,105 @@ class JAMSExtractor(AbstractExtractor):
                 tempo=tempo,
                 scale=scale,
                 mode=mode,
-                version=version,
+                playing_version=playing_version,
                 duration=duration,
             )
-            self.logger.info("JAMS metadata extracted", extra={"title": title})
-            return jams_metadata
         except Exception as exception:
-            self.logger.error("JAMS metadata extraction has failed")
+            self.logger.error("JAMS metadata extraction has failed", exc_info=True)
             raise RuntimeError("JAMS metadata extraction has failed.") from exception
 
-    def extract_annotation(self, jam: jams.JAMS) -> JAMSAnnotation:
+    def _extract_pitch_contour(
+        self,
+        annotation: jams.core.Annotation,
+        data_source: str,
+    ) -> list[PitchContourDict]:
+        """Extract pitch contour annotation from a jams.core.Annotation
+
+        Args:
+            annotation (jams.core.Annotation): Pitch contour annotation.
+            data_source (str): Source of annotation data.
+
+        Returns:
+            list[PitchContourDict]: Pitch contour annotation extracted.
+        """
+        return [
+            {
+                "data_source": data_source,
+                "time": data.time,
+                "frequency": data.value.get("frequency", 0.0),
+            }
+            for data in annotation.data
+        ]
+
+    def _extract_note_midi(
+        self,
+        annotation: jams.core.Annotation,
+        data_source: str,
+    ) -> list[NoteMidiDict]:
+        """Extract note midi annotation from a jams.core.Annotation
+
+        Args:
+            annotation (jams.core.Annotation): Note midi annotation.
+            data_source (str): Source of annotation data.
+
+        Returns:
+            list[NoteMidiDict]: Note midi annotation extracted.
+        """
+        return [
+            {
+                "data_source": data_source,
+                "time": data.time,
+                "duration": data.duration,
+                "value": data.value,
+            }
+            for data in annotation.data
+        ]
+
+    def _extract_beat_position(
+        self, annotation: jams.core.Annotation
+    ) -> list[BeatPositionDict]:
+        """Extract beat position annotation from a jams.core.Annotation
+
+        Args:
+            dataset_name (str): Name of the data set.
+            title(str): Title extract from jams.JAMS.file_metadata.
+            annotation (jams.core.Annotation): Beat position annotation.
+
+        Returns:
+            list[BeatPositionDict]: Beat position annotation extracted.
+        """
+        return [
+            {
+                "time": data.time,
+                "position": data.value["position"],
+                "beat_units": data.value["beat_units"],
+                "measure": data.value["measure"],
+                "num_beats": data.value["num_beats"],
+            }
+            for data in annotation.data
+        ]
+
+    def _extract_chord(self, annotation: jams.core.Annotation) -> list[ChordDict]:
+        """Extract chord annotation from a jams.core.Annotation
+
+        Args:
+            annotation (jams.core.Annotation): Chord annotation.
+
+        Returns:
+            list[ChordDict]: Chord annotation extracted.
+        """
+        return [
+            {
+                "time": data.time,
+                "duration": data.duration,
+                "value": data.value,
+            }
+            for data in annotation.data
+        ]
+
+    def extract_annotation(
+        self, jam: jams.JAMS, dataset_name: str = "GuitarSet"
+    ) -> JAMSAnnotation:
         """Extract annotation from a jams.JAMS.
 
         Args:
@@ -232,52 +253,44 @@ class JAMSExtractor(AbstractExtractor):
         """
         try:
             self.logger.info("Extracting JAMS annotation...")
-            pitch_contour: list[PitchContour] = []
-            note_midi: list[NoteMidi] = []
-            beat_position: list[BeatPosition] = []
-            chord: list[Chord] = []
-            for jam_annotation in jam.annotations:
-                data_source = jam_annotation["annotation_metadata"]["data_source"]
-                namespace = jam_annotation["namespace"]
+
+            pitch_contour: list[PitchContourDict] = []
+            note_midi: list[NoteMidiDict] = []
+            beat_position: list[BeatPositionDict] = []
+            chord: list[ChordDict] = []
+
+            title = jam.file_metadata.title
+            if not title:
+                raise RuntimeError("JAMS title is missing")
+
+            annotations = jam.annotations
+            if not annotations:
+                raise RuntimeError("JAMS annotations is missing")
+
+            for annotation in annotations:
+                data_source = annotation.annotation_metadata.data_source
+                namespace = annotation.namespace
                 if namespace == "pitch_contour":
-                    for data in jam_annotation["data"]:
-                        pitch_contour.append(
-                            {
-                                "data_source": data_source,
-                                "time": data.time,
-                                "frequency": data.value["frequency"],
-                            }
+                    pitch_contour.extend(
+                        self._extract_pitch_contour(
+                            annotation=annotation,
+                            data_source=data_source,
                         )
-                if namespace == "note_midi":
-                    for data in jam_annotation["data"]:
-                        note_midi.append(
-                            {
-                                "data_source": data_source,
-                                "time": data.time,
-                                "duration": data.duration,
-                                "value": data.value,
-                            }
+                    )
+                elif namespace == "note_midi":
+                    note_midi.extend(
+                        self._extract_note_midi(
+                            annotation=annotation,
+                            data_source=data_source,
                         )
-                if namespace == "beat_position":
-                    for data in jam_annotation["data"]:
-                        beat_position.append(
-                            {
-                                "time": data.time,
-                                "position": data.value["position"],
-                                "beat_units": data.value["beat_units"],
-                                "measure": data.value["measure"],
-                                "num_beats": data.value["num_beats"],
-                            }
-                        )
-                if (namespace == "chord") and (data_source == ""):
-                    for data in jam_annotation["data"]:
-                        chord.append(
-                            {
-                                "time": data.time,
-                                "duration": data.duration,
-                                "value": data.value,
-                            }
-                        )
+                    )
+                elif namespace == "beat_position":
+                    beat_position.extend(
+                        self._extract_beat_position(annotation=annotation)
+                    )
+                elif (namespace == "chord") and (data_source == ""):
+                    chord.extend(self._extract_chord(annotation=annotation))
+
             self.logger.info(
                 "JAMS annotation extracted",
                 extra={
@@ -288,11 +301,44 @@ class JAMSExtractor(AbstractExtractor):
                 },
             )
             return JAMSAnnotation(
-                pitch_contour=pd.DataFrame(pitch_contour),
-                note_midi=pd.DataFrame(note_midi),
-                beat_position=pd.DataFrame(beat_position),
-                chord=pd.DataFrame(chord),
+                dataset_name=dataset_name,
+                title=title,
+                pitch_contour=pd.DataFrame(
+                    pitch_contour,
+                    columns=[
+                        "data_source",
+                        "time",
+                        "frequency",
+                    ],
+                ),
+                note_midi=pd.DataFrame(
+                    note_midi,
+                    columns=[
+                        "data_source",
+                        "time",
+                        "duration",
+                        "value",
+                    ],
+                ),
+                beat_position=pd.DataFrame(
+                    beat_position,
+                    columns=[
+                        "time",
+                        "position",
+                        "beat_units",
+                        "measure",
+                        "num_beats",
+                    ],
+                ),
+                chord=pd.DataFrame(
+                    chord,
+                    columns=[
+                        "time",
+                        "duration",
+                        "value",
+                    ],
+                ),
             )
         except Exception as exception:
-            self.logger.error(f"JAMS annotation extraction has failed: {exception}")
-            raise RuntimeError("JAMS annotation extraction has failed.") from exception
+            self.logger.error("JAMS annotation extraction has failed", exc_info=True)
+            raise RuntimeError("JAMS annotation extraction has failed") from exception

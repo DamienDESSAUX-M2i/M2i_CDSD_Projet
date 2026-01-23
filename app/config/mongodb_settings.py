@@ -9,6 +9,10 @@ class MongoConfig:
     host: str = os.getenv("MONGO_HOST", "localhost")
     port: int = os.getenv("MONGO_PORT", 27017)
     dbname: str = os.getenv("MONGO_DBNAME", "audio_midi")
+    collection_pitch_contour: str = "pitch_contour"
+    collection_note_midi: str = "note_midi"
+    collection_beat_position: str = "beat_position"
+    collection_chord: str = "chord"
 
     @property
     def connection_string(self) -> str:

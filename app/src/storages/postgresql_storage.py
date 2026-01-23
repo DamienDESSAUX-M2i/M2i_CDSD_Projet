@@ -14,24 +14,36 @@ class PostgresStorage:
         self.cursor = self.connection.cursor()
 
     def _get_connection(self) -> psycopg.Connection:
-        self.logger.info("Attempting to connect to the Mongo service.")
+        self.logger.info("Attempting to connect to the Postgres service.")
         connection = psycopg.connect(
             postgres_config.connection_string, row_factory=psycopg.rows.dict_row
         )
-        self.logger.info("Connecting to the Mongo service.")
+        self.logger.info("Connecting to the Postgres service.")
         return connection
 
     # CRUD Metadata
 
-    def select_metadata(self, id_item: int) -> dict | None:
+    def select_metadata(self, id_metadata: int) -> dict | None:
         try:
             self.cursor.execute(
-                "SELECT id_item FROM table WHERE id_item=%s;",
-                (id_item,),
+                "SELECT * FROM metadata WHERE id_metadata=%s;",
+                (id_metadata,),
             )
             return self.cursor.fetchone()
         except Exception as e:
-            self.logger.error(f"select_author_failed: {e}")
+            self.logger.error(f"Selection has failed: {e}")
+            return None
+
+    def select_metadata_title(self, title: str) -> dict | None:
+        try:
+            self.cursor.execute(
+                "SELECT id_metadata FROM metadata WHERE title=%s;",
+                (title,),
+            )
+            result = self.cursor.fetchone()
+            return result.get("id_metadata", None)
+        except Exception as e:
+            self.logger.error(f"Selection has failed: {e}")
             return None
 
     def insert_into_metadata(self, metadata: JAMSMetadata) -> dict | None:
@@ -50,7 +62,7 @@ class PostgresStorage:
                     metadata.tempo,
                     metadata.scale,
                     metadata.mode,
-                    metadata.version,
+                    metadata.playing_version,
                     metadata.duration,
                 ),
             )
@@ -62,37 +74,48 @@ class PostgresStorage:
             self.logger.error(f"Insertion has failed: {e}")
             return None
 
-    def update_metadata(self, id_item: int, item: str) -> dict | None:
+    def update_metadata(self, id_metadata: int, metadata: JAMSMetadata) -> dict | None:
         try:
             self.cursor.execute(
                 """
-                UPDATE table
-                SET item=%s
-                WHERE id_item=%s
+                UPDATE metadata
+                SET dataset_name=%s, guitarist_id=%s, title=%s, style=%s, tempo=%s, scale=%s, mode=%s, playing_version=%s, duration=%s
+                WHERE id_metadata=%s
                 RETURNING *;
                 """,
-                (item, id_item),
+                (
+                    metadata.dataset_name,
+                    metadata.guitarist_id,
+                    metadata.title,
+                    metadata.style,
+                    metadata.tempo,
+                    metadata.scale,
+                    metadata.mode,
+                    metadata.playing_version,
+                    metadata.duration,
+                    id_metadata,
+                ),
             )
             self.connection.commit()
             result = self.cursor.fetchone()
-            self.logger.debug(f"Updating: {result}")
+            self.logger.info(f"Updating: {result}")
             return result
         except Exception as e:
-            self.logger.error(f"Updating failed: {e}")
+            self.logger.error(f"Updating has failed: {e}")
             return None
 
-    def delete_metadata(self, id_item: int) -> dict | None:
+    def delete_metadata(self, id_metadata: int) -> dict | None:
         try:
             self.cursor.execute(
-                "DELETE FROM table WHERE id_item=%s RETURNING *;",
-                (id_item,),
+                "DELETE FROM metadata WHERE id_metadata=%s RETURNING *;",
+                (id_metadata,),
             )
             self.connection.commit()
             result = self.cursor.fetchone()
             self.logger.warning(f"Deleting: {result}")
             return result
         except Exception as e:
-            self.logger.error(f"Deleting failed: {e}")
+            self.logger.error(f"Deleting has failed: {e}")
             return None
 
     # UTILS

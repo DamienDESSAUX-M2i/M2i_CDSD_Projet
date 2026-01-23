@@ -128,9 +128,7 @@ class MinIOStorage:
             content_type="application/xml",
         )
 
-    def upload_jams(
-        self, bucket_name: str, file_name: str, jam: jams.JAMS
-    ) -> str | None:
+    def put_jams(self, bucket_name: str, file_name: str, jam: jams.JAMS) -> str | None:
         """Upload a JAMS file.
 
         Args:
@@ -184,7 +182,7 @@ class MinIOStorage:
             self.logger.error(f"Image upload failed: {e}")
             return None
 
-    def upload_audio(
+    def put_audio(
         self,
         bucket_name: str,
         file_name: str,
