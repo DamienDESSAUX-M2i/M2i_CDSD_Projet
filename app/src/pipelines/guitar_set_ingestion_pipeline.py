@@ -62,10 +62,27 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             self.logger.info("Ingestion pipeline stars")
 
             self.logger.info("[1/2] JAMS ingestion")
-            self._jams_ingestion()
+            self._jams_ingestion(
+                directory_jams_path=guitar_set_ingestion_pipeline_config.annotation_path
+            )
 
             self.logger.info("[2/2] WAV ingestion")
-            self._wav_ingestion()
+            self.logger.info("[1/4] audio_hex_pickup_debleeded")
+            self._wav_ingestion(
+                directory_wav_path=guitar_set_ingestion_pipeline_config.audio_hex_pickup_debleeded_path
+            )
+            self.logger.info("[1/4] audio_hex_pickup_original_path")
+            self._wav_ingestion(
+                directory_wav_path=guitar_set_ingestion_pipeline_config.audio_hex_pickup_original_path
+            )
+            self.logger.info("[1/4] audio_mono_mic_path")
+            self._wav_ingestion(
+                directory_wav_path=guitar_set_ingestion_pipeline_config.audio_mono_mic_path
+            )
+            self.logger.info("[1/4] audio_mono_pickup_mix_path")
+            self._wav_ingestion(
+                directory_wav_path=guitar_set_ingestion_pipeline_config.audio_mono_pickup_mix_path
+            )
 
             self.logger.info(
                 f"Ingestion pipeline ends successfully: {self.statistics.to_dict()}"
@@ -143,12 +160,15 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             self.statistics.jams_error += 1
             self.logger.error(f"JAMS processing has failed: {exception}")
 
-    def _jams_ingestion(self) -> None:
+    def _jams_ingestion(self, directory_jams_path: Path) -> None:
         """Ingestion of jams.JAMS files."""
+        if not directory_jams_path.exists():
+            raise FileNotFoundError(
+                f"Directory does not exist: path={directory_jams_path}"
+            )
+
         nb_ingestion = 1
-        for jam_file_path in guitar_set_ingestion_pipeline_config.annotation_path.glob(
-            "*.jams"
-        ):
+        for jam_file_path in directory_jams_path.glob("*.jams"):
             self._jam_processing(jam_file_path=jam_file_path)
             if (
                 self.ingestion_limit is not None
@@ -178,7 +198,7 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
 
             self.minio_storage.put_audio(
                 bucket_name=minio_config.bucket_raw,
-                file_name=f"{guitar_set_ingestion_pipeline_config.dataset_name}/{title.group('title')}/audio_mono_pickup_mix.wav",
+                file_name=f"{guitar_set_ingestion_pipeline_config.dataset_name}/{title.group('title')}/{wav_file_path.parent.name}.wav",
                 audio_data=audio_data,
                 sample_rate=sample_rate,
             )
@@ -187,14 +207,15 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             self.statistics.wav_error += 1
             self.logger.error(f"WAV processing has failed: {exception}")
 
-    def _wav_ingestion(self) -> None:
+    def _wav_ingestion(self, directory_wav_path: Path) -> None:
         """Ingestion of WAV files."""
+        if not directory_wav_path.exists():
+            raise FileNotFoundError(
+                f"Directory does not exist: path={directory_wav_path}"
+            )
+
         nb_ingestion = 1
-        for (
-            wav_file_path
-        ) in guitar_set_ingestion_pipeline_config.audio_mono_pickup_mix_path.glob(
-            "*.wav"
-        ):
+        for wav_file_path in directory_wav_path.glob("*.wav"):
             self._wav_processing(wav_file_path=wav_file_path)
             if (
                 self.ingestion_limit is not None
