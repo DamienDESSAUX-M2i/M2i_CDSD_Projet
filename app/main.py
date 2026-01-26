@@ -12,7 +12,7 @@ def main() -> None:
         "--guitar_set", action="store_true", help="Launch guitar set ingestion pipeline"
     )
     parser.add_argument(
-        "--ingestion_limit", type=int, default=2, help="Max number of files ingested"
+        "--limit", type=int, default=2, help="Max number of files ingested"
     )
     parser.add_argument(
         "--preprocessing", action="store_true", help="Launch preprocessing pipeline"
@@ -20,9 +20,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.guitar_set:
-        ingestion_pipeline = GuitarSetIngestionPipeline(
-            ingestion_limit=args.ingestion_limit
-        )
+        ingestion_pipeline = GuitarSetIngestionPipeline(ingestion_limit=args.limit)
         ingestion_pipeline.run()
         ingestion_pipeline.close()
 
