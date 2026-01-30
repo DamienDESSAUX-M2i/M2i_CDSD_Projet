@@ -8,5 +8,19 @@ CREATE TABLE IF NOT EXISTS metadata (
     scale VARCHAR(15),
     mode VARCHAR(63),
     playing_version VARCHAR(255),
-    duration FLOAT
+    duration FLOAT,
+    instrument VARCHAR(255),
+    instrument_model VARCHAR(255),
+    pick_up_setting VARCHAR(255),
+    -- pick_up_type VARCHAR(255),
+    instrument_tuning VARCHAR(255),
+    -- amp_channel VARCHAR(255),
+    audio_effects VARCHAR(255),
+    recording_date VARCHAR(255),
+    recording_artist VARCHAR(255),
+    instrument_body_material VARCHAR(255),
+    instrument_string_material VARCHAR(255),
+    composer VARCHAR(255),
+    recording_source VARCHAR(255)
+    -- polyphony BOOLEAN
 );

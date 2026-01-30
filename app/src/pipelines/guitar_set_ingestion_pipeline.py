@@ -2,13 +2,9 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-import jams
-import pandas as pd
 from config import (
     guitar_set_ingestion_pipeline_config,
     minio_config,
-    mongo_config,
-    postgres_config,
 )
 
 from src.extractors import JAMSExtractor, WAVExtractor
@@ -71,15 +67,15 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             self._wav_ingestion(
                 directory_wav_path=guitar_set_ingestion_pipeline_config.audio_hex_pickup_debleeded_path
             )
-            self.logger.info("[1/4] audio_hex_pickup_original_path")
+            self.logger.info("[2/4] audio_hex_pickup_original_path")
             self._wav_ingestion(
                 directory_wav_path=guitar_set_ingestion_pipeline_config.audio_hex_pickup_original_path
             )
-            self.logger.info("[1/4] audio_mono_mic_path")
+            self.logger.info("[3/4] audio_mono_mic_path")
             self._wav_ingestion(
                 directory_wav_path=guitar_set_ingestion_pipeline_config.audio_mono_mic_path
             )
-            self.logger.info("[1/4] audio_mono_pickup_mix_path")
+            self.logger.info("[4/4] audio_mono_pickup_mix_path")
             self._wav_ingestion(
                 directory_wav_path=guitar_set_ingestion_pipeline_config.audio_mono_pickup_mix_path
             )
@@ -139,19 +135,21 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
             self.statistics.jams_error += 1 if result == "errors" else 0
 
-            self.mongo_storage.insert_note_midi(note_midi=dict_annotation["note_midi"])
+            result = self.mongo_storage.insert_note_midi(
+                note_midi=dict_annotation["note_midi"]
+            )
             self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
             self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
             self.statistics.jams_error += 1 if result == "errors" else 0
 
-            self.mongo_storage.insert_beat_position(
+            result = self.mongo_storage.insert_beat_position(
                 beat_position=dict_annotation["beat_position"]
             )
             self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
             self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
             self.statistics.jams_error += 1 if result == "errors" else 0
 
-            self.mongo_storage.insert_chord(chord=dict_annotation["chord"])
+            result = self.mongo_storage.insert_chord(chord=dict_annotation["chord"])
             self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
             self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
             self.statistics.jams_error += 1 if result == "errors" else 0
@@ -182,9 +180,6 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
 
         Args:
             wav_file_path (Path): Path of the WAV file
-
-        Return:
-            bool: True if
         """
         try:
             audio_data, sample_rate = self.wav_extractor.extract(
@@ -196,13 +191,17 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             if not title:
                 raise RuntimeError(f"No title found: title = {title}")
 
-            self.minio_storage.put_audio(
+            result = self.minio_storage.put_audio(
                 bucket_name=minio_config.bucket_raw,
                 file_name=f"{guitar_set_ingestion_pipeline_config.dataset_name}/{title.group('title')}/{wav_file_path.parent.name}.wav",
                 audio_data=audio_data,
                 sample_rate=sample_rate,
             )
-            self.statistics.wav_uploaded += 1
+            if result:
+                self.statistics.wav_uploaded += 1
+            else:
+                self.statistics.wav_error += 1
+
         except Exception as exception:
             self.statistics.wav_error += 1
             self.logger.error(f"WAV processing has failed: {exception}")

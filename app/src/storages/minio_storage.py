@@ -105,7 +105,7 @@ class MinIOStorage:
             content_type="application/json",
         )
 
-    def upload_xml(
+    def put_xml(
         self, bucket_name: str, file_name: str, tree: etree.ElementTree
     ) -> str | None:
         """Upload a XML file.

@@ -11,6 +11,20 @@ from .jams_models import (
     Scale,
     Style,
 )
+from .xml_models import (
+    AmpChannel,
+    Event,
+    ExcitationStyle,
+    ExpressionStyle,
+    GuitarBrand,
+    GuitarModel,
+    GuitarType,
+    Loudness,
+    MicroPosition,
+    MicroType,
+    XMLAnnotation,
+    XMLMetadata,
+)
 
 __all__ = [
     "SCALE_MAP",
@@ -24,4 +38,16 @@ __all__ = [
     "PlayingVersion",
     "Scale",
     "Style",
+    "AmpChannel",
+    "Event",
+    "ExcitationStyle",
+    "ExpressionStyle",
+    "GuitarBrand",
+    "GuitarModel",
+    "GuitarType",
+    "Loudness",
+    "MicroPosition",
+    "MicroType",
+    "XMLAnnotation",
+    "XMLMetadata",
 ]

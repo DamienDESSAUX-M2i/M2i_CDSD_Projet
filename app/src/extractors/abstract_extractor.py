@@ -15,7 +15,7 @@ class AbstractExtractor(ABC):
             raise ValueError("file_path must be a pathlib.Path.")
 
         if not file_path.exists():
-            raise FileNotFoundError(f"WAV file not found: {file_path}")
+            raise FileNotFoundError(f"File not found: {file_path}")
 
         if suffix and (file_path.suffix.lower() != suffix):
             raise ValueError(
