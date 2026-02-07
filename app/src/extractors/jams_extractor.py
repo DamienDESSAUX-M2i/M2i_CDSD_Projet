@@ -50,30 +50,35 @@ class JAMSExtractor(AbstractExtractor):
         self._validate_file_path(file_path=file_path, suffix=".jams")
 
         try:
-            self.logger.info(
-                "Reading JAMS file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.debug(f"Reading JAMS file: path: {file_path.as_posix()}")
             jam = jams.load(path_or_file=str(file_path), **kwargs)
-            self.logger.info(
-                "JAMS extraction completed",
-                extra={
-                    "path": str(file_path),
-                    "metadata": jam.file_metadata,
-                },
-            )
+            self.logger.debug("JAMS extraction completed")
             return jam
         except Exception as exception:
-            self.logger.exception(
-                "Failed to load JAMS file.",
-                exc_info=exception,
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.exception(f"Failed to load JAMS file: {exception}")
             raise RuntimeError("JAMS extraction failed") from exception
+
+    def enrich_with_directory_name(
+        self, jam_metadata: JAMSMetadata, jam_file_path: Path
+    ) -> JAMSAnnotation:
+        """Enrich a JAMSMetadata with information content into directory name.
+
+        Args:
+            jam_metadata (JAMSMetadata): JAMSMetadata to enriched.
+            jam_file_path (Path): Path of the JAMS file.
+
+        Returns:
+            JAMSAnnotation: JAMSAnnotation enriched.
+        """
+        self.logger.debug(f"Enrich JAMSMetadata: title={jam_metadata.title}")
+
+        if re.search(r"\bmic\b", jam_file_path.as_posix()):
+            jam_metadata.pick_up_setting = "room_mic"
+        if re.search(r"\bpickup\b", jam_file_path.as_posix()):
+            jam_metadata.pick_up_setting = "hex-pickup"
+
+        self.logger.debug("JAMSMetadata enriched")
+        return jam_metadata
 
     def extract_metadata(
         self, jam: jams.JAMS, dataset_name: str = "GuitarSet"
@@ -91,7 +96,7 @@ class JAMSExtractor(AbstractExtractor):
             JAMSMetadata: Metadata extracted from a jams.JAMS.
         """
         try:
-            self.logger.info("Extracting JAMS metadata...")
+            self.logger.debug("Extracting JAMS metadata...")
 
             title = jam.file_metadata.title
             if not title:
@@ -128,11 +133,12 @@ class JAMSExtractor(AbstractExtractor):
                 mode = Mode(mode_str)
                 playing_version = PlayingVersion(playing_version_str)
             except ValueError as exception:
-                raise RuntimeError(
+                self.logger.error(
                     f"enum cast has failed: style={style_str}, scale={scale_str}, mode={mode_str}, playing_version={playing_version_str}"
-                ) from exception
+                )
+                raise RuntimeError("enum cast has failed") from exception
 
-            self.logger.info("JAMS metadata extracted", extra={"title": title})
+            self.logger.debug(f"JAMS metadata extracted: title: {title}")
             return JAMSMetadata(
                 dataset_name=dataset_name,
                 guitarist_id=guitarist_id,
@@ -143,9 +149,10 @@ class JAMSExtractor(AbstractExtractor):
                 mode=mode,
                 playing_version=playing_version,
                 duration=duration,
+                pick_up_setting=None,
             )
         except Exception as exception:
-            self.logger.error("JAMS metadata extraction has failed", exc_info=True)
+            self.logger.error(f"JAMS metadata extraction has failed: {exception}")
             raise RuntimeError("JAMS metadata extraction has failed.") from exception
 
     def _extract_pitch_contour(
@@ -252,7 +259,7 @@ class JAMSExtractor(AbstractExtractor):
             JAMSAnnotation: Annotations extracted from a jams.JAMS.
         """
         try:
-            self.logger.info("Extracting JAMS annotation...")
+            self.logger.debug("Extracting JAMS annotation...")
 
             pitch_contour: list[PitchContourDict] = []
             note_midi: list[NoteMidiDict] = []
@@ -291,7 +298,7 @@ class JAMSExtractor(AbstractExtractor):
                 elif (namespace == "chord") and (data_source == ""):
                     chord.extend(self._extract_chord(annotation=annotation))
 
-            self.logger.info(
+            self.logger.debug(
                 "JAMS annotation extracted",
                 extra={
                     "pitch_contour": len(pitch_contour),

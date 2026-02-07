@@ -37,7 +37,7 @@ class MicroPosition(StrEnum):
 @dataclass
 class XMLMetadata:
     dataset_name: str
-    audio_file_name: str
+    title: str
     instrument: str
     instrument_model: str
     pick_up_setting: str
@@ -56,7 +56,7 @@ class XMLMetadata:
     def to_dict(self) -> dict:
         return {
             "dataset_name": self.dataset_name,
-            "audio_file_name": self.audio_file_name,
+            "audio_file_name": self.title,
             "instrument": self.instrument,
             "instrument_model": self.instrument_model,
             "pick_up_setting": self.pick_up_setting,
@@ -123,13 +123,13 @@ class Event:
             "offset": self.offset,
             "fret_number": self.fret_number,
             "string_number": self.string_number,
-            "excitation_style": self.excitation_style.name
+            "excitation_style": self.excitation_style.name.lower()
             if self.excitation_style
             else None,
-            "expression_style": self.expression_style.name
+            "expression_style": self.expression_style.name.lower()
             if self.expression_style
             else None,
-            "loudness": self.loudness.name if self.loudness else None,
+            "loudness": self.loudness.name.lower() if self.loudness else None,
             "modulation_frequency_range": self.modulation_frequency_range,
             "modulation_frequency": self.modulation_frequency,
         }

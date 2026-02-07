@@ -26,9 +26,9 @@ class MongoStorage:
         }
 
     def _get_client(self) -> MongoClient:
-        self.logger.info("Attempting to connect to the Mongo service.")
+        self.logger.info("Connecxion to the Mongo service...")
         client = MongoClient(mongo_config.connection_string)
-        self.logger.info("Connecting to the Mongo service.")
+        self.logger.info("Connecting to the Mongo service")
         return client
 
     def _insert_document(self, collection_name: str, document: dict) -> str | None:
@@ -50,7 +50,7 @@ class MongoStorage:
 
             document["inserted_at"] = datetime.now(timezone.utc)
 
-            # Upsert based on title
+            # Upsert based on dataset_name and title
             result = self.collections[collection_name].update_one(
                 {"dataset_name": document["dataset_name"], "title": document["title"]},
                 {"$set": document},
@@ -58,25 +58,27 @@ class MongoStorage:
             )
 
             if result.did_upsert:
-                self.logger.info(
-                    f"Document inserted: {document['dataset_name']} - {document['title']}"
+                self.logger.debug(
+                    f"Document inserted: dataset_name={document['dataset_name']}, title={document['title']}"
                 )
                 return "inserted"
 
-            self.logger.info(
-                f"Document updated: {document['dataset_name']} - {document['title']}"
+            self.logger.debug(
+                f"Document updated: dataset_name={document['dataset_name']}, title={document['title']}"
             )
             return "updated"
 
-        except PyMongoError as e:
-            self.logger.error(f"Document insert failed: {e}")
+        except PyMongoError as exception:
+            self.logger.error(f"Document insert failed: {exception}")
             return None
 
-    def insert_pitch_contour(self, pitch_contour: PitchContourDict) -> str | None:
+    def insert_pitch_contour(
+        self, pitch_contour: dict[str, str | list[PitchContourDict]]
+    ) -> str | None:
         """Insert or update a pitch contour. The update is based on 'dataset_name' and 'title'.
 
         Args:
-            pitch_contour (PitchContourDict): Dictionary representing pitch contour.
+            pitch_contour (PitchContourDict): Dictionary representing pitch contour. {dataset_name: str, title: str, pitch_contour: list[PitchContourDict]}
 
         Returns:
             str | None: "inserted", "updated" or None
@@ -86,11 +88,13 @@ class MongoStorage:
             document=pitch_contour,
         )
 
-    def insert_note_midi(self, note_midi: NoteMidiDict) -> str | None:
+    def insert_note_midi(
+        self, note_midi: dict[str, str | list[NoteMidiDict]]
+    ) -> str | None:
         """Insert or update a note midi. The update is based on 'dataset_name' and 'title'.
 
         Args:
-            note_midi (NoteMidiDict): Dictionary representing note midi.
+            note_midi (NoteMidiDict): Dictionary representing note midi. {dataset_name: str, title: str, note_midi: list[NoteMidiDict]}
 
         Returns:
             str | None: "inserted", "updated" or None
@@ -100,11 +104,13 @@ class MongoStorage:
             document=note_midi,
         )
 
-    def insert_beat_position(self, beat_position: BeatPositionDict) -> str | None:
+    def insert_beat_position(
+        self, beat_position: dict[str, str | list[BeatPositionDict]]
+    ) -> str | None:
         """Insert or update a beat position. The update is based on 'dataset_name' and 'title'.
 
         Args:
-            beat_position (BeatPositionDict): Dictionary representing beat position.
+            beat_position (BeatPositionDict): Dictionary representing beat position. {dataset_name: str, title: str, beat_position: list[BeatPositionDict]}
 
         Returns:
             str | None: "inserted", "updated" or None
@@ -114,11 +120,11 @@ class MongoStorage:
             document=beat_position,
         )
 
-    def insert_chord(self, chord: ChordDict) -> str | None:
+    def insert_chord(self, chord: dict[str, str | list[ChordDict]]) -> str | None:
         """Insert or update a chord. The update is based on 'dataset_name' and 'title'.
 
         Args:
-            chord (ChordDict): Dictionary representing chord.
+            chord (ChordDict): Dictionary representing chord. {dataset_name: str, title: str, chord: list[ChordDict]}
 
         Returns:
             str | None: "inserted", "updated" or None
@@ -160,82 +166,6 @@ class MongoStorage:
                     results["errors"] += 1
 
         return results
-
-    def insert_many_pitch_contour(self, pitch_contours: list[PitchContourDict]) -> dict:
-        """Insert or update many pitch contours. The update is based on 'dataset_name' and 'title'.
-
-        Args:
-            pitch_contours (list[PitchContourDict]): List of dictionaries representing pitch contours.
-
-        Returns:
-            dict: Numbers of inserted pitch contours, updated pitch_contours and errors.
-            {
-                "inserted": (int) Number of pitch contours inserted,
-                "updated": (int) Number of pitch contours updated,
-                "errors": (int) Number of errors,
-            }
-        """
-        return self._insert_many_documents(
-            collection_name=mongo_config.collection_pitch_contour,
-            documents=pitch_contours,
-        )
-
-    def insert_many_note_midi(self, notes_midi: list[NoteMidiDict]) -> dict:
-        """Insert or update many notes midi. The update is based on 'dataset_name' and 'title'.
-
-        Args:
-            notes_midi (list[NoteMidiDict]): List of dictionaries representing notes midi.
-
-        Returns:
-            dict: Numbers of inserted notes midi, updated notes midi and errors.
-            {
-                "inserted": (int) Number of notes midi inserted,
-                "updated": (int) Number of notes midi updated,
-                "errors": (int) Number of errors,
-            }
-        """
-        return self._insert_many_documents(
-            collection_name=mongo_config.collection_note_midi,
-            documents=notes_midi,
-        )
-
-    def insert_many_beat_position(self, beat_positions: list[BeatPositionDict]) -> dict:
-        """Insert or update many beat positions. The update is based on 'dataset_name' and 'title'.
-
-        Args:
-            beat_positions (list[BeatPositionDict]): List of dictionaries representing beat positions.
-
-        Returns:
-            dict: Numbers of inserted beat positions, updated beat positions and errors.
-            {
-                "inserted": (int) Number of beat positions inserted,
-                "updated": (int) Number of beat positions updated,
-                "errors": (int) Number of errors,
-            }
-        """
-        return self._insert_many_documents(
-            collection_name=mongo_config.collection_beat_position,
-            documents=beat_positions,
-        )
-
-    def insert_many_chord(self, chords: list[ChordDict]) -> dict:
-        """Insert or update many chords. The update is based on 'dataset_name' and 'title'.
-
-        Args:
-            chords (list[ChordDict]): List of dictionaries representing chords.
-
-        Returns:
-            dict: Numbers of inserted chords, updated chords and errors.
-            {
-                "inserted": (int) Number of chords inserted,
-                "updated": (int) Number of chords updated,
-                "errors": (int) Number of errors,
-            }
-        """
-        return self._insert_many_documents(
-            collection_name=mongo_config.collection_chord,
-            documents=chords,
-        )
 
     def find_document(
         self,
@@ -302,15 +232,15 @@ class MongoStorage:
             filter (dict, optional): Query. Defaults to {}.
 
         Returns:
-            int: Number of pitch contours deleted.
+            int: Number of documents deleted.
         """
         deleted_result = self.collections[collection_name].delete_many(filter=filter)
 
-        self.logger.warning(f"Pitch contours deleted: {deleted_result.deleted_count}")
+        self.logger.warning(f"Documents deleted: {deleted_result.deleted_count}")
 
         return deleted_result.deleted_count
 
     def close(self) -> None:
         """Close the connection"""
         self.client.close()
-        self.logger.info("Mongo connection closed.")
+        self.logger.info("Mongo connection closed")

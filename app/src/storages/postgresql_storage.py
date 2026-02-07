@@ -14,45 +14,59 @@ class PostgresStorage:
         self.cursor = self.connection.cursor()
 
     def _get_connection(self) -> psycopg.Connection:
-        self.logger.info("Attempting to connect to the Postgres service.")
+        self.logger.info("Connexion to the Postgres service...")
         connection = psycopg.connect(
             postgres_config.connection_string, row_factory=psycopg.rows.dict_row
         )
-        self.logger.info("Connecting to the Postgres service.")
+        self.logger.info("Connecting to the Postgres service")
         return connection
 
     # CRUD Metadata
 
     def select_metadata(self, id_metadata: int) -> dict | None:
         try:
+            self.logger.debug(f"Executing metadata query: id_metadata={id_metadata}")
             self.cursor.execute(
                 "SELECT * FROM metadata WHERE id_metadata=%s;",
                 (id_metadata,),
             )
-            return self.cursor.fetchone()
-        except Exception as e:
-            self.logger.error(f"Selection has failed: {e}")
+            result = self.cursor.fetchone()
+            if result is not None:
+                self.logger.debug("Metadata fetched successfully")
+                return result
+            else:
+                self.logger.debug("Metadata fetched nothing")
+                return None
+        except Exception as exception:
+            self.logger.error(f"Metadata selection has failed: {exception}")
             return None
 
     def select_metadata_title(self, title: str) -> dict | None:
         try:
+            self.logger.debug(f"Executing metadata query: title={title}")
             self.cursor.execute(
-                "SELECT id_metadata FROM metadata WHERE title=%s;",
+                "SELECT * FROM metadata WHERE title=%s;",
                 (title,),
             )
             result = self.cursor.fetchone()
-            return result.get("id_metadata", None) if result else None
-        except Exception as e:
-            self.logger.error(f"Selection has failed: {e}")
+            if result is not None:
+                self.logger.debug("Metadata fetched successfully")
+                return result.get("id_metadata", None)
+            else:
+                self.logger.debug("Metadata fetched nothing")
+                return None
+        except Exception as exception:
+            self.logger.error(f"Metadata selection has failed: {exception}")
             return None
 
     def insert_into_metadata(self, metadata: JAMSMetadata | XMLMetadata) -> dict | None:
         try:
+            self.logger.debug(f"Executing metadata query: title={metadata.title}")
             if isinstance(metadata, JAMSMetadata):
                 self.cursor.execute(
                     """
-                    INSERT INTO metadata (dataset_name, guitarist_id, title, style, tempo, scale, mode, playing_version, duration)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO metadata (dataset_name, guitarist_id, title, style, tempo, scale, mode, playing_version, duration, pick_up_setting)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING *;
                     """,
                     (
@@ -65,6 +79,7 @@ class PostgresStorage:
                         metadata.mode,
                         metadata.playing_version,
                         metadata.duration,
+                        metadata.pick_up_setting,
                     ),
                 )
             elif isinstance(metadata, XMLMetadata):
@@ -90,7 +105,7 @@ class PostgresStorage:
                     """,
                     (
                         metadata.dataset_name,
-                        metadata.audio_file_name,
+                        metadata.title,
                         metadata.instrument,
                         metadata.instrument_model,
                         metadata.pick_up_setting,
@@ -113,21 +128,22 @@ class PostgresStorage:
                 )
             self.connection.commit()
             result = self.cursor.fetchone()
-            self.logger.info(f"Insertion: {result}")
+            self.logger.debug("Metadata inserted successfully")
             return result
-        except Exception as e:
-            self.logger.error(f"Insertion has failed: {e}")
+        except Exception as exception:
+            self.logger.error(f"Metadata insertion has failed: {exception}")
             return None
 
     def update_metadata(
         self, id_metadata: int, metadata: JAMSMetadata | XMLMetadata
     ) -> dict | None:
         try:
+            self.logger.debug(f"Executing metadata query: title={metadata.title}")
             if isinstance(metadata, JAMSMetadata):
                 self.cursor.execute(
                     """
                     UPDATE metadata
-                    SET dataset_name=%s, guitarist_id=%s, title=%s, style=%s, tempo=%s, scale=%s, mode=%s, playing_version=%s, duration=%s
+                    SET dataset_name=%s, guitarist_id=%s, title=%s, style=%s, tempo=%s, scale=%s, mode=%s, playing_version=%s, duration=%s, pick_up_setting=%s
                     WHERE id_metadata=%s
                     RETURNING *;
                     """,
@@ -141,6 +157,7 @@ class PostgresStorage:
                         metadata.mode,
                         metadata.playing_version,
                         metadata.duration,
+                        metadata.pick_up_setting,
                         id_metadata,
                     ),
                 )
@@ -167,7 +184,7 @@ class PostgresStorage:
                     """,
                     (
                         metadata.dataset_name,
-                        metadata.audio_file_name,
+                        metadata.title,
                         metadata.instrument,
                         metadata.instrument_model,
                         metadata.pick_up_setting,
@@ -191,24 +208,25 @@ class PostgresStorage:
                 )
             self.connection.commit()
             result = self.cursor.fetchone()
-            self.logger.info(f"Updating: {result}")
+            self.logger.debug("Metadata updated successfully")
             return result
-        except Exception as e:
-            self.logger.error(f"Updating has failed: {e}")
+        except Exception as exception:
+            self.logger.error(f"Metadata updating has failed: {exception}")
             return None
 
     def delete_metadata(self, id_metadata: int) -> dict | None:
         try:
+            self.logger.warning(f"Executing metadata query: id_metadata={id_metadata}")
             self.cursor.execute(
                 "DELETE FROM metadata WHERE id_metadata=%s RETURNING *;",
                 (id_metadata,),
             )
             self.connection.commit()
             result = self.cursor.fetchone()
-            self.logger.warning(f"Deleting: {result}")
+            self.logger.warning("Metadata deleted successfully")
             return result
-        except Exception as e:
-            self.logger.error(f"Deleting has failed: {e}")
+        except Exception as exception:
+            self.logger.error(f"Metadata deleting has failed: {exception}")
             return None
 
     # UTILS
@@ -217,4 +235,4 @@ class PostgresStorage:
         """Close connection"""
         self.cursor.close()
         self.connection.close()
-        self.logger.info("Postgres connection closed.")
+        self.logger.info("Postgres connection closed")

@@ -5,6 +5,7 @@ from config import (
     idmt_smt_guitar_ingestion_pipeline_config,
     minio_config,
 )
+from tqdm import tqdm
 
 from src.extractors import WAVExtractor, XMLExtractor
 from src.pipelines import AbstractPipeline
@@ -29,6 +30,11 @@ class IDMTSMTGuitarIngestionPipelineStatistics:
         values are values of the attributes."""
         return self.__dict__
 
+    def to_string(self) -> str:
+        """Create a string containing values of all attributes."""
+        strs = [f"{k}={v}" for k, v in self.__dict__.items()]
+        return ", ".join(strs)
+
 
 class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
     """Ingestion Pipeline."""
@@ -49,7 +55,7 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             RuntimeError: If pipeline failed.
         """
         try:
-            self.logger.info("Ingestion pipeline stars")
+            self.logger.info("IDMT SMT Guitar ingestion pipeline start...")
 
             self.logger.info("[1/4] Dataset1 ingestion")
             self._dataset1_ingestion()
@@ -67,26 +73,25 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             )
 
             self.logger.info("[4/4] Dataset4 ingestion")
+            self._dataset4_ingestion()
 
             self.logger.info(
-                f"Ingestion pipeline ends successfully: {self.statistics.to_dict()}"
+                f"IDMT SMT Guitar ingestion pipeline ends successfully: {self.statistics.to_string()}"
             )
         except Exception as exc:
-            self.logger.info("Ingestion pipeline failed.")
-            raise RuntimeError("Ingestion pipeline failed") from exc
+            self.logger.error("IDMT SMT Guitar ingestion pipeline failed.")
+            raise RuntimeError("IDMT SMT Guitar ingestion pipeline failed") from exc
 
     def _xml_processing(
         self,
         xml_file_path: Path,
         dataset_number: int,
-        directory_name: str | None = None,
     ) -> None:
         """Processing of a XML file.
 
         Args:
             xml_file_path (Path): Path of the XML file.
             dataset_number (int): The number of the dataset (Between 1 and 4).
-            directory_name (str): Name of directories inside the dataset. Only used for dataset 1.
         """
         try:
             tree = self.xml_extractor.read(file_path=xml_file_path)
@@ -102,10 +107,12 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             xml_metadata = self.xml_extractor.extract_metadata(
                 tree=tree,
                 dataset_name=f"IDMT_SMT_Guitar_{dataset_number}",
-                directory_name=directory_name,
+            )
+            xml_metadata = self.xml_extractor.enrich_with_directory_name(
+                xml_metadata=xml_metadata, xml_file_path=xml_file_path
             )
             id_metadata = self.postgres_storage.select_metadata_title(
-                title=xml_metadata.audio_file_name
+                title=xml_metadata.title
             )
             if id_metadata:
                 result = self.postgres_storage.update_metadata(
@@ -136,43 +143,43 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
 
         except Exception as exception:
             self.statistics.xml_error += 1
-            self.logger.error(f"JAMS processing has failed: {exception}")
+            self.logger.error(f"XML processing has failed: {exception}")
 
     def _xml_ingestion(
         self,
         directory_xml_path: Path,
         dataset_number: int,
-        directory_name: str | None = None,
     ) -> None:
         """Ingestion of XML files.
 
         Args:
             directory_xml_path (Path): Path of directory containing XML files.
             dataset_number (int): The number of the dataset (Between 1 and 4).
-            directory_name (str): Name of directories inside the dataset. Only used for dataset 1.
         """
-        self.logger.info("XML Ingestion ...")
+        self.logger.debug("XML Ingestion...")
 
         if not directory_xml_path.exists():
             raise FileNotFoundError(
                 f"Directory does not exist: path={directory_xml_path}"
             )
 
-        nb_ingestion = 1
-        for xml_file_path in directory_xml_path.glob("*.xml"):
+        xml_paths = list(directory_xml_path.glob("*.xml"))
+        if self.ingestion_limit is not None:
+            xml_paths = xml_paths[: self.ingestion_limit]
+
+        nb_ingestion = 0
+        for xml_file_path in tqdm(
+            xml_paths,
+            desc="XML ingestion",
+            colour="green",
+        ):
             self._xml_processing(
                 xml_file_path=xml_file_path,
                 dataset_number=dataset_number,
-                directory_name=directory_name,
             )
-            if (
-                self.ingestion_limit is not None
-                and self.ingestion_limit <= nb_ingestion
-            ):
-                break
             nb_ingestion += 1
 
-        self.logger.info(
+        self.logger.debug(
             "XML Ingestion completed successfully: nb_ingestion={nb_ingestion}"
         )
 
@@ -216,16 +223,19 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
                 f"Directory does not exist: path={directory_wav_path}"
             )
 
-        nb_ingestion = 1
-        for wav_file_path in directory_wav_path.glob("*.wav"):
+        wav_paths = list(directory_wav_path.glob("*.wav"))
+        if self.ingestion_limit is not None:
+            wav_paths = wav_paths[: self.ingestion_limit]
+
+        nb_ingestion = 0
+        for wav_file_path in tqdm(
+            wav_paths,
+            desc="WAV ingestion",
+            colour="green",
+        ):
             self._wav_processing(
                 wav_file_path=wav_file_path, dataset_number=dataset_number
             )
-            if (
-                self.ingestion_limit is not None
-                and self.ingestion_limit <= nb_ingestion
-            ):
-                break
             nb_ingestion += 1
 
     def _dataset1_ingestion(self) -> None:
@@ -239,10 +249,10 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
         dir_paths = [p for p in paths if p.is_dir()]
 
         for dir_path in dir_paths:
+            self.logger.info(f"\tdirectory_name={dir_path.name}")
             self._xml_ingestion(
                 directory_xml_path=dir_path / "annotation",
                 dataset_number=1,
-                directory_name=dir_path.name,
             )
             self._wav_ingestion(
                 directory_wav_path=dir_path / "audio",
@@ -267,3 +277,31 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             directory_wav_path=dataset_path / "audio",
             dataset_number=dataset_number,
         )
+
+    # TODO
+    def _dataset4_ingestion(self) -> None:
+        """Ingestion of the dataset number 4."""
+        if not idmt_smt_guitar_ingestion_pipeline_config.dataset4_path.exists():
+            raise FileNotFoundError(
+                f"Directory does not exist: path={idmt_smt_guitar_ingestion_pipeline_config.dataset1_path}"
+            )
+
+        chords_paths = Path(
+            "C:/Users/Administrateur/Documents/projet_cdsd_data/idmt-smt-guitar/dataset4"
+        ).rglob("chords/*.csv")
+
+        patterns_paths = Path(
+            "C:/Users/Administrateur/Documents/projet_cdsd_data/idmt-smt-guitar/dataset4"
+        ).rglob("patterns/*.txt")
+
+        onsets_paths = Path(
+            "C:/Users/Administrateur/Documents/projet_cdsd_data/idmt-smt-guitar/dataset4"
+        ).rglob("onsets/*.csv")
+
+        texture_paths = Path(
+            "C:/Users/Administrateur/Documents/projet_cdsd_data/idmt-smt-guitar/dataset4"
+        ).rglob("texture/*.txt")
+
+        audio_paths = Path(
+            "C:/Users/Administrateur/Documents/projet_cdsd_data/idmt-smt-guitar/dataset4"
+        ).rglob("audio/*.wav")

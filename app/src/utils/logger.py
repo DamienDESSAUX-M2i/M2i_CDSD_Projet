@@ -7,7 +7,7 @@ LOGGER_NAME = os.getenv("LOGGER_NAME", "app")
 
 
 def set_up_logger(
-    name: str, logger_file_path: Path = None, level=logging.INFO
+    name: str, logger_file_path: Path = None, level=logging.DEBUG
 ) -> logging.Logger:
     """Set up a logger.
 
@@ -29,13 +29,17 @@ def set_up_logger(
     )
 
     console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
     if logger_file_path:
         file_handler = logging.FileHandler(
-            logger_file_path, mode="wt", encoding="utf-8"
+            logger_file_path,
+            mode="wt",
+            encoding="utf-8",
         )
+        file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 

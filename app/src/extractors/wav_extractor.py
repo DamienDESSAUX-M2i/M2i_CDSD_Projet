@@ -32,7 +32,7 @@ class WAVExtractor(AbstractExtractor):
         self._validate_file_path(file_path=file_path, suffix=".wav")
 
         try:
-            self.logger.info(
+            self.logger.debug(
                 "Reading WAV file",
                 extra={
                     "path": str(file_path),
@@ -42,7 +42,7 @@ class WAVExtractor(AbstractExtractor):
                 file=file_path,
                 **kwargs,
             )
-            self.logger.info(
+            self.logger.debug(
                 "WAV extraction completed",
                 extra={
                     "path": str(file_path),

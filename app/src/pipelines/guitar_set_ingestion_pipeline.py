@@ -6,6 +6,7 @@ from config import (
     guitar_set_ingestion_pipeline_config,
     minio_config,
 )
+from tqdm import tqdm
 
 from src.extractors import JAMSExtractor, WAVExtractor
 from src.pipelines import AbstractPipeline
@@ -35,6 +36,11 @@ class GuitarSetIngestionPipelineStatistics:
         values are values of the attributes."""
         return self.__dict__
 
+    def to_string(self) -> str:
+        """Create a string containing values of all attributes."""
+        strs = [f"{k}={v}" for k, v in self.__dict__.items()]
+        return ", ".join(strs)
+
 
 class GuitarSetIngestionPipeline(AbstractPipeline):
     """Ingestion Pipeline."""
@@ -55,7 +61,7 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             RuntimeError: If pipeline failed.
         """
         try:
-            self.logger.info("Ingestion pipeline stars")
+            self.logger.info("GuitarSet ingestion pipeline start...")
 
             self.logger.info("[1/2] JAMS ingestion")
             self._jams_ingestion(
@@ -63,29 +69,29 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             )
 
             self.logger.info("[2/2] WAV ingestion")
-            self.logger.info("[1/4] audio_hex_pickup_debleeded")
+            self.logger.info("\t[1/4] Directory: audio_hex_pickup_debleeded")
             self._wav_ingestion(
                 directory_wav_path=guitar_set_ingestion_pipeline_config.audio_hex_pickup_debleeded_path
             )
-            self.logger.info("[2/4] audio_hex_pickup_original_path")
+            self.logger.info("\t[2/4] Directory: audio_hex_pickup_original_path")
             self._wav_ingestion(
                 directory_wav_path=guitar_set_ingestion_pipeline_config.audio_hex_pickup_original_path
             )
-            self.logger.info("[3/4] audio_mono_mic_path")
+            self.logger.info("\t[3/4] Directory: audio_mono_mic_path")
             self._wav_ingestion(
                 directory_wav_path=guitar_set_ingestion_pipeline_config.audio_mono_mic_path
             )
-            self.logger.info("[4/4] audio_mono_pickup_mix_path")
+            self.logger.info("\t[4/4] Directory: audio_mono_pickup_mix_path")
             self._wav_ingestion(
                 directory_wav_path=guitar_set_ingestion_pipeline_config.audio_mono_pickup_mix_path
             )
 
             self.logger.info(
-                f"Ingestion pipeline ends successfully: {self.statistics.to_dict()}"
+                f"GuitarSet ingestion pipeline completed: {self.statistics.to_string()}"
             )
-        except Exception as exc:
-            self.logger.info("Ingestion pipeline failed.")
-            raise RuntimeError("Ingestion pipeline failed") from exc
+        except Exception as exception:
+            self.logger.info(f"Ingestion pipeline has failed: {exception}")
+            raise RuntimeError("Ingestion pipeline has failed") from exception
 
     def _jam_processing(self, jam_file_path: Path) -> None:
         """Processing of a jams.JAMS file.
@@ -105,6 +111,9 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             self.statistics.jams_uploaded += 1
 
             jam_metadata = self.jams_extractor.extract_metadata(jam=jam)
+            jam_metadata = self.jams_extractor.enrich_with_directory_name(
+                jam_metadata=jam_metadata, jam_file_path=jam_file_path
+            )
             id_metadata = self.postgres_storage.select_metadata_title(
                 title=jam_metadata.title
             )
@@ -159,21 +168,32 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             self.logger.error(f"JAMS processing has failed: {exception}")
 
     def _jams_ingestion(self, directory_jams_path: Path) -> None:
-        """Ingestion of jams.JAMS files."""
+        """Ingestion of jams.JAMS files.
+
+        Args:
+            directory_jams_path (Path): Path of the directory containing JAMS files.
+        """
+        self.logger.debug("JAMS ingestion...")
+
         if not directory_jams_path.exists():
             raise FileNotFoundError(
                 f"Directory does not exist: path={directory_jams_path}"
             )
 
-        nb_ingestion = 1
-        for jam_file_path in directory_jams_path.glob("*.jams"):
+        jams_paths = list(directory_jams_path.glob("*.jams"))
+        if self.ingestion_limit is not None:
+            jams_paths = jams_paths[: self.ingestion_limit]
+
+        nb_ingestion = 0
+        for jam_file_path in tqdm(
+            jams_paths,
+            desc="jAMS ingestion",
+            colour="green",
+        ):
             self._jam_processing(jam_file_path=jam_file_path)
-            if (
-                self.ingestion_limit is not None
-                and self.ingestion_limit <= nb_ingestion
-            ):
-                break
             nb_ingestion += 1
+
+        self.logger.debug(f"JANS ingestion completed: nb_ingestion={nb_ingestion}")
 
     def _wav_processing(self, wav_file_path: Path) -> None:
         """Processing of a WAV file.
@@ -207,18 +227,29 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             self.logger.error(f"WAV processing has failed: {exception}")
 
     def _wav_ingestion(self, directory_wav_path: Path) -> None:
-        """Ingestion of WAV files."""
+        """Ingestion of WAV files.
+
+        Args:
+            directory_wav_path (Path): Path of the directory containing WAV files.
+        """
+        self.logger.debug("WAV ingestion...")
+
         if not directory_wav_path.exists():
             raise FileNotFoundError(
                 f"Directory does not exist: path={directory_wav_path}"
             )
 
-        nb_ingestion = 1
-        for wav_file_path in directory_wav_path.glob("*.wav"):
+        wav_paths = list(directory_wav_path.glob("*.wav"))
+        if self.ingestion_limit is not None:
+            wav_paths = wav_paths[: self.ingestion_limit]
+
+        nb_ingestion = 0
+        for wav_file_path in tqdm(
+            wav_paths,
+            desc="WAV ingestion",
+            colour="green",
+        ):
             self._wav_processing(wav_file_path=wav_file_path)
-            if (
-                self.ingestion_limit is not None
-                and self.ingestion_limit <= nb_ingestion
-            ):
-                break
             nb_ingestion += 1
+
+        self.logger.debug(f"WAV ingestion completed: nb_ingestion={nb_ingestion}")

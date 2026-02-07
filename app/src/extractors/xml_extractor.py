@@ -24,7 +24,7 @@ from src.models import (
 from src.transformers import ElementTreeWrapper
 
 DIRECTORY_NAME_REGEX = re.compile(
-    r"^(?P<instrument_model>(Fender\ Strat|Ibanez\ Power\ Strat))\ (?P<amp_channel>Clean)\ (?P<pick_up_setting>Neck|Bridge|Bridge\+Neck)\ (?P<pick_up_type>SC|HU)\ ?(?P<polyphony>(?:Chords)?)$",
+    r"(?P<instrument_model>(Fender\ Strat|Ibanez\ Power\ Strat))\ (?P<amp_channel>Clean)\ (?P<pick_up_setting>Neck|Bridge|Bridge\+Neck)\ (?P<pick_up_type>SC|HU)\ ?(?P<polyphony>(?:Chords)?)",
     re.VERBOSE,
 )
 
@@ -53,41 +53,61 @@ class XMLExtractor(AbstractExtractor):
         self._validate_file_path(file_path=file_path, suffix=".xml")
 
         try:
-            self.logger.info(
-                "Reading XML file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.debug(f"Reading XML file: path={file_path.as_posix()}")
             tree = ET.parse(file_path, **kwargs)
-            self.logger.info(
-                "XML extraction completed",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.debug("XML extraction completed")
             return tree
-        except Exception as exc:
-            self.logger.exception(
-                "Failed to load XML file.",
-                extra={
-                    "path": str(file_path),
-                },
+        except Exception as exception:
+            self.logger.error(f"Failed to load XML file: {exception}")
+            raise RuntimeError("XML extraction failed") from exception
+
+    def enrich_with_directory_name(
+        self, xml_metadata: XMLMetadata, xml_file_path: Path
+    ) -> XMLMetadata:
+        """Enrich a XMLMetadata with information content into directory name.
+
+        Args:
+            xml_metadata (XMLMetadata): XMLMetadata to enriched.
+            xml_file_path (Path): Path of the XML file.
+
+        Returns:
+            XMLMetadata: XMLMetadata enriched.
+        """
+        self.logger.debug(f"Enrich XMLMedata: title={xml_metadata.title}")
+
+        if "dataset1" in xml_file_path.as_posix():
+            directory_name_search = DIRECTORY_NAME_REGEX.search(
+                xml_file_path.as_posix()
             )
-            raise RuntimeError("XML extraction failed") from exc
+            if not directory_name_search:
+                self.logger.error(
+                    f"Directory name format does not match: {xml_file_path.as_posix()}"
+                )
+                raise RuntimeError("Directory name format does not match")
+
+            xml_metadata.instrument_model = directory_name_search.group(
+                "instrument_model"
+            )
+            # xml_metadata.amp_channel = directory_name_search.group("amp_channel")
+            xml_metadata.pick_up_setting = directory_name_search.group(
+                "pick_up_setting"
+            )
+            # xml_metadata.pick_up_type = directory_name_search.group("pick_up_type")
+            # xml_metadata.polyphony = directory_name_search.group("polyphony")
+
+        self.logger.debug("XMLMetadata enriched")
+        return xml_metadata
 
     def extract_metadata(
         self,
         tree: ET.ElementTree,
         dataset_name: str = "IDMT_SMT_Guitar",
-        directory_name: str | None = None,
     ) -> XMLMetadata:
         """Extract metadata from an ET.ElementTree.
 
         Args:
             tree (ET.ElementTree): An ET.ElementTree.
             dataset_name (str) : Name of the dataset. Default "IDMT_SMT_Guitar".
-            directory_name (str) : Name of the directory. Used for "dataset1".
 
         Raises:
             RunTimeError: If XML metadata extraction fails.
@@ -96,16 +116,14 @@ class XMLExtractor(AbstractExtractor):
             XMLMetadata: Metadata extracted from a ET.ElementTree.
         """
         try:
-            self.logger.info("Extracting XML metadata...")
+            self.logger.debug("Extracting XML metadata...")
 
             tree_wrapper = ElementTreeWrapper(tree=tree)
-            audio_file_name = tree_wrapper.get_value(
-                path="globalParameter/audioFileName"
-            )
-            if not audio_file_name:
+            title = tree_wrapper.get_value(path="globalParameter/audioFileName")
+            if not title:
                 raise RuntimeError("XML title is missing")
 
-            audio_file_name = audio_file_name.replace(".wav", "").replace("\\", "")
+            title = title.replace(".wav", "").replace("\\", "")
 
             instrument = tree_wrapper.get_value(path="globalParameter/instrument")
             instrument_model = tree_wrapper.get_value(
@@ -138,33 +156,16 @@ class XMLExtractor(AbstractExtractor):
             # amp_channel = None
             # polyphony = None
 
-            # Parse directory_name
-            if directory_name:
-                directory_name_match = DIRECTORY_NAME_REGEX.match(directory_name)
-                if not directory_name_match:
-                    raise RuntimeError(
-                        f"Directory name format does not match: {directory_name}"
-                    )
-
-                instrument_model = directory_name_match.group("instrument_model")
-                # amp_channel = directory_name_match.group("amp_channel")
-                pick_up_setting = directory_name_match.group("pick_up_setting")
-                # pick_up_type = directory_name_match.group("pick_up_type")
-                # polyphony = directory_name_match.group("polyphony")
-
             # cast
             try:
                 pass
             except ValueError as exception:
                 raise RuntimeError(f"enum cast has failed") from exception
 
-            self.logger.info(
-                f"XML metadata extracted: {audio_file_name}",
-                extra={"audio_file_name": audio_file_name},
-            )
+            self.logger.debug(f"XML metadata extracted: title={title}")
             return XMLMetadata(
                 dataset_name=dataset_name,
-                audio_file_name=audio_file_name,
+                title=title,
                 instrument=instrument,
                 instrument_model=instrument_model,
                 pick_up_setting=pick_up_setting,
@@ -181,8 +182,8 @@ class XMLExtractor(AbstractExtractor):
                 # polyphony=bool(polyphony),
             )
         except Exception as exception:
-            self.logger.error("XML metadata extraction has failed", exc_info=True)
-            raise RuntimeError("XML metadata extraction has failed.") from exception
+            self.logger.error(f"XML metadata extraction has failed: {exception}")
+            raise RuntimeError("XML metadata extraction has failed") from exception
 
     def extract_annotation(
         self, tree: ET.ElementTree, dataset_name: str = "IDMT_SMT_Guitar"
@@ -200,7 +201,7 @@ class XMLExtractor(AbstractExtractor):
             XMLAnnotation: Annotations extracted from a ET.ElementTree.
         """
         try:
-            self.logger.info("Extracting XML annotation...")
+            self.logger.debug("Extracting XML annotation...")
 
             tree_wrapper = ElementTreeWrapper(tree)
             title = tree_wrapper.get_value(path="globalParameter/audioFileName")
@@ -258,15 +259,11 @@ class XMLExtractor(AbstractExtractor):
                         )
                     )
                 except ValueError as exception:
-                    raise RuntimeError(
-                        f"Event cast has failed: {event.__dir__}"
-                    ) from exception
+                    self.logger.error(f"Event cast has failed: {exception}")
+                    raise RuntimeError("Event cast has failed") from exception
 
-            self.logger.info(
-                "XML annotation extracted",
-                extra={
-                    "transcription": len(events_processed),
-                },
+            self.logger.debug(
+                f"XML annotation extracted: transcription={len(events_processed)}"
             )
             return XMLAnnotation(
                 dataset_name=dataset_name,
@@ -288,5 +285,5 @@ class XMLExtractor(AbstractExtractor):
                 ),
             )
         except Exception as exception:
-            self.logger.error("XML annotation extraction has failed", exc_info=True)
+            self.logger.error(f"XML annotation extraction has failed: {exception}")
             raise RuntimeError("XML annotation extraction has failed") from exception

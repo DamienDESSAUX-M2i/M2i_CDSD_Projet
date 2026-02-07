@@ -3,11 +3,13 @@ import json
 import logging
 import xml.etree.ElementTree as etree
 from datetime import timedelta
+from typing import Iterator
 
 import jams
 import numpy as np
 import soundfile as sf
 from config import minio_config
+from minio.datatypes import Object
 from minio.error import S3Error
 
 from minio import Minio
@@ -21,14 +23,14 @@ class MinIOStorage:
         self._ensure_buckets()
 
     def _get_client(self) -> Minio:
-        self.logger.info("Attempting to connect to the MinIO service.")
+        self.logger.info("Connexion to the MinIO service...")
         client = Minio(
             endpoint=minio_config.minio_endpoint,
             access_key=minio_config.minio_user,
             secret_key=minio_config.minio_password,
             secure=minio_config.minio_secure,
         )
-        self.logger.info("Connecting to the MinIO service.")
+        self.logger.info("Connecting to the MinIO service")
         return client
 
     def _ensure_buckets(self) -> None:
@@ -42,14 +44,14 @@ class MinIOStorage:
         try:
             for bucket_name in bucket_names:
                 if not self.client.bucket_exists(bucket_name):
-                    self.logger.info(f"Bucket created: {bucket_name}")
+                    self.logger.debug(f"Bucket created: {bucket_name}")
                     self.client.make_bucket(bucket_name)
                 else:
-                    self.logger.info(f"Bucket {bucket_name} already exists.")
+                    self.logger.debug(f"Bucket {bucket_name} already exists.")
         except Exception as e:
             self.logger.error(f" Error MinIO make buckets: {e}.")
 
-    def upload_export(
+    def put_object(
         self,
         bucket_name: str,
         file_name: str,
@@ -77,14 +79,14 @@ class MinIOStorage:
             )
 
             uri = f"minio://{bucket_name}/{file_name}"
-            self.logger.info(f"Export uploaded: {uri}")
+            self.logger.debug(f"Uploaded completed: uri={uri}, bytes={len(data)}")
             return uri
 
-        except S3Error as e:
-            self.logger.error(f"Upload failed: {e}")
+        except S3Error as exception:
+            self.logger.error(f"Upload has failed: {exception}")
             return None
 
-    def upload_json(self, bucket_name: str, file_name: str, data: dict) -> str | None:
+    def put_json(self, bucket_name: str, file_name: str, data: dict) -> str | None:
         """Upload a JSON file.
 
         Args:
@@ -95,10 +97,13 @@ class MinIOStorage:
         Returns:
             str | None: URI MinIO or None.
         """
+        self.logger.debug("Convert dictionary to JSON bytes...")
         json_bytes = json.dumps(
             obj=data, indent=4, ensure_ascii=False, default=str
         ).encode("utf-8")
-        return self.upload_export(
+
+        self.logger.debug("Upload JSON file...")
+        return self.put_object(
             bucket_name=bucket_name,
             file_name=file_name,
             data=json_bytes,
@@ -108,7 +113,7 @@ class MinIOStorage:
     def put_xml(
         self, bucket_name: str, file_name: str, tree: etree.ElementTree
     ) -> str | None:
-        """Upload a XML file.
+        """Convert an ElemetTree to a XML file then upload the XML file.
 
         Args:
             bucket_name (str): Bucket name.
@@ -118,10 +123,13 @@ class MinIOStorage:
         Returns:
             str | None: URI MinIO or None.
         """
+        self.logger.debug("Convert ElementTree to XML bytes...")
         xml_bytes = etree.tostring(
             tree.getroot(), encoding="utf-8", xml_declaration=True
         )
-        return self.upload_export(
+
+        self.logger.debug("Upload XML file...")
+        return self.put_object(
             bucket_name=bucket_name,
             file_name=file_name,
             data=xml_bytes,
@@ -139,15 +147,18 @@ class MinIOStorage:
         Returns:
             str | None: URI MinIO or None.
         """
+        self.logger.debug("Convert jams.JAMS to JSON bytes...")
         jam_bytes = jam.dumps(indent=4).encode("utf-8")
-        return self.upload_export(
+
+        self.logger.debug("Upload JAMS file...")
+        return self.put_object(
             bucket_name=bucket_name,
             file_name=file_name,
             data=jam_bytes,
             content_type="application/jams",
         )
 
-    def upload_image(
+    def put_image(
         self,
         bucket_name: str,
         file_name: str,
@@ -166,6 +177,7 @@ class MinIOStorage:
             str | None: MinIO URI or None.
         """
         try:
+            self.logger.debug("Upload image...")
             self.client.put_object(
                 bucket_name=bucket_name,
                 object_name=file_name,
@@ -175,11 +187,11 @@ class MinIOStorage:
             )
 
             uri = f"minio://{bucket_name}/{file_name}"
-            self.logger.info(f"Image uploaded: {uri}")
+            self.logger.debug(f"Image uploaded: {uri}")
             return uri
 
-        except S3Error as e:
-            self.logger.error(f"Image upload failed: {e}")
+        except S3Error as exception:
+            self.logger.error(f"Image upload failed: {exception}")
             return None
 
     def put_audio(
@@ -206,6 +218,7 @@ class MinIOStorage:
             if not file_name.lower().endswith(".wav"):
                 file_name = f"{file_name}.wav"
 
+            self.logger.debug("Upload WAV...")
             buffer = io.BytesIO()
 
             sf.write(
@@ -227,26 +240,13 @@ class MinIOStorage:
             )
 
             uri = f"minio://{bucket_name}/{file_name}"
-            self.logger.info(
-                f"Uploading audio data to MinIO: {uri}",
-                extra={
-                    "bucket_name": bucket_name,
-                    "object_name": file_name,
-                    "sample_rate": sample_rate,
-                    "shape": audio_data.shape,
-                    "bytes": data_size,
-                },
+            self.logger.debug(
+                f"Uploading audio data to MinIO: uri={uri}, sample_rate={sample_rate}, shape={audio_data.shape}, bytes={data_size}"
             )
             return uri
 
-        except S3Error as e:
-            self.logger.error(
-                f"Audio upload failed: {e}",
-                extra={
-                    "bucket_name": bucket_name,
-                    "object_name": file_name,
-                },
-            )
+        except S3Error as exception:
+            self.logger.error(f"Audio upload failed: {exception}")
             return None
 
     def get_object(self, bucket_name: str, file_name: str) -> bytes | None:
@@ -264,12 +264,12 @@ class MinIOStorage:
             data = response.read()
             response.close()
             response.release_conn()  # To reuse the connection
-            self.logger.info(
-                f"Object get: uri=minio://{bucket_name}/{file_name} size={len(data) // 8} octets"
+            self.logger.debug(
+                f"Object get: uri=minio://{bucket_name}/{file_name}, bytes={len(data)}"
             )
             return data
-        except S3Error as e:
-            self.logger.info(f"Get object failed: {e}")
+        except S3Error as exception:
+            self.logger.info(f"Get object failed: {exception}")
             return None
 
     def get_audio(
@@ -292,7 +292,7 @@ class MinIOStorage:
             return sf.read(io.BytesIO(audio_bytes))
         return None
 
-    def list_objects(self, bucket_name: str, prefix: str = "") -> list[dict]:
+    def list_objects(self, bucket_name: str, prefix: str = "") -> Iterator[Object]:
         """List of information about the objects in a bucket based on a prefix.
 
         Args:
@@ -300,13 +300,9 @@ class MinIOStorage:
             prefix (str, optional): Prefix. Defaults to "".
 
         Returns:
-            list[dict]: List of information about the objects. Keys of dictionaries are "name" (str | None), "size" (int | None) and "modified" (datetime | None).
+            Iterator[Object]: Iterator of minio.Object.
         """
-        objects = self.client.list_objects(bucket_name, prefix=prefix, recursive=True)
-        return [
-            {"name": obj.object_name, "size": obj.size, "modified": obj.last_modified}
-            for obj in objects
-        ]
+        return self.client.list_objects(bucket_name, prefix=prefix, recursive=True)
 
     def list_raws_audio(self) -> list[dict]:
         """List of information about the audio in the raw bucket.
@@ -327,11 +323,14 @@ class MinIOStorage:
             bool: True if the object was successfully deleted, false otherwise.
         """
         try:
+            self.logger.debug("Remove object...")
             self.client.remove_object(bucket_name, file_name)
-            self.logger.info(f"Object removed: minio://{bucket_name}/{file_name}")
+            self.logger.warning(
+                f"Object removed: uri=minio://{bucket_name}/{file_name}"
+            )
             return True
-        except S3Error as e:
-            self.logger.error(f"Object remove error: {e}")
+        except S3Error as exception:
+            self.logger.error(f"Object remove has failed: {exception}")
             return False
 
     def get_presigned_url(
@@ -348,17 +347,18 @@ class MinIOStorage:
             str | None: Pre-signed URL.
         """
         try:
+            self.logger.debug("Get presigned URL...")
             url = self.client.presigned_get_object(
                 bucket_name=bucket_name,
                 object_name=file_name,
                 expires=timedelta(hours=expires_hours),
             )
-            self.logger.info(
-                f"Get presigned URL from minio://{bucket_name}/{file_name}"
+            self.logger.debug(
+                f"Presigned URL successfully created from minio://{bucket_name}/{file_name}"
             )
             return url
-        except S3Error as e:
-            self.logger.error(f"Get presigned URL failed: {e}")
+        except S3Error as exception:
+            self.logger.error(f"Get presigned URL has failed: {exception}")
             return None
 
     def get_storage_stats(self) -> dict:
@@ -376,10 +376,10 @@ class MinIOStorage:
         ]
 
         for bucket_name in bucket_names:
-            objects = self.list_objects(bucket_name)
+            list_objects = list(self.list_objects(bucket_name))
             stats[bucket_name] = {
-                "nb_objects": len(objects),
-                "total_size": sum(o["size"] for o in objects),
+                "nb_objects": len(list_objects),
+                "total_size": sum(obj.size for obj in list_objects),
             }
 
         return stats

@@ -69,18 +69,20 @@ class JAMSMetadata:
     mode: Mode
     playing_version: PlayingVersion
     duration: float
+    pick_up_setting: str | None
 
     def to_dict(self) -> dict:
         return {
             "dataset_name": self.dataset_name,
             "guitarist_id": self.guitarist_id,
             "title": self.title,
-            "style": self.style.value,
+            "style": self.style.name.lower(),
             "tempo": self.tempo,
-            "scale": self.scale.value,
+            "scale": self.scale.name.lower(),
             "mode": self.mode,
-            "version": self.playing_version.value,
+            "version": self.playing_version.name.lower(),
             "duration": self.duration,
+            "pick_up_setting": self.pick_up_setting,
         }
 
 
