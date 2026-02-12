@@ -9,7 +9,7 @@ class GuitarSetIngestionPipelineConfig:
     dataset_path: Path = Path(
         os.getenv(
             "GUITARSET_PATH",
-            "C:/Users/Administrateur/Documents/projet_cdsd_data/guitarset",
+            "C:/Users/Administrateur/Documents/M2i_CDSD_Projet_Data/guitarset",
         )
     )
     annotation_path: Path = dataset_path / "annotation"
@@ -29,7 +29,7 @@ class IDMTSMTGuitarIngestionPipelineConfig:
     dataset_path: Path = Path(
         os.getenv(
             "IDMT_SMT_GUITAR_PATH",
-            "C:/Users/Administrateur/Documents/projet_cdsd_data/idmt-smt-guitar",
+            "C:/Users/Administrateur/Documents/M2i_CDSD_Projet_Data/idmt-smt-guitar",
         )
     )
     dataset1_path = dataset_path / "dataset1"

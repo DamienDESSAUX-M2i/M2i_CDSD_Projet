@@ -96,40 +96,40 @@ services:
     networks:
       - network_postgres
 
-  app:
-    depends_on:
-      - minio
-      - mongo
-      - postgres
-    container_name: app
-    build: ./app
-    env_file:
-      - ./.env
-    environment:
-      - MINIO_USER=${MINIO_USER}
-      - MINIO_PASSWORD=${MINIO_PASSWORD}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-      - MINIO_SECURE=${MINIO_SECURE}
-      - BUCKET_RAW=${BUCKET_RAW}
-      - BUCKET_PROCESSED=${BUCKET_PROCESSED}
-      - BUCKET_OUTPUT=${BUCKET_OUTPUT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_DBNAME=${POSTGRES_DBNAME}
-      - MONGO_USER=${MONGO_USER}
-      - MONGO_PASSWORD=${MONGO_PASSWORD}
-      - MONGO_HOST=${MONGO_HOST}
-      - MONGO_PORT=${MONGO_PORT}
-      - MONGO_DBNAME=${MONGO_DBNAME}
-    restart: unless-stopped
-    ports:
-      - 5000:5000
-    volumes:
-      - ./app:/app
-    networks:
-      - network_app
+  # app:
+  #   depends_on:
+  #     - minio
+  #     - mongo
+  #     - postgres
+  #   container_name: app
+  #   build: ./app
+  #   env_file:
+  #     - ./.env
+  #   environment:
+  #     - MINIO_USER=${MINIO_USER}
+  #     - MINIO_PASSWORD=${MINIO_PASSWORD}
+  #     - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+  #     - MINIO_SECURE=${MINIO_SECURE}
+  #     - BUCKET_RAW=${BUCKET_RAW}
+  #     - BUCKET_PROCESSED=${BUCKET_PROCESSED}
+  #     - BUCKET_OUTPUT=${BUCKET_OUTPUT}
+  #     - POSTGRES_USER=${POSTGRES_USER}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #     - POSTGRES_HOST=${POSTGRES_HOST}
+  #     - POSTGRES_PORT=${POSTGRES_PORT}
+  #     - POSTGRES_DBNAME=${POSTGRES_DBNAME}
+  #     - MONGO_USER=${MONGO_USER}
+  #     - MONGO_PASSWORD=${MONGO_PASSWORD}
+  #     - MONGO_HOST=${MONGO_HOST}
+  #     - MONGO_PORT=${MONGO_PORT}
+  #     - MONGO_DBNAME=${MONGO_DBNAME}
+  #   restart: unless-stopped
+  #   ports:
+  #     - 5000:5000
+  #   volumes:
+  #     - ./app:/app
+  #   networks:
+  #     - network_app
 
 networks:
   network_app:
