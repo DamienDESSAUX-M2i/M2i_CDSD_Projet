@@ -1,57 +1,178 @@
-<h1>Transcription Audio - Midi</h1>
+<h1>Transcription audio de guitare en MIDI</h1>
 
-Projet de soutenance du titre *Concepteur Développeur en Science des Données* (Jedha - RNCP 35288)
+Transcription automatique d'un signal audio de guitare en fichier MIDI à l’aide de techniques de traitement du signal et de deep learning.
 
-<h2>Table des matières</h2>
+Projet de soutenance du titre professionnel *Concepteur Développeur en Science des Données* (Jedha - RNCP35288).
 
-- [1. Description du projet](#1-description-du-projet)
-- [Contexte](#contexte)
-- [Application par bloc](#application-par-bloc)
-- [2. Architecture](#2-architecture)
-- [3. Structure du projet](#3-structure-du-projet)
-- [4. Prérequis](#4-prérequis)
-- [5. Installation](#5-installation)
-  - [5.1. Démarrer l'infrastructure](#51-démarrer-linfrastructure)
-  - [5.2. Accès aux interfaces](#52-accès-aux-interfaces)
-  - [5.3. Exécuter le pipeline](#53-exécuter-le-pipeline)
-- [6. Sources de données](#6-sources-de-données)
-  - [6.1. Web Scraping](#61-web-scraping)
-  - [6.2. API](#62-api)
-  - [6.3. Fichier Excel](#63-fichier-excel)
-- [7. Conformité RGPD](#7-conformité-rgpd)
-- [8. Requêtes analytiques](#8-requêtes-analytiques)
-- [9. Technologies utilisées](#9-technologies-utilisées)
-- [10. Commandes utiles](#10-commandes-utiles)
-- [11. Auteur](#11-auteur)
+## 1. Table des matières
 
+- [1. Table des matières](#1-table-des-matières)
+- [2. Context](#2-context)
+- [3. État de l’art](#3-état-de-lart)
+- [4. Application par bloc](#4-application-par-bloc)
+  - [4.1. BC01 : Construction et alimentation d'une infrastructure de gestion de donnees](#41-bc01--construction-et-alimentation-dune-infrastructure-de-gestion-de-donnees)
+  - [4.2. BC02 : Analyse exploratoire, descriptive et inferentielle de donnees](#42-bc02--analyse-exploratoire-descriptive-et-inferentielle-de-donnees)
+  - [4.3. BC03 : Analyse predictive de donnees structurees par IA (Machine Learning)](#43-bc03--analyse-predictive-de-donnees-structurees-par-ia-machine-learning)
+  - [4.4. BC04 : Analyse predictive de donnees non-structurees par IA (Deep Learning)](#44-bc04--analyse-predictive-de-donnees-non-structurees-par-ia-deep-learning)
+  - [4.5. BC05 : Industrialisation d'un algorithme et automatisation des processus de decision](#45-bc05--industrialisation-dun-algorithme-et-automatisation-des-processus-de-decision)
+  - [4.6. BC06 : Direction de projets de gestion de donnees](#46-bc06--direction-de-projets-de-gestion-de-donnees)
+- [5. Sources de données](#5-sources-de-données)
+  - [5.1. GuitarSet](#51-guitarset)
+  - [5.2. IDMT-SMT-Guitar](#52-idmt-smt-guitar)
+- [6. Architecture](#6-architecture)
+- [7. Structure du projet](#7-structure-du-projet)
+- [8. Prérequis](#8-prérequis)
+- [9. Installation](#9-installation)
+  - [9.1. Démarrer l'infrastructure](#91-démarrer-linfrastructure)
+  - [9.2. Accès aux interfaces](#92-accès-aux-interfaces)
+  - [9.3. Exécuter le pipeline](#93-exécuter-le-pipeline)
+- [12. Technologies utilisées](#12-technologies-utilisées)
+- [13. Commandes utiles](#13-commandes-utiles)
+- [14. Auteur](#14-auteur)
 
-## 1. Description du projet
+## 2. Context
 
-Transcription d'un enregistrement audio de guitare en fichier MIDI.
+La transcription automatique de musique (Automatic Music Transcription) consiste à convertir un signal audio en représentation symbolique (notes, temps, durées, vélocité).
 
-## Contexte
+Dans le cas de la guitare, le problème est complexe en raison :
+- de la richesse harmonique de l'instrument : Une note de guitare ne produit pas une seule fréquence, mais une fréquence fondamentale accompagnée de plusieurs harmoniques, des résonances de la caisse... Dans un spectrogramme, les harmoniques peuvent avoir une amplitude plus élevée que la fondamentale, ce qui peut conduire à une mauvaise estimation du pitch.
+- de la polyphonie : La guitare peut jouer plusieurs notes simultanément provoquant un chevauchement spectral des harmoniques, un masquage fréquentiel ou une superposition d’enveloppes temporelles. Contrairement à un instrument monophonique, la détection multi-pitch nécessite une classification multi-label et une séparation implicite des sources.
+- du sustain : Une note de guitare a une enveloppe ADSR complexe (attaque rapide, décroissance, sustain variable, release dépendant de l’interprétation) entrainant des difficultés à la détection précise des onsets, à l'estimation correcte de la fin de note et un risque de fragmentation d’une note longue en plusieurs notes courtes.
+- des techniques expressives : La guitare introduit des phénomènes non linéaires comme les dends (variation continue de pitch), vibrato (modulation périodique de fréquence), hammer-on / pull-off, slides ou palm mute. Ces effets produisent des variations continues de fréquence, des signaux non stationnaires, des ambiguïtés dans la quantification MIDI (qui est discret). Le MIDI impose des hauteurs discrètes, alors que la guitare peut produire des transitions continues.
+- des bruits et artefacts : Les enregistrements réels contiennent des bruits de fond, bruits de frottement des cordes, de la réverbération, de la saturation (guitare électrique). Ces éléments perturbent les représentations spectrales et les modèles entraînés sur données propres.
 
-**Entrée** :
+Ce projet vise à développer un pipeline complet permettant de générer un fichier MIDI exploitable à partir d’un enregistrement audio brut.
+
+**Objectifs visést :**
+- Détecter les hauteurs (pitch detection)
+- Identifier les instants d’attaque (onset detection)
+- Estimer les durées des notes
+- Générer un fichier MIDI structuré
+- Évaluer les performances avec des métriques standards
+
+**Limitations du format MIDI :**
+- Les annotations MIDI peuvent présenter de légers décalages temporels, des erreurs humaines, une quantification différente du jeu réel. Cela complique l’apprentissage supervisé et l’évaluation des performances.
+- Mathématiquement, la transcription est un problème inverse, on cherche une représentation symbolique discrète à partir d’un signal continu complexe. Il n’existe pas de solution unique, plusieurs combinaisons de notes peuvent produire un spectre similaire et l’information harmonique peut être ambiguë. Le problème est donc non linéaire, multi-label et fortement dépendant du contexte temporel.
+- Le MIDI standard représente Note number (entier), Velocity, Start time et Duration. Mais ne capture pas naturellement les micro-intervalles, les bends continus précis les subtilités timbrales. Il existe donc une perte d’information intrinsèque lors du passage audio → MIDI.
+
+**Données d'entrée :**
 - Fichier audio WAV
 - Guitare monophonique et polyphonique
 - Guitare acoustique et électrique
 - Accordage standard EADGBE
 
-**Sortie** :
+**Données de sortie** :
 - Fichier MIDI représentant les notes jouées
 
-## Application par bloc
+## 3. État de l’art
 
-| Bloc | Application concrete |
-| :- | :- |
-| BC01 | Stockage objet (MinIO S3) des enregistrements sonores (.wav), annotations (.xml, .jams) et features (spectrogrammes, CQT, MFCC, ...), Stockage document (MongoDB) des annotations Stockage SQL (PostgreSQL) des métadonnées entrées et sorties, Pipeline preprocessing (Resampling (22.05 kHz), Conversion mono, Normalisation, Découpage en frames), Pipeline processing (Extraction features: spectrogrammes, CQT et MFCC ...) |
-| BC02 | Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, Comparaison STFT vs CQT |
-| BC03 | |
-| BC04 | |
-| BC05 | |
-| BC06 | |
+Les principales approches existantes :
+- Méthodes DSP classiques : STFT, autocorrélation, YIN
+- Approches Deep Learning : CNN, CRNN, Transformers
+- Outils commerciaux comme Melodyne
+- Modèle open-source Spotify Basic Pitch
 
-## 2. Architecture
+Ce projet combine une représentation spectrale (CQT) avec un modèle CRNN.
+
+## 4. Application par bloc
+
+### 4.1. BC01 : Construction et alimentation d'une infrastructure de gestion de donnees
+
+Stockage objet (MinIO S3) des enregistrements sonores (.wav), annotations (.xml, .jams) et features (spectrogrammes, CQT, MFCC, ...), Stockage document (MongoDB) des annotations Stockage SQL (PostgreSQL) des métadonnées entrées et sorties, Pipeline preprocessing (Resampling (22.05 kHz), Conversion mono, Normalisation, Découpage en frames), Pipeline processing (Extraction features: spectrogrammes, CQT et MFCC ...) |
+
+### 4.2. BC02 : Analyse exploratoire, descriptive et inferentielle de donnees
+
+Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, Comparaison STFT vs CQT |
+
+### 4.3. BC03 : Analyse predictive de donnees structurees par IA (Machine Learning)
+
+### 4.4. BC04 : Analyse predictive de donnees non-structurees par IA (Deep Learning)
+
+### 4.5. BC05 : Industrialisation d'un algorithme et automatisation des processus de decision
+
+### 4.6. BC06 : Direction de projets de gestion de donnees
+
+## 5. Sources de données
+
+### 5.1. GuitarSet
+
+**Lien du site associé au dataset** : https://guitarset.weebly.com/
+
+**Contenu audio** :
+- 360 extraits audio d'environ 30 secondes chacun :
+  - 6 musiciens interprètent chacun 30 grilles d'accords.
+  - 2 versions par grilles d'accords : accompagnement et solo qui est une improvisation sur l'accompagnement.
+- 30 grilles d'accords générées à partir de combinaisons de :
+  - 5 styles : rock, auteur-compositeur-interprète, bossa nova, jazz et funk.
+  - 3 progressions : blues à 12 mesures, Autumn Leaves et Canon de Pachelbel.
+  - Deux tempi : lent et rapide.
+
+**Configuration de la collection audio** :
+- L'audio est enregistré à l'aide d'un capteur hexaphonique qui génère un signal pour chaque corde séparément et un microphone à condensateur Neumann U-87.
+- Les musiciens disposent de partitions et de pistes d'accompagnement conformes au style approprié, incluant une batterie et une ligne de basse.
+- 3 enregistrements audio accompagnent chaque extrait, avec le suffixe suivant :
+  - hex : fichier WAV original 6 canaux du capteur hexaphonique
+  - hex_cln : fichiers WAV hexaphoniques après suppression des interférences
+  - mic : enregistrement monophonique du microphone de référence
+
+**Contenu d'annotation** :
+- Chacun des 360 extraits est accompagné d'un fichier .jams contenant 16 annotations :
+  - **Hauteur** :
+    - 6 annotations *pitch_contour* (1 par corde)
+    - 6 annotations *midi_note* (1 par corde)
+  - Temps et tempo :
+    - 1 annotation *beat_position*
+    - 1 annotation *tempo*
+  - Accords
+    - 2 annotations d'accords : *instructed* (version numérique de la partition founie aux musiciens) et *performed* (annatation d'accords déduite des annotations de notes en utilisabt la segmentation et la fondamentale de la partition numérique). 
+
+### 5.2. IDMT-SMT-Guitar
+
+**Lien du site associé au dataset** : https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html
+
+**Vue d'ensemble** :
+- 7 guitares (accordage standard)
+- Plusieurs réglages micros
+- Plusieurs épaisseurs de cordes
+- Dispositif d'enregistrement : interfaces audio appropriées connectées directement à la sortie de la guitare ou microphone à condensateur
+- Format : RIFF WAVE mono
+- Fréquence d'échantillonnage : 44 100 Hz
+
+**4 sous-ensembles** :
+- 1er sous-ensemble
+  - Différentes techniques de jeu :
+    - styles de jeu aux doigts : *finger-style*, *muted*, *picked*
+    - styles d'expression : *normal*, *bending*, *slide*, *vibrato*, *harmonics*, *dead-notes*
+  - Profondeur de bits : 24 bits
+  - Enregistré à l'aide de 3 guitares différentes
+  - Environ 4 700 événements de notes, avec une structure monophonique et polyphonique
+  - Annotation au format XML
+
+- 2e sous-ensemble : 
+  - 400 notes monophoniques et polyphoniques
+  - Chacune jouée avec deux guitares différentes
+  - Aucun style d'expression n'a été appliqué
+  - Profondeur de bits : 16 bits
+  - Annotation au format XML
+
+- 3e sous-ensemble :
+  - 5 courts enregistrements de guitare monophoniques et polyphoniques
+  - Enregistrés avec le même instrument, sans style ni expression particulier
+  - Fichiers sont au format XML
+  - Profondeur de bits : 16 bits
+  - Annotation au format XML
+
+- 4e sous-ensemble :
+  - À des fins d'évaluation pour la reconnaissance d'accords et l'estimation de styles rythmiques
+  - 64 courts morceaux musicaux regroupés par genre
+  - Pour chaque morceau :
+    - 2 tempos différents
+    - 3 guitares différentes
+    - Format XML
+  - Profondeur de bits : 16 bits
+  - Annotations concernant les positions d'attaque, les accords, la longueur du motif rythmique et la texture (monophonie/polyphonie) sont incluses dans différents formats de fichiers
+
+## 6. Architecture
 
 ```
                                   ┌───────────────────────────────┐
@@ -62,7 +183,7 @@ Transcription d'un enregistrement audio de guitare en fichier MIDI.
                                   └───────────────┬───────────────┘
                                                   │
                                   ┌───────────────┴───────────────┐
-                                  │ Ingestion Pipeline            │
+                                  │ Ingestion Pipeline (Python)   │
                                   └───────────────┬───────────────┘
                                                   │
                 ┌─────────────────────────────────┼──────────────────────────────────┐
@@ -83,7 +204,7 @@ Transcription d'un enregistrement audio de guitare en fichier MIDI.
                                                   │
                                                   ▼
                                   ┌───────────────────────────────┐
-                                  │ Preprocessing Pipeline        │
+                                  │ Preprocessor Pipeline (Python)│
                                   │ Feature Extraction            │
                                   └───────────────┬───────────────┘
                                                   │
@@ -102,7 +223,7 @@ Transcription d'un enregistrement audio de guitare en fichier MIDI.
                                                   │
                                                   ▼
                                   ┌───────────────────────────────┐
-                                  │ ML Pipeline                   │
+                                  │ ML Pipeline (Python)          │
                                   └───────────────┬───────────────┘
                                                   │
                ┌──────────────────────────────────┼─────────────────────────────────┐
@@ -113,11 +234,11 @@ Transcription d'un enregistrement audio de guitare en fichier MIDI.
 │ (Object Storage)              │ │ (Document Storage)            │ │ (SGBD)                        │
 │                               │ │                               │ │                               │
 │ Bucket: output                │ │ Collections:                  │ │ • Métadonnées output          │
-│ • MIDI                        │ │ • ML output                   │ │                               │
+│ • MIDI                        │ │ • ML output                   │ │ • Métriques                   │
 └───────────────────────────────┘ └───────────────────────────────┘ └───────────────────────────────┘
 ```
 
-## 3. Structure du projet
+## 7. Structure du projet
 
 ```
 M2i_CDSD_Projet/
@@ -128,6 +249,7 @@ M2i_CDSD_Projet/
 │
 ├── docs/
 │   ├── DAT.md                   # Dossier d'Architecture Technique
+│   ├── rncp35288.md             # Description titre RNCP35288
 │   └── RGPD_CONFORMITE.md       # Documentation RGPD
 │
 ├── src/
@@ -154,14 +276,15 @@ M2i_CDSD_Projet/
 └── logs/                        # Logs d'exécution
 ```
 
-## 4. Prérequis
+## 8. Prérequis
 
 - Docker et Docker Compose
 - Python 3.11+ (pour exécution locale)
+- Git
 
-## 5. Installation
+## 9. Installation
 
-### 5.1. Démarrer l'infrastructure
+### 9.1. Démarrer l'infrastructure
 
 ```bash
 # Démarrer tous les services
@@ -171,15 +294,15 @@ docker-compose up -d
 docker-compose ps
 ```
 
-### 5.2. Accès aux interfaces
+### 9.2. Accès aux interfaces
 
 | Service | URL | Identifiants |
 |---------|-----|--------------|
-| **Mongo Express** | http://localhost:8081 | admin / admin2026 |
-| **pgAdmin** | http://localhost:5050 | admin@datapulse.local / admin2026 |
-| **MinIO Console** | http://localhost:9001 | datapulse / datapulse2026 |
+| **Mongo Express** | http://localhost:8081 | admin / admin0000 |
+| **pgAdmin** | http://localhost:5050 | admin@admin.com / admin0000 |
+| **MinIO Console** | http://localhost:9001 | admin / admin0000 |
 
-### 5.3. Exécuter le pipeline
+### 9.3. Exécuter le pipeline
 
 ```bash
 # Pipeline complet
@@ -194,46 +317,7 @@ docker-compose exec pipeline python -m pipeline.etl_pipeline --step transform
 docker-compose exec pipeline python -m pipeline.etl_pipeline --step load
 ```
 
-## 6. Sources de données
-
-### 6.1. Web Scraping
-
-| Site | URL | Données |
-|------|-----|---------|
-| Books to Scrape | https://books.toscrape.com | ~1000 livres |
-| Quotes to Scrape | https://quotes.toscrape.com | ~100 citations |
-
-### 6.2. API
-
-| API | URL | Usage |
-|-----|-----|-------|
-| API Adresse | https://api-adresse.data.gouv.fr | Géocodage des librairies |
-
-### 6.3. Fichier Excel
-
-Le fichier `partenaire_librairies.xlsx` contient 20 librairies partenaires avec des données personnelles nécessitant un traitement RGPD.
-
-## 7. Conformité RGPD
-
-Les données personnelles (nom, email, téléphone des contacts) sont :
-
-1. **Pseudonymisées** : Hashage SHA-256 avec sel
-2. **Minimisées** : Seul le hash est conservé en couche Gold
-3. **Supprimables** : Script de suppression sur demande disponible
-
-Voir `docs/RGPD_CONFORMITE.md` pour plus de détails.
-
-## 8. Requêtes analytiques
-
-Le fichier `sql/analyses.sql` contient 5 requêtes démontrant la valeur de la plateforme :
-
-1. **Agrégation simple** : Statistiques par catégorie de livres
-2. **Jointure** : Citations avec auteurs et tags
-3. **Window function** : Classement des livres par prix dans leur catégorie
-4. **Top N** : Top 10 des auteurs les plus prolifiques
-5. **Croisement sources** : Opportunités commerciales librairies/livres
-
-## 9. Technologies utilisées
+## 12. Technologies utilisées
 
 | Composant | Technologie | Justification |
 |-----------|-------------|---------------|
@@ -243,7 +327,7 @@ Le fichier `sql/analyses.sql` contient 5 requêtes démontrant la valeur de la p
 | Pipeline | Python | Écosystème riche, lisibilité |
 | Infrastructure | Docker | Reproductibilité, isolation |
 
-## 10. Commandes utiles
+## 13. Commandes utiles
 
 ```bash
 # Logs du pipeline
@@ -262,7 +346,7 @@ docker-compose down
 docker-compose down -v
 ```
 
-## 11. Auteur
+## 14. Auteur
 
 Data Engineer - DataPulse Analytics
 ECF Titre Professionnel Data Engineer
