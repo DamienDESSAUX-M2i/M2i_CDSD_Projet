@@ -2,33 +2,41 @@
 
 Transcription automatique d'un signal audio de guitare en fichier MIDI à l’aide de techniques de traitement du signal et de deep learning.
 
-Projet de soutenance du titre professionnel *Concepteur Développeur en Science des Données* (Jedha - RNCP35288).
-
 ## 1. Table des matières
 
 - [1. Table des matières](#1-table-des-matières)
 - [2. Context](#2-context)
-- [3. État de l’art](#3-état-de-lart)
-- [4. Application par bloc](#4-application-par-bloc)
-  - [4.1. BC01 : Construction et alimentation d'une infrastructure de gestion de donnees](#41-bc01--construction-et-alimentation-dune-infrastructure-de-gestion-de-donnees)
-  - [4.2. BC02 : Analyse exploratoire, descriptive et inferentielle de donnees](#42-bc02--analyse-exploratoire-descriptive-et-inferentielle-de-donnees)
-  - [4.3. BC03 : Analyse predictive de donnees structurees par IA (Machine Learning)](#43-bc03--analyse-predictive-de-donnees-structurees-par-ia-machine-learning)
-  - [4.4. BC04 : Analyse predictive de donnees non-structurees par IA (Deep Learning)](#44-bc04--analyse-predictive-de-donnees-non-structurees-par-ia-deep-learning)
-  - [4.5. BC05 : Industrialisation d'un algorithme et automatisation des processus de decision](#45-bc05--industrialisation-dun-algorithme-et-automatisation-des-processus-de-decision)
-  - [4.6. BC06 : Direction de projets de gestion de donnees](#46-bc06--direction-de-projets-de-gestion-de-donnees)
-- [5. Sources de données](#5-sources-de-données)
-  - [5.1. GuitarSet](#51-guitarset)
-  - [5.2. IDMT-SMT-Guitar](#52-idmt-smt-guitar)
-- [6. Architecture](#6-architecture)
-- [7. Structure du projet](#7-structure-du-projet)
-- [8. Prérequis](#8-prérequis)
-- [9. Installation](#9-installation)
-  - [9.1. Démarrer l'infrastructure](#91-démarrer-linfrastructure)
-  - [9.2. Accès aux interfaces](#92-accès-aux-interfaces)
-  - [9.3. Exécuter le pipeline](#93-exécuter-le-pipeline)
-- [12. Technologies utilisées](#12-technologies-utilisées)
-- [13. Commandes utiles](#13-commandes-utiles)
-- [14. Auteur](#14-auteur)
+- [3. Objectifs](#3-objectifs)
+  - [3.1. Limitations du format MIDI](#31-limitations-du-format-midi)
+  - [3.2. Données d'entrée](#32-données-dentrée)
+  - [3.3. Données de sortie](#33-données-de-sortie)
+- [4. État de l’art](#4-état-de-lart)
+- [5. Application par bloc](#5-application-par-bloc)
+  - [5.1. BC01 : Construction et alimentation d'une infrastructure de gestion de donnees](#51-bc01--construction-et-alimentation-dune-infrastructure-de-gestion-de-donnees)
+  - [5.2. BC02 : Analyse exploratoire, descriptive et inferentielle de donnees](#52-bc02--analyse-exploratoire-descriptive-et-inferentielle-de-donnees)
+  - [5.3. BC03 : Analyse predictive de donnees structurees par IA (Machine Learning)](#53-bc03--analyse-predictive-de-donnees-structurees-par-ia-machine-learning)
+  - [5.4. BC04 : Analyse predictive de donnees non-structurees par IA (Deep Learning)](#54-bc04--analyse-predictive-de-donnees-non-structurees-par-ia-deep-learning)
+  - [5.5. BC05 : Industrialisation d'un algorithme et automatisation des processus de decision](#55-bc05--industrialisation-dun-algorithme-et-automatisation-des-processus-de-decision)
+  - [5.6. BC06 : Direction de projets de gestion de donnees](#56-bc06--direction-de-projets-de-gestion-de-donnees)
+- [6. Sources de données](#6-sources-de-données)
+  - [6.1. GuitarSet](#61-guitarset)
+  - [6.2. IDMT-SMT-Guitar](#62-idmt-smt-guitar)
+- [7. Architecture](#7-architecture)
+- [8. Structure du projet](#8-structure-du-projet)
+- [9. Prérequis](#9-prérequis)
+- [10. Installation](#10-installation)
+  - [10.1. Repository](#101-repository)
+  - [10.2. Environnement virtuel](#102-environnement-virtuel)
+  - [10.3. Variables d'environnement](#103-variables-denvironnement)
+  - [10.4. Démarrer l'infrastructure](#104-démarrer-linfrastructure)
+  - [10.5. Structure des données](#105-structure-des-données)
+- [11. Utilisation](#11-utilisation)
+  - [11.1. Accès aux interfaces](#111-accès-aux-interfaces)
+  - [11.2. Exécution des pipelines](#112-exécution-des-pipelines)
+  - [11.3. Options disponibles](#113-options-disponibles)
+  - [11.4. Exemples d'utilisations des options](#114-exemples-dutilisations-des-options)
+  - [11.5. Commandes utiles](#115-commandes-utiles)
+- [12. Auteur](#12-auteur)
 
 ## 2. Context
 
@@ -43,28 +51,33 @@ Dans le cas de la guitare, le problème est complexe en raison :
 
 Ce projet vise à développer un pipeline complet permettant de générer un fichier MIDI exploitable à partir d’un enregistrement audio brut.
 
-**Objectifs visést :**
+## 3. Objectifs
+
+Les objectifs visés sont :
 - Détecter les hauteurs (pitch detection)
 - Identifier les instants d’attaque (onset detection)
 - Estimer les durées des notes
 - Générer un fichier MIDI structuré
 - Évaluer les performances avec des métriques standards
 
-**Limitations du format MIDI :**
+### 3.1. Limitations du format MIDI
+
 - Les annotations MIDI peuvent présenter de légers décalages temporels, des erreurs humaines, une quantification différente du jeu réel. Cela complique l’apprentissage supervisé et l’évaluation des performances.
 - Mathématiquement, la transcription est un problème inverse, on cherche une représentation symbolique discrète à partir d’un signal continu complexe. Il n’existe pas de solution unique, plusieurs combinaisons de notes peuvent produire un spectre similaire et l’information harmonique peut être ambiguë. Le problème est donc non linéaire, multi-label et fortement dépendant du contexte temporel.
 - Le MIDI standard représente Note number (entier), Velocity, Start time et Duration. Mais ne capture pas naturellement les micro-intervalles, les bends continus précis les subtilités timbrales. Il existe donc une perte d’information intrinsèque lors du passage audio → MIDI.
 
-**Données d'entrée :**
+### 3.2. Données d'entrée
+
 - Fichier audio WAV
 - Guitare monophonique et polyphonique
 - Guitare acoustique et électrique
 - Accordage standard EADGBE
 
-**Données de sortie** :
+### 3.3. Données de sortie
+
 - Fichier MIDI représentant les notes jouées
 
-## 3. État de l’art
+## 4. État de l’art
 
 Les principales approches existantes :
 - Méthodes DSP classiques : STFT, autocorrélation, YIN
@@ -74,27 +87,27 @@ Les principales approches existantes :
 
 Ce projet combine une représentation spectrale (CQT) avec un modèle CRNN.
 
-## 4. Application par bloc
+## 5. Application par bloc
 
-### 4.1. BC01 : Construction et alimentation d'une infrastructure de gestion de donnees
+### 5.1. BC01 : Construction et alimentation d'une infrastructure de gestion de donnees
 
-Stockage objet (MinIO S3) des enregistrements sonores (.wav), annotations (.xml, .jams) et features (spectrogrammes, CQT, MFCC, ...), Stockage document (MongoDB) des annotations Stockage SQL (PostgreSQL) des métadonnées entrées et sorties, Pipeline preprocessing (Resampling (22.05 kHz), Conversion mono, Normalisation, Découpage en frames), Pipeline processing (Extraction features: spectrogrammes, CQT et MFCC ...) |
+Stockage objet (MinIO S3) des enregistrements sonores (.wav), annotations (.xml, .jams) et features (spectrogrammes, CQT, MFCC, ...), Stockage document (MongoDB) des annotations Stockage SQL (PostgreSQL) des métadonnées entrées et sorties, Pipeline preprocessing (Resampling (22.05 kHz), Conversion mono, Normalisation, Découpage en frames), Pipeline preprocessing (Extraction features: spectrogrammes, CQT et MFCC ...)
 
-### 4.2. BC02 : Analyse exploratoire, descriptive et inferentielle de donnees
+### 5.2. BC02 : Analyse exploratoire, descriptive et inferentielle de donnees
 
-Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, Comparaison STFT vs CQT |
+Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, Comparaison STFT vs CQT
 
-### 4.3. BC03 : Analyse predictive de donnees structurees par IA (Machine Learning)
+### 5.3. BC03 : Analyse predictive de donnees structurees par IA (Machine Learning)
 
-### 4.4. BC04 : Analyse predictive de donnees non-structurees par IA (Deep Learning)
+### 5.4. BC04 : Analyse predictive de donnees non-structurees par IA (Deep Learning)
 
-### 4.5. BC05 : Industrialisation d'un algorithme et automatisation des processus de decision
+### 5.5. BC05 : Industrialisation d'un algorithme et automatisation des processus de decision
 
-### 4.6. BC06 : Direction de projets de gestion de donnees
+### 5.6. BC06 : Direction de projets de gestion de donnees
 
-## 5. Sources de données
+## 6. Sources de données
 
-### 5.1. GuitarSet
+### 6.1. GuitarSet
 
 **Lien du site associé au dataset** : https://guitarset.weebly.com/
 
@@ -117,20 +130,20 @@ Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, C
 
 **Contenu d'annotation** :
 - Chacun des 360 extraits est accompagné d'un fichier .jams contenant 16 annotations :
-  - **Hauteur** :
+  - **Hauteur :**
     - 6 annotations *pitch_contour* (1 par corde)
     - 6 annotations *midi_note* (1 par corde)
-  - Temps et tempo :
+  - **Temps et tempo :**
     - 1 annotation *beat_position*
     - 1 annotation *tempo*
-  - Accords
+  - **Accords :**
     - 2 annotations d'accords : *instructed* (version numérique de la partition founie aux musiciens) et *performed* (annatation d'accords déduite des annotations de notes en utilisabt la segmentation et la fondamentale de la partition numérique). 
 
-### 5.2. IDMT-SMT-Guitar
+### 6.2. IDMT-SMT-Guitar
 
 **Lien du site associé au dataset** : https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html
 
-**Vue d'ensemble** :
+**Vue d'ensemble :**
 - 7 guitares (accordage standard)
 - Plusieurs réglages micros
 - Plusieurs épaisseurs de cordes
@@ -138,8 +151,8 @@ Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, C
 - Format : RIFF WAVE mono
 - Fréquence d'échantillonnage : 44 100 Hz
 
-**4 sous-ensembles** :
-- 1er sous-ensemble
+**4 sous-ensembles :**
+- **1er sous-ensemble :**
   - Différentes techniques de jeu :
     - styles de jeu aux doigts : *finger-style*, *muted*, *picked*
     - styles d'expression : *normal*, *bending*, *slide*, *vibrato*, *harmonics*, *dead-notes*
@@ -148,21 +161,21 @@ Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, C
   - Environ 4 700 événements de notes, avec une structure monophonique et polyphonique
   - Annotation au format XML
 
-- 2e sous-ensemble : 
+- **2e sous-ensemble :**
   - 400 notes monophoniques et polyphoniques
   - Chacune jouée avec deux guitares différentes
   - Aucun style d'expression n'a été appliqué
   - Profondeur de bits : 16 bits
   - Annotation au format XML
 
-- 3e sous-ensemble :
+- **3e sous-ensemble :**
   - 5 courts enregistrements de guitare monophoniques et polyphoniques
   - Enregistrés avec le même instrument, sans style ni expression particulier
   - Fichiers sont au format XML
   - Profondeur de bits : 16 bits
   - Annotation au format XML
 
-- 4e sous-ensemble :
+- **4e sous-ensemble :**
   - À des fins d'évaluation pour la reconnaissance d'accords et l'estimation de styles rythmiques
   - 64 courts morceaux musicaux regroupés par genre
   - Pour chaque morceau :
@@ -172,7 +185,9 @@ Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, C
   - Profondeur de bits : 16 bits
   - Annotations concernant les positions d'attaque, les accords, la longueur du motif rythmique et la texture (monophonie/polyphonie) sont incluses dans différents formats de fichiers
 
-## 6. Architecture
+## 7. Architecture
+
+L'architecture du projet est décrite par le schéma ci-dessous.
 
 ```
                                   ┌───────────────────────────────┐
@@ -238,53 +253,214 @@ Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, C
 └───────────────────────────────┘ └───────────────────────────────┘ └───────────────────────────────┘
 ```
 
-## 7. Structure du projet
+## 8. Structure du projet
+
+La structure du projet est décrite par le schéma ci-dessous.
+
 
 ```
 M2i_CDSD_Projet/
-├── docker-compose.yml
-├── pyproject.toml
-├── requirements.txt
-├── README.md
+├── .env                          # Variables d’environnement (non versionnées)
+├── .gitignore                    # Fichiers/dossiers ignorés par Git
+├── docker-compose.yml            # Orchestration des services (PostgreSQL, MongoDB, MinIO)
+├── pyproject.toml                # Configuration du projet Python (PEP 621)
+├── README.md                     # Documentation principale du projet
 │
-├── docs/
-│   ├── DAT.md                   # Dossier d'Architecture Technique
-│   ├── rncp35288.md             # Description titre RNCP35288
-│   └── RGPD_CONFORMITE.md       # Documentation RGPD
+├── app/                          # Code applicatif principal
+│   ├── .dockerignore             # Fichiers ignorés lors du build Docker
+│   ├── Dockerfile                # Image Docker de l’application
+│   ├── main.py                   # Point d’entrée de l’application
+│   ├── requirements.txt          # Dépendances Python
+│   │
+│   ├── config/                   # Fichiers de configuration centralisés
+│   │   ├── etl_settings.py
+│   │   ├── ingestion_pipelines_settings.py
+│   │   ├── minio_settings.py
+│   │   ├── mongodb_settings.py
+│   │   ├── postgresql_settings.py
+│   │   └── __init__.py
+│   │
+│   ├── notebooks/                # Notebooks d’exploration et d’analyse
+│   │   └── 01_analyse_exploratoire.ipynb
+│   │
+│   ├── src/                      # Code source structuré par responsabilités
+│   │   ├── __init__.py
+│   │   │
+│   │   ├── extractors/           # Extraction des données (audio et annotation)
+│   │   │   ├── abstract_extractor.py
+│   │   │   ├── api_extractor.py
+│   │   │   ├── csv_extractor.py
+│   │   │   ├── excel_extractor.py
+│   │   │   ├── jams_extractor.py
+│   │   │   ├── json_extractor.py
+│   │   │   ├── wav_extractor.py
+│   │   │   ├── xml_extractor.py
+│   │   │   └── __init__.py
+│   │   │
+│   │   ├── loaders/              # Chargement des données vers différentes cibles
+│   │   │   ├── abstract_loader.py
+│   │   │   ├── csv_loader.py
+│   │   │   ├── excel_loader.py
+│   │   │   ├── jams_loader.py
+│   │   │   ├── json_loader.py
+│   │   │   ├── wav_loader.py
+│   │   │   ├── xml_loader.py
+│   │   │   └── __init__.py
+│   │   │
+│   │   ├── models/               # Modèles de données (structures métiers)
+│   │   │   ├── jams_models.py
+│   │   │   ├── xml_models.py
+│   │   │   └── __init__.py
+│   │   │
+│   │   ├── pipelines/            # Orchestration des flux ETL
+│   │   │   ├── abstract_pipeline.py
+│   │   │   ├── guitar_set_ingestion_pipeline.py
+│   │   │   ├── idmt_smt_guitar_ingestion_pipeline.py
+│   │   │   ├── preprocessing_pipeline.py
+│   │   │   └── __init__.py
+│   │   │
+│   │   ├── storages/             # Connecteurs vers systèmes de stockage
+│   │   │   ├── minio_storage.py
+│   │   │   ├── mongo_storage.py
+│   │   │   ├── postgresql_storage.py
+│   │   │   └── __init__.py
+│   │   │
+│   │   ├── transformers/         # Transformation et enrichissement des données
+│   │   │   ├── element_tree_wrapper.py
+│   │   │   └── __init__.py
+│   │   │
+│   │   └── utils/                # Outils transverses (logging)
+│   │       ├── logger.py
+│   │       └── __init__.py
+│   │
+│   └── tests/                    # Tests unitaires et fonctionnels
 │
-├── src/
-│   ├── scrapers/
-│   │   ├── books_scraper.py     # Scraper Books to Scrape
-│   │   └── quotes_scraper.py    # Scraper Quotes to Scrape
-│   ├── api/
-│   │   └── geocoding_client.py  # Client API Adresse
-│   ├── import/
-│   │   └── excel_importer.py    # Import fichier Excel
-│   └── pipeline/
-│       └── etl_pipeline.py      # Pipeline ETL complet
+├── docs/                         # Documentation complémentaire
+│   └── rncp35288.md
 │
-├── sql/
-│   └── analyses.sql             # 5 requêtes analytiques
+├── logs/                         # Fichiers de logs générés par l’application
 │
-├── init/
-│   ├── mongo-init.js            # Initialisation MongoDB
-│   └── postgres-init.sql        # Initialisation PostgreSQL
+├── minio/                        # Service MinIO
+│   └── volume/                   # Données persistées
 │
-├── data/
-│   └── partenaire_librairies.xlsx  # Fichier fourni
+├── mongo/                        # Service MongoDB
+│   ├── initdb/                   # Scripts d’initialisation de la base
+│   │   └── 01_collections.js
+│   └── volume/                   # Données persistées
 │
-└── logs/                        # Logs d'exécution
+├── pgadmin/                      # Interface d’administration PostgreSQL
+│   ├── storage/
+│   └── volume/
+│
+└── postgres/                     # Service PostgreSQL
+    ├── initdb/                   # Scripts d’initialisation de la base
+    │   └── 01_tables.sql
+    └── volume/                   # Données persistées
+
 ```
 
-## 8. Prérequis
+## 9. Prérequis
 
-- Docker et Docker Compose
-- Python 3.11+ (pour exécution locale)
 - Git
+- Docker et Docker Compose
+- Python 3.13+ (pour exécution locale)
 
-## 9. Installation
+## 10. Installation
 
-### 9.1. Démarrer l'infrastructure
+### 10.1. Repository
+
+Cloner le projet depuis GitHub.
+
+```bash
+git clone https://github.com/DamienDESSAUX-M2i/M2i_CDSD_Projet.git
+```
+
+### 10.2. Environnement virtuel
+
+Créer un environement virtuel et installer les dépendances.
+
+```bash
+# Créer l'environnement virtuel
+python -m venv venv
+
+# Activer l'environnement
+## Linux/Mac:
+source venv/bin/activate
+## Windows:
+venv\Scripts\activate
+
+# Installer les dépendances
+pip install -r requirements.txt
+```
+
+Si vous utilisez uv, initialisez le projet avec `uv sync`.
+
+### 10.3. Variables d'environnement
+
+Créer, à la racine du projet, un fichier environement `./env` comprenant les variables d'environnement suivantes :
+
+```bash
+# ===
+# Global
+# ===
+
+LOG_NAME="app"
+GUITARSET_PATH="C:/Users/Administrateur/Documents/M2i_CDSD_Projet_Data/guitarset"
+IDMT_SMT_GUITAR_PATH="C:/Users/Administrateur/Documents/M2i_CDSD_Projet_Data/idmt-smt-guitar"
+
+# ===
+# MinIO
+# ===
+
+MINIO_ENDPOINT="minio:9000"
+MINIO_USER="admin"
+MINIO_PASSWORD="admin0000"
+MINIO_SECURE=False
+# bucket names
+BUCKET_RAW="raw"
+BUCKET_PROCESSED="processed"
+BUCKET_OUTPUT="output"
+
+# ===
+# Mongo
+# ===
+
+MONGO_USER="admin"
+MONGO_PASSWORD="admin0000"
+MONGO_HOST="mongo"
+MONGO_PORT="27017"
+MONGO_DBNAME="audio_midi"
+# mongo-express
+ME_USER="admin"
+ME_PASSWORD="admin0000"
+
+# ===
+# Postgres
+# ===
+
+POSTGRES_USER="admin"
+POSTGRES_PASSWORD="admin0000"
+POSTGRES_HOST="postgres"
+POSTGRES_PORT="5432"
+POSTGRES_DBNAME="audio_midi"
+# pgadmin
+PGADMIN_EMAIL="admin@admin.com"
+PGADMIN_PASSWORD="admin0000"
+
+```
+
+### 10.4. Démarrer l'infrastructure
+
+Démarrer l'infrastructure Docker.
+
+| Service | Image |
+| :- | :- |
+| `minio` | `quay.io/minio/minio` |
+| `minio-init` | `minio/mc` |
+| `mongo` | `mongo` |
+| `mongo-express` | `mongo-express` |
+| `postgres` | `postgres` |
+| `pgadmin` | `dpage/pgadmin4` |
 
 ```bash
 # Démarrer tous les services
@@ -294,63 +470,96 @@ docker-compose up -d
 docker-compose ps
 ```
 
-### 9.2. Accès aux interfaces
+Le service `minio-init` s'arrête après l'initialisation du service `minio`.
+
+### 10.5. Structure des données
+
+Les données doivent absolument respecter la structure suivante :
+
+```txt
+M2i_CDSD_Projet_Data\
+├───guitarset
+│   ├───annotation
+│   ├───audio_hex-pickup_debleeded
+│   ├───audio_hex-pickup_original
+│   ├───audio_mono-mic
+│   └───audio_mono-pickup_mix
+└───idmt-smt-guitar
+    ├───dataset1
+    ├───dataset2
+    ├───dataset3
+    └───dataset4
+```
+
+## 11. Utilisation
+
+### 11.1. Accès aux interfaces
 
 | Service | URL | Identifiants |
 |---------|-----|--------------|
-| **Mongo Express** | http://localhost:8081 | admin / admin0000 |
-| **pgAdmin** | http://localhost:5050 | admin@admin.com / admin0000 |
 | **MinIO Console** | http://localhost:9001 | admin / admin0000 |
+| **Mongo Express** | http://localhost:8081 | admin / admin0000 |
+| **pgAdmin** | http://localhost:8080 | admin@admin.com / admin0000 |
 
-### 9.3. Exécuter le pipeline
+### 11.2. Exécution des pipelines
 
 ```bash
-# Pipeline complet
-docker-compose exec pipeline python -m pipeline.etl_pipeline --step all --excel /app/data/partenaire_librairies.xlsx
+# Ingestion pipeline
+python app/main.py --guitarset --idmtsmtguitar
 
-# Mode test (données limitées)
-docker-compose exec pipeline python -m pipeline.etl_pipeline --step all --test --excel /app/data/partenaire_librairies.xlsx
+# Preprocessor pipeline
+python app/main.py --preprocessor
 
-# Étapes séparées
-docker-compose exec pipeline python -m pipeline.etl_pipeline --step extract
-docker-compose exec pipeline python -m pipeline.etl_pipeline --step transform
-docker-compose exec pipeline python -m pipeline.etl_pipeline --step load
+# ML pipeline
+python app/main.py --ml
 ```
 
-## 12. Technologies utilisées
+### 11.3. Options disponibles
 
-| Composant | Technologie | Justification |
-|-----------|-------------|---------------|
-| Données brutes | MongoDB | Flexibilité schéma, JSON natif |
-| Données finales | PostgreSQL | SQL standard, window functions |
-| Stockage fichiers | MinIO | Compatible S3, versioning |
-| Pipeline | Python | Écosystème riche, lisibilité |
-| Infrastructure | Docker | Reproductibilité, isolation |
+| Option | Description |
+|--------|-------------|
+| `--guitar_set` | Lance la pipeline d'ingestion pour le dataset `GuitarSet` |
+| `--idmt_smt_guitar` | Lance la pipeline d'ingestion pour le dataset `IDMT-SMT-Guitar` |
+| `--limit` | Type: int | None, Défaut: None, Limite le nombre données ingérées |
+| `--no-dataset1` | Désactive l'ingestion du sous ensemble numéro 1 du dataset `IDMT-SMT-Guitar` |
+| `--no-dataset2` | Désactive l'ingestion du sous ensemble numéro 2 du dataset `IDMT-SMT-Guitar` |
+| `--no-dataset3` | Désactive l'ingestion du sous ensemble numéro 3 du dataset `IDMT-SMT-Guitar` |
+| `--no-dataset4` | Désactive l'ingestion du sous ensemble numéro 4 du dataset `IDMT-SMT-Guitar` |
+| `--preprocessor` | Lance la pipeline de prétraitement |
+| `--ml` | Lance la pipeline de machine learning |
 
-## 13. Commandes utiles
+### 11.4. Exemples d'utilisations des options
 
 ```bash
-# Logs du pipeline
-docker-compose logs -f pipeline
+# Ingestion des 10 premières données du dataset GuitarSet
+python app/main.py --guitar_set --limit 10
+
+# Ingestion des 10 premières données des sous ensembles de données numéros 1 et 3 du dataset IDMT-SMT-Guitar
+python app/main.py --idmt_smt_guitar --limit 10 --no-dataset2 --no-dataset4
+```
+
+### 11.5. Commandes utiles
+
+```bash
+# Création alias MinIO
+docker-compose exec minio mc alias set local http://localhost:9000 admin admin000
+# Liste des objets du bucket raw
+docker-compose exec minio mc ls local/raw
 
 # Accès MongoDB
-docker-compose exec mongodb mongosh -u admin -p datapulse2026
+docker-compose exec mongo mongosh -u admin -p admin0000
 
 # Accès PostgreSQL
-docker-compose exec postgres psql -U datapulse -d datapulse
+docker-compose exec postgres psql -U admin -d audio_midi
 
 # Arrêter l'infrastructure
 docker-compose down
-
-# Supprimer les données (volumes)
-docker-compose down -v
 ```
 
-## 14. Auteur
+## 12. Auteur
 
-Data Engineer - DataPulse Analytics
-ECF Titre Professionnel Data Engineer
+DESSAUX Damien
 
 ---
 
-*Projet réalisé dans le cadre du Titre Professionnel Data Engineer (RNCP35288)*
+Projet de soutenance du titre professionnel *Concepteur Développeur en Science des Données* (Jedha - RNCP35288).
