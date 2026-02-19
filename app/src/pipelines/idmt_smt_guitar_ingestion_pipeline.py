@@ -39,13 +39,24 @@ class IDMTSMTGuitarIngestionPipelineStatistics:
 class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
     """Ingestion Pipeline."""
 
-    def __init__(self, ingestion_limit: int | None = None):
+    def __init__(
+        self,
+        ingestion_limit: int | None = None,
+        dataset1: bool = True,
+        dataset2: bool = True,
+        dataset3: bool = True,
+        dataset4: bool = True,
+    ):
         super().__init__()
         self.xml_extractor = XMLExtractor()
         self.wav_extractor = WAVExtractor()
         self.ingestion_limit = (
             ingestion_limit or idmt_smt_guitar_ingestion_pipeline_config.ingestion_limit
         )
+        self.dataset1 = dataset1
+        self.dataset2 = dataset2
+        self.dataset3 = dataset3
+        self.dataset4 = dataset4
         self.statistics = IDMTSMTGuitarIngestionPipelineStatistics()
 
     def run(self):
@@ -57,23 +68,27 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
         try:
             self.logger.info("IDMT SMT Guitar ingestion pipeline start...")
 
-            self.logger.info("[1/4] Dataset1 ingestion")
-            self._dataset1_ingestion()
+            if self.dataset1:
+                self.logger.info("  Ingestion of subset number 1")
+                self._dataset1_ingestion()
 
-            self.logger.info("[2/4] Dataset2 ingestion")
-            self._dataset_ingestion(
-                dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset2_path,
-                dataset_number=2,
-            )
+            if self.dataset2:
+                self.logger.info("  Ingestion of subset number 2")
+                self._dataset_ingestion(
+                    dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset2_path,
+                    dataset_number=2,
+                )
 
-            self.logger.info("[3/4] Dataset3 ingestion")
-            self._dataset_ingestion(
-                dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset2_path,
-                dataset_number=3,
-            )
+            if self.dataset3:
+                self.logger.info("  Ingestion of subset number 3")
+                self._dataset_ingestion(
+                    dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset2_path,
+                    dataset_number=3,
+                )
 
-            self.logger.info("[4/4] Dataset4 ingestion")
-            self._dataset4_ingestion()
+            if self.dataset4:
+                self.logger.info("  Ingestion of subset number 4")
+                self._dataset4_ingestion()
 
             self.logger.info(
                 f"IDMT SMT Guitar ingestion pipeline ends successfully: {self.statistics.to_string()}"

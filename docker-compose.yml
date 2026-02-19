@@ -18,7 +18,31 @@ services:
       - ./minio/volume:/data
     networks:
       - network_app
+      - network_minio
     command: ["server", "/data", "--console-address" ,":9001"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    build: ./minio/init
+    container_name: minio-init
+    env_file:
+      - ./.env
+    environment:
+      - MINIO_USER=${MINIO_USER}
+      - MINIO_PASSWORD=${MINIO_PASSWORD}
+      - BUCKET_RAW=${BUCKET_RAW}
+      - BUCKET_PROCESSED=${BUCKET_PROCESSED}
+      - BUCKET_OUTPUT=${BUCKET_OUTPUT}
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - network_minio
+    restart: "no"
 
   mongo:
     image: mongo
@@ -33,6 +57,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
+      - ./mongo/initdb/01_collections.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - ./mongo/volume:/data/db
     networks:
       - network_app
@@ -133,5 +158,6 @@ services:
 
 networks:
   network_app:
+  network_minio:
   network_mongo:
   network_postgres:

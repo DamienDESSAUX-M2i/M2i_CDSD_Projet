@@ -17,7 +17,7 @@ class GuitarSetIngestionPipelineConfig:
     audio_hex_pickup_original_path: Path = dataset_path / "audio_hex-pickup_original"
     audio_mono_mic_path: Path = dataset_path / "audio_mono-mic"
     audio_mono_pickup_mix_path: Path = dataset_path / "audio_mono-pickup_mix"
-    ingestion_limit: int = 3
+    ingestion_limit: int | None = None
 
 
 guitar_set_ingestion_pipeline_config = GuitarSetIngestionPipelineConfig()
@@ -36,7 +36,7 @@ class IDMTSMTGuitarIngestionPipelineConfig:
     dataset2_path = dataset_path / "dataset2"
     dataset3_path = dataset_path / "dataset3"
     dataset4_path = dataset_path / "dataset4"
-    ingestion_limit: int = 3
+    ingestion_limit: int | None = None
 
 
 idmt_smt_guitar_ingestion_pipeline_config = IDMTSMTGuitarIngestionPipelineConfig()
