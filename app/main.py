@@ -76,8 +76,6 @@ def main() -> None:
         preprocessing_pipeline.run()
         ingestion_pipeline.close()
 
-    print(args.dataset1)
-
 
 if __name__ == "__main__":
     main()
