@@ -1,6 +1,5 @@
 import re
 import xml.etree.ElementTree as ET
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -8,16 +7,10 @@ import pandas as pd
 
 from src.extractors import AbstractExtractor
 from src.models import (
-    AmpChannel,
     Event,
     ExcitationStyle,
     ExpressionStyle,
-    GuitarBrand,
-    GuitarModel,
-    GuitarType,
     Loudness,
-    MicroPosition,
-    MicroType,
     XMLAnnotation,
     XMLMetadata,
 )
@@ -98,16 +91,35 @@ class XMLExtractor(AbstractExtractor):
         self.logger.debug("XMLMetadata enriched")
         return xml_metadata
 
+    def _get_title(self, tree_wrapper: ElementTreeWrapper) -> str:
+        """Extract and formate title from XML file.
+
+        Args:
+            tree_wrapper (ElementTreeWrapper): XML file loaded.
+
+        Returns:
+            str: title.
+        """
+        title = tree_wrapper.get_value(path="globalParameter/audioFileName")
+        if not title:
+            raise RuntimeError("XML title is missing")
+
+        title = title.replace(".wav", "").replace("\\", "")
+
+        return title
+
     def extract_metadata(
         self,
         tree: ET.ElementTree,
+        title: str,
         dataset_name: str = "IDMT_SMT_Guitar",
     ) -> XMLMetadata:
         """Extract metadata from an ET.ElementTree.
 
         Args:
             tree (ET.ElementTree): An ET.ElementTree.
-            dataset_name (str) : Name of the dataset. Default "IDMT_SMT_Guitar".
+            title (str): File name.
+            dataset_name (str): Name of the dataset. Default "IDMT_SMT_Guitar".
 
         Raises:
             RunTimeError: If XML metadata extraction fails.
@@ -118,12 +130,9 @@ class XMLExtractor(AbstractExtractor):
         try:
             self.logger.debug("Extracting XML metadata...")
 
-            tree_wrapper = ElementTreeWrapper(tree=tree)
-            title = tree_wrapper.get_value(path="globalParameter/audioFileName")
-            if not title:
-                raise RuntimeError("XML title is missing")
-
             title = title.replace(".wav", "").replace("\\", "")
+
+            tree_wrapper = ElementTreeWrapper(tree=tree)
 
             instrument = tree_wrapper.get_value(path="globalParameter/instrument")
             instrument_model = tree_wrapper.get_value(
@@ -160,7 +169,7 @@ class XMLExtractor(AbstractExtractor):
             try:
                 pass
             except ValueError as exception:
-                raise RuntimeError(f"enum cast has failed") from exception
+                raise RuntimeError("enum cast has failed") from exception
 
             self.logger.debug(f"XML metadata extracted: title={title}")
             return XMLMetadata(
@@ -186,13 +195,14 @@ class XMLExtractor(AbstractExtractor):
             raise RuntimeError("XML metadata extraction has failed") from exception
 
     def extract_annotation(
-        self, tree: ET.ElementTree, dataset_name: str = "IDMT_SMT_Guitar"
+        self, tree: ET.ElementTree, title: str, dataset_name: str = "IDMT_SMT_Guitar"
     ) -> XMLAnnotation:
         """Extract annotation from a ET.ElementTree.
 
         Args:
             tree (ET.ElementTree): An ET.ElementTree.
-            dataset_name (str) : Name of the dataset. Default "IDMT_SMT_Guitar".
+            title (str): File name.
+            dataset_name (str): Name of the dataset. Default "IDMT_SMT_Guitar".
 
         Raises:
             RunTimeError: If XML annotation extraction fails.
@@ -203,10 +213,9 @@ class XMLExtractor(AbstractExtractor):
         try:
             self.logger.debug("Extracting XML annotation...")
 
+            title = title.replace(".wav", "").replace("\\", "")
+
             tree_wrapper = ElementTreeWrapper(tree)
-            title = tree_wrapper.get_value(path="globalParameter/audioFileName")
-            if not title:
-                raise RuntimeError("XML title is missing")
 
             events_raw = tree_wrapper.to_list(
                 element=tree_wrapper.get_element("transcription")
@@ -246,6 +255,7 @@ class XMLExtractor(AbstractExtractor):
                             else None,
                             expression_style=ExpressionStyle(expression_style_str)
                             if expression_style_str
+                            and (expression_style_str in ExpressionStyle)
                             else None,
                             loudness=Loudness(loudness_str) if loudness_str else None,
                             modulation_frequency_range=float(

@@ -304,13 +304,38 @@ class MinIOStorage:
         """
         return self.client.list_objects(bucket_name, prefix=prefix, recursive=True)
 
-    def list_raws_audio(self) -> list[dict]:
-        """List of information about the audio in the raw bucket.
+    def list_raw(self, prefix: str = "") -> Iterator[Object]:
+        """Iterator of minio.Object in the raw bucket.
+
+        Args:
+            prefix (str | None): Prefix. Defaults to "".
 
         Returns:
-            list[dict]: List of information about the audio in the raw bucket. Keys of dictionaries are "name" (str | None), "size" (int | None) and "modified" (datetime | None).
+            Iterator[Object]: Iterator of minio.Object.
         """
-        return self.list_objects(minio_config.bucket_raw, prefix="audio")
+        return self.list_objects(minio_config.bucket_processed, prefix=prefix)
+
+    def list_processed(self, prefix: str = "") -> Iterator[Object]:
+        """Iterator of minio.Object in the processed bucket.
+
+        Args:
+            prefix (str | None): Prefix. Defaults to "".
+
+        Returns:
+            Iterator[Object]: Iterator of minio.Object.
+        """
+        return self.list_objects(minio_config.bucket_raw, prefix=prefix)
+
+    def list_output(self, prefix: str = "") -> Iterator[Object]:
+        """Iterator of minio.Object in the output bucket.
+
+        Args:
+            prefix (str | None): Prefix. Defaults to "".
+
+        Returns:
+            Iterator[Object]: Iterator of minio.Object.
+        """
+        return self.list_objects(minio_config.bucket_output, prefix=prefix)
 
     def remove_object(self, bucket_name: str, file_name: str) -> bool:
         """Remove an object.

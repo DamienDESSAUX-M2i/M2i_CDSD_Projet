@@ -82,7 +82,7 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             if self.dataset3:
                 self.logger.info("  Ingestion of subset number 3")
                 self._dataset_ingestion(
-                    dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset2_path,
+                    dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset3_path,
                     dataset_number=3,
                 )
 
@@ -121,6 +121,7 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
 
             xml_metadata = self.xml_extractor.extract_metadata(
                 tree=tree,
+                title=xml_file_path.stem,
                 dataset_name=f"IDMT_SMT_Guitar_{dataset_number}",
             )
             xml_metadata = self.xml_extractor.enrich_with_directory_name(
@@ -147,7 +148,9 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
                     self.statistics.xml_error += 1
 
             annotations = self.xml_extractor.extract_annotation(
-                tree=tree, dataset_name="IDMT_SMT_Guitar_1"
+                tree=tree,
+                title=xml_file_path.stem,
+                dataset_name=f"IDMT_SMT_Guitar_{dataset_number}",
             )
             dict_annotation = annotations.to_dict()
 
@@ -253,6 +256,48 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             )
             nb_ingestion += 1
 
+    def _modify_file_names(self, dir_path: Path) -> None:
+        """Modify file names to avoid doubloon.
+
+        Args:
+            dir_path (Path): Path of directories. Directories' names must be "Fender Strat Clean Neck SC Chords" or "Ibanez Power Strat Clean Bridge HU Chords".
+        """
+        try:
+            allowed_dirs = {
+                "Fender Strat Clean Neck SC Chords",
+                "Ibanez Power Strat Clean Bridge HU Chords",
+            }
+
+            if dir_path.name not in allowed_dirs:
+                raise ValueError(
+                    f"Unsupported directory: directory_name={dir_path.name}"
+                )
+
+            self.logger.info("Modify file names to avoid doubloons...")
+
+            file_names_modifies = 0
+            for subfolder, extension in {
+                "annotation": "*.xml",
+                "audio": "*.wav",
+            }.items():
+                directory = dir_path / subfolder
+
+                for file_path in directory.glob(extension):
+                    if not file_path.name.startswith(("SC", "HU")):
+                        prefix = "SC" if " SC " in dir_path.name else "HU"
+                        new_path = file_path.parent / f"{prefix}_{file_path.name}"
+                        if not new_path.exists():
+                            file_path.rename(new_path)
+                            self.logger.debug(f"File renamed: {new_path}")
+                            file_names_modifies += 1
+
+            self.logger.info(
+                f"Modifying file names completed, file_names_modifies={file_names_modifies}"
+            )
+        except Exception as exception:
+            self.logger.error(f"Modifying file names has failed: {exception}")
+            raise
+
     def _dataset1_ingestion(self) -> None:
         """Ingestion of the dataset number 1."""
         if not idmt_smt_guitar_ingestion_pipeline_config.dataset1_path.exists():
@@ -264,6 +309,9 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
         dir_paths = [p for p in paths if p.is_dir()]
 
         for dir_path in dir_paths:
+            if "Chords" in dir_path.as_posix():
+                self._modify_file_names(dir_path=dir_path)
+
             self.logger.info(f"\tdirectory_name={dir_path.name}")
             self._xml_ingestion(
                 directory_xml_path=dir_path / "annotation",
