@@ -26,7 +26,7 @@ class MongoStorage:
         }
 
     def _get_client(self) -> MongoClient:
-        self.logger.info("Connecxion to the Mongo service...")
+        self.logger.info("Connexion to the Mongo service...")
         client = MongoClient(mongo_config.connection_string)
         self.logger.info("Connecting to the Mongo service")
         return client

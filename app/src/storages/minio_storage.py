@@ -313,7 +313,7 @@ class MinIOStorage:
         Returns:
             Iterator[Object]: Iterator of minio.Object.
         """
-        return self.list_objects(minio_config.bucket_processed, prefix=prefix)
+        return self.list_objects(minio_config.bucket_raw, prefix=prefix)
 
     def list_processed(self, prefix: str = "") -> Iterator[Object]:
         """Iterator of minio.Object in the processed bucket.
@@ -324,7 +324,7 @@ class MinIOStorage:
         Returns:
             Iterator[Object]: Iterator of minio.Object.
         """
-        return self.list_objects(minio_config.bucket_raw, prefix=prefix)
+        return self.list_objects(minio_config.bucket_processed, prefix=prefix)
 
     def list_output(self, prefix: str = "") -> Iterator[Object]:
         """Iterator of minio.Object in the output bucket.

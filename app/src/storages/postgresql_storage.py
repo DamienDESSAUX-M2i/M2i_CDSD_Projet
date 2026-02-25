@@ -41,6 +41,24 @@ class PostgresStorage:
             self.logger.error(f"Metadata selection has failed: {exception}")
             return None
 
+    def select_dataset(self, dataset_name: str) -> dict | None:
+        try:
+            self.logger.debug(f"Executing metadata query: dataset_name={dataset_name}")
+            self.cursor.execute(
+                "SELECT * FROM metadata WHERE dataset_name=%s;",
+                (dataset_name,),
+            )
+            result = self.cursor.fetchall()
+            if result is not None:
+                self.logger.debug("Metadata fetched successfully")
+                return result
+            else:
+                self.logger.debug("Metadata fetched nothing")
+                return None
+        except Exception as exception:
+            self.logger.error(f"Metadata selection has failed: {exception}")
+            return None
+
     def select_metadata_title(self, title: str) -> dict | None:
         try:
             self.logger.debug(f"Executing metadata query: title={title}")

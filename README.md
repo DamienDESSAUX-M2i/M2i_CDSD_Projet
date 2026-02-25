@@ -415,7 +415,7 @@ IDMT_SMT_GUITAR_PATH="C:/Users/Administrateur/Documents/M2i_CDSD_Projet_Data/idm
 MINIO_ENDPOINT="minio:9000"
 MINIO_USER="admin"
 MINIO_PASSWORD="admin0000"
-MINIO_SECURE=False
+MINIO_SECURE="False"
 # bucket names
 BUCKET_RAW="raw"
 BUCKET_PROCESSED="processed"
