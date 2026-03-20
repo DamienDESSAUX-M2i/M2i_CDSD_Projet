@@ -273,7 +273,8 @@ M2i_CDSD_Projet/
 │   ├── requirements.txt          # Dépendances Python
 │   │
 │   ├── config/                   # Fichiers de configuration centralisés
-│   │   ├── etl_settings.py
+│   │   ├── dataset_enum.py
+│   │   ├── dataset_settings.py
 │   │   ├── ingestion_pipelines_settings.py
 │   │   ├── minio_settings.py
 │   │   ├── mongodb_settings.py

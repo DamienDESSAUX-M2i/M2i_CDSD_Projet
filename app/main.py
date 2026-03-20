@@ -1,11 +1,18 @@
 import argparse
+from pathlib import Path
 
+from config import Dataset
 from src.pipelines import (
     GuitarSetIngestionPipeline,
     IDMTSMTGuitarIngestionPipeline,
     PreprocessingPipeline,
 )
-from src.utils import initialize_logger
+from src.utils import (
+    download_and_extract_dataset,
+    initialize_logger,
+)
+
+DATA_RAW_DIR = Path("./app/data/raw")
 
 
 def main() -> None:
@@ -53,7 +60,21 @@ def main() -> None:
     parser.add_argument(
         "--ml", action="store_true", help="Launch machine learning pipeline"
     )
+    parser.add_argument("--download_guitarset", action="store_true")
+    parser.add_argument("--download_idmt_smt_guitar", action="store_true")
     args = parser.parse_args()
+
+    if args.download_guitarset:
+        download_and_extract_dataset(
+            dataset=Dataset.GUITARSET,
+            base_dir=DATA_RAW_DIR,
+        )
+
+    if args.download_idmt_smt_guitar:
+        download_and_extract_dataset(
+            dataset=Dataset.IDMT_SMT_GUITAR,
+            base_dir=DATA_RAW_DIR,
+        )
 
     if args.guitar_set:
         ingestion_pipeline = GuitarSetIngestionPipeline(ingestion_limit=args.limit)
