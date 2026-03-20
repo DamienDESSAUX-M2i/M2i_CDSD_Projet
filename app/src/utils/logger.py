@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path
 
-LOGGER_DIR_PATH = Path("./logs")  # /app/logs in container
+LOGGER_DIR_PATH = Path("./app/logs")  # /app/logs in container
 LOGGER_NAME = os.getenv("LOGGER_NAME", "app")
 
 
