@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class PostgresConfig:
     user: str = os.getenv("POSTGRES_USER", "admin")
     password: str = os.getenv("POSTGRES_PASSWORD", "admin0000")

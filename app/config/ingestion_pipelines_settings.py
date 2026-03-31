@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-@dataclass
+@dataclass(frozen=True)
 class GuitarSetIngestionPipelineConfig:
     dataset_name: str = "GuitarSet"
     dataset_path: Path = Path(
@@ -23,7 +23,7 @@ class GuitarSetIngestionPipelineConfig:
 guitar_set_ingestion_pipeline_config = GuitarSetIngestionPipelineConfig()
 
 
-@dataclass
+@dataclass(frozen=True)
 class IDMTSMTGuitarIngestionPipelineConfig:
     dataset_name: str = "IDMT_SMT_Guitar"
     dataset_path: Path = Path(

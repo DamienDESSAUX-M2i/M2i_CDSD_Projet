@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class MongoConfig:
     user: str = os.getenv("MONGO_USER", "admin")
     password: str = os.getenv("MONGO_PASSWORD", "admin0000")
