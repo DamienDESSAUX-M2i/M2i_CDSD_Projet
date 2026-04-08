@@ -1,5 +1,6 @@
 import logging
 import os
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 LOGGER_DIR_PATH = Path("./app/logs")  # /app/logs in container
@@ -23,7 +24,7 @@ def set_up_logger(
     logger.setLevel(level)
 
     formatter = logging.Formatter(
-        "{asctime} - {levelname} - {module} - {funcName} - {message}",
+        "{asctime} | {levelname:<8} | {name} | {module}: {funcName} | {message}",
         style="{",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -34,9 +35,11 @@ def set_up_logger(
     logger.addHandler(console_handler)
 
     if logger_file_path:
-        file_handler = logging.FileHandler(
+        file_handler = RotatingFileHandler(
             logger_file_path,
-            mode="wt",
+            mode="a",
+            maxBytes=5242880,
+            backupCount=3,
             encoding="utf-8",
         )
         file_handler.setLevel(logging.DEBUG)

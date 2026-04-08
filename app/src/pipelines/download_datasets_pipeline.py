@@ -4,6 +4,7 @@ from pathlib import Path
 from config import (
     download_datasets_pipeline_config,
     guitar_set_config,
+    idmt_smt_guitar_config,
 )
 
 from src.extractors import ZipExtractor
@@ -14,6 +15,9 @@ from src.transporters import DatasetDownloader
 @dataclass
 class DownloadDatasetsPipelineStatistics:
     dataset_download: int = 0
+    dataset_download_error: int = 0
+    dataset_unzip: int = 0
+    dataset_unzip_error: int = 0
 
     def to_dict(self) -> dict:
         """Cast the dataclass to a dictionary whose
@@ -30,8 +34,15 @@ class DownloadDatasetsPipelineStatistics:
 class DownloadDatasetsPipeline(AbstractPipeline):
     """Pipeline for download and extract datasets."""
 
-    def __init__(self, base_dir: Path):
-        self.base_dir = download_datasets_pipeline_config.base_dir
+    def __init__(
+        self,
+        guitarset: bool = True,
+        idmt_smt_guitar: bool = True,
+    ):
+        super().__init__()
+        self.guitarset = guitarset
+        self.idmt_smt_guitar = idmt_smt_guitar
+        self.base_dir = Path(download_datasets_pipeline_config.base_dir)
         self.downloader = DatasetDownloader(
             chunk_size=download_datasets_pipeline_config.chunk_size,
             timeout=download_datasets_pipeline_config.timeout,
@@ -56,11 +67,15 @@ class DownloadDatasetsPipeline(AbstractPipeline):
         try:
             self.logger.info("Download datasets pipeline start...")
 
-            self.logger.info("[1/2] GuitarSet downloading")
-            self.download_and_extract_idmt_smt_guitar()
+            if self.guitarset:
+                self.logger.info("GuitarSet downloading ...")
+                self._download_and_extract_guitarset()
+                self.logger.info("GuitarSet download completed")
 
-            self.logger.info("[2/2] IDMT-SMT-Guitar downloading")
-            self.download_and_extract_idmt_smt_guitar()
+            if self.idmt_smt_guitar:
+                self.logger.info("IDMT-SMT-Guitar downloading ...")
+                self._download_and_extract_idmt_smt_guitar()
+                self.logger.info("IDMT-SMT-Guitar download completed")
 
             self.logger.info(
                 f"Download datasets pipeline completed: {self.statistics.to_string()}"
@@ -69,42 +84,84 @@ class DownloadDatasetsPipeline(AbstractPipeline):
             self.logger.info(f"Ingestion pipeline has failed: {exception}")
             raise RuntimeError("Ingestion pipeline has failed") from exception
 
-    def download_and_extract_guitarset(self) -> None:
-        archive_path = self.base_dir / guitar_set_config.archive_name
-        extract_path = self.base_dir / guitar_set_config.extract_dir
-
+    def _download_and_extract_guitarset(self) -> None:
         self.logger.info(f"Dataset state, dataset={guitar_set_config.name}")
 
-        if extract_path.exists() and any(extract_path.iterdir()):
-            self.logger.info(
-                f"Skipping dataset (already done), dataset={guitar_set_config.name}"
-            )
-            return
+        extract_dir_path = self.base_dir / guitar_set_config.extract_dir
+        for url, archive_name in zip(
+            guitar_set_config.urls, guitar_set_config.archive_names
+        ):
+            try:
+                archive_path = self.base_dir / archive_name
+                if archive_path.exists():
+                    self.logger.info(
+                        f"Skipping download, file already exists: archive_path={archive_path}"
+                    )
+                else:
+                    self.downloader.download(url, archive_path)
+                    self.statistics.dataset_download += 1
 
-        try:
-            for url in guitar_set_config.urls:
-                self.downloader.download(url, archive_path)
-            self.extractor.extract_zip(archive_path, extract_path)
-        except Exception:
-            self.logger.exception(f"Dataset failed, dataset={guitar_set_config.name}")
-            raise
+            except Exception:
+                self.logger.exception(
+                    f"Dataset download failed: dataset={guitar_set_config.name}, url={url}"
+                )
+                self.statistics.dataset_download_error += 1
+                raise
 
-    def download_and_extract_idmt_smt_guitar(self) -> None:
-        archive_path = self.base_dir / guitar_set_config.archive_name
-        extract_path = self.base_dir / guitar_set_config.extract_dir
+            try:
+                extract_path = (extract_dir_path / archive_name).with_suffix("")
+                if extract_path.exists() and any(extract_path.iterdir()):
+                    self.logger.info(
+                        f"Skipping unzip, directory already exists, extract_path={extract_path}"
+                    )
+                else:
+                    self.extractor.extract_zip(archive_path, extract_path)
+                    self.statistics.dataset_unzip += 1
 
-        self.logger.info(f"Dataset state, dataset={guitar_set_config.name}")
+            except Exception:
+                self.logger.exception(
+                    f"Dataset unzip failed: dataset={guitar_set_config.name}, archive_path={archive_path}"
+                )
+                self.statistics.dataset_unzip_error += 1
+                raise
 
-        if extract_path.exists() and any(extract_path.iterdir()):
-            self.logger.info(
-                f"Skipping dataset (already done), dataset={guitar_set_config.name}"
-            )
-            return
+    def _download_and_extract_idmt_smt_guitar(self) -> None:
+        self.logger.info(f"Dataset state, dataset={idmt_smt_guitar_config.name}")
 
-        try:
-            for url in guitar_set_config.urls:
-                self.downloader.download(url, archive_path)
-            self.extractor.extract_zip(archive_path, extract_path)
-        except Exception:
-            self.logger.exception(f"Dataset failed, dataset={guitar_set_config.name}")
-            raise
+        extract_dir_path = self.base_dir / idmt_smt_guitar_config.extract_dir
+        for url, archive_name in zip(
+            idmt_smt_guitar_config.urls, idmt_smt_guitar_config.archive_names
+        ):
+            try:
+                archive_path = self.base_dir / archive_name
+                if archive_path.exists():
+                    self.logger.info(
+                        f"Skipping download, file already exists: archive_path={archive_path}"
+                    )
+                else:
+                    self.downloader.download(url, archive_path)
+                    self.statistics.dataset_download += 1
+
+            except Exception:
+                self.logger.exception(
+                    f"Dataset download failed: dataset={guitar_set_config.name}, url={url}"
+                )
+                self.statistics.dataset_download_error += 1
+                raise
+
+            try:
+                extract_path = extract_dir_path
+                if extract_path.exists() and any(extract_path.iterdir()):
+                    self.logger.info(
+                        f"Skipping unzip, directory already exists, extract_path={extract_path}"
+                    )
+                else:
+                    self.extractor.extract_zip(archive_path, extract_path)
+                    self.statistics.dataset_unzip += 1
+
+            except Exception:
+                self.logger.exception(
+                    f"Dataset unzip failed: dataset={guitar_set_config.name}, archive_path={archive_path}"
+                )
+                self.statistics.dataset_unzip_error += 1
+                raise

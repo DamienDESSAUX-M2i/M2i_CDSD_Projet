@@ -5,5 +5,5 @@ from src.utils import LOGGER_NAME
 
 
 class AbstractTransporter(ABC):
-    def __init__(self, logger_name: logging.Logger = LOGGER_NAME) -> None:
-        self.logger = logging.getLogger(logger_name)
+    def __init__(self) -> None:
+        self.logger = logging.getLogger(LOGGER_NAME)

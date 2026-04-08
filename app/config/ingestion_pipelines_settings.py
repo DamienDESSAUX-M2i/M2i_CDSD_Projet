@@ -9,14 +9,14 @@ class GuitarSetIngestionPipelineConfig:
     dataset_path: Path = Path(
         os.getenv(
             "GUITARSET_PATH",
-            "C:/Users/Administrateur/Documents/M2i_CDSD_Projet_Data/guitarset",
+            "./app/data/raw/guitarset",
         )
     )
     annotation_path: Path = dataset_path / "annotation"
-    audio_hex_pickup_debleeded_path: Path = dataset_path / "audio_hex-pickup_debleeded"
-    audio_hex_pickup_original_path: Path = dataset_path / "audio_hex-pickup_original"
-    audio_mono_mic_path: Path = dataset_path / "audio_mono-mic"
-    audio_mono_pickup_mix_path: Path = dataset_path / "audio_mono-pickup_mix"
+    audio_hex_pickup_debleeded_path: Path = dataset_path / "audio_hex_pickup_debleeded"
+    audio_hex_pickup_original_path: Path = dataset_path / "audio_hex_pickup_original"
+    audio_mono_mic_path: Path = dataset_path / "audio_mono_mic"
+    audio_mono_pickup_mix_path: Path = dataset_path / "audio_mono_pickup_mix"
     ingestion_limit: int | None = None
 
 
@@ -29,7 +29,7 @@ class IDMTSMTGuitarIngestionPipelineConfig:
     dataset_path: Path = Path(
         os.getenv(
             "IDMT_SMT_GUITAR_PATH",
-            "C:/Users/Administrateur/Documents/M2i_CDSD_Projet_Data/idmt-smt-guitar",
+            "./app/data/raw/idmt_smt_guitar/IDMT-SMT-GUITAR_V2",
         )
     )
     dataset1_path = dataset_path / "dataset1"

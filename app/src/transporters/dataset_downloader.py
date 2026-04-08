@@ -40,6 +40,7 @@ class DatasetDownloader(AbstractTransporter):
             token (str, optional): Bearer token for authorization headers.
             user_agent (str): Default User-Agent string to use for requests.
         """
+        super().__init__()
         self.chunk_size = chunk_size
         self.timeout = timeout
         self.max_retry_attempts = max_retry_attempts
@@ -144,8 +145,14 @@ class DatasetDownloader(AbstractTransporter):
             requests.RequestException: If an HTTP error occurs during the request.
             Exception: If the maximum number of retry attempts is reached without success.
         """
+        if output_path.exists():
+            self.logger.info(
+                f"File already exists: output_path={str(output_path)}",
+            )
+            raise
+
         self.logger.info(
-            f"Starting download, url={url}, output_path={str(output_path)}",
+            f"Starting download: url={url}, output_path={str(output_path)}",
         )
 
         tmp_path = output_path.with_suffix(output_path.suffix + ".part")
@@ -185,7 +192,7 @@ class DatasetDownloader(AbstractTransporter):
 
         for attempt in range(1, max_retry_attempts + 1):
             try:
-                self.logger.info(f"Download attempt, attempt={attempt}, url={url}")
+                self.logger.info(f"Download attempt: attempt={attempt}, url={url}")
 
                 self._download_once(
                     url=url,
@@ -195,21 +202,21 @@ class DatasetDownloader(AbstractTransporter):
                     headers=headers,
                 )
 
-                self.logger.info(f"Download complete, path={str(output_path)}")
+                self.logger.info(f"Download complete: path={str(output_path)}")
                 return
             except Exception as exception:
                 self.logger.warning(
-                    f"Download attempt failed, attempt={attempt}, error={str(exception)}, url={url}"
+                    f"Download attempt failed: attempt={attempt}, error={str(exception)}, url={url}"
                 )
 
                 if attempt == max_retry_attempts:
                     self.logger.error(
-                        f"Max retries reached, url={url}",
+                        f"Max retries reached: url={url}",
                     )
                     raise
 
                 sleep_time = backoff_factor**attempt
-                self.logger.debug(f"Retrying after backoff, sleep_time={sleep_time}")
+                self.logger.debug(f"Retrying after backoff: sleep_time={sleep_time}")
                 time.sleep(sleep_time)
 
     def _download_once(
@@ -224,7 +231,7 @@ class DatasetDownloader(AbstractTransporter):
 
         if existing_size > 0:
             headers["Range"] = f"bytes={existing_size}-"
-            self.logger.info(f"Resuming download, url{url}, bytes={existing_size}")
+            self.logger.info(f"Resuming download: url{url}, bytes={existing_size}")
 
         with session.get(
             url=url,
@@ -233,12 +240,12 @@ class DatasetDownloader(AbstractTransporter):
             timeout=self.timeout,
         ) as response:
             self.logger.debug(
-                f"HTTP response received, status_code={response.status_code}, url={url}"
+                f"HTTP response received: status_code={response.status_code}, url={url}"
             )
 
             if existing_size > 0 and response.status_code != 206:
                 self.logger.warning(
-                    f"Server does not support resume, restarting download, url={url}"
+                    f"Server does not support resume, restarting download: url={url}"
                 )
                 tmp_path.unlink(missing_ok=True)
                 raise RuntimeError("Resume not supported")
@@ -249,7 +256,7 @@ class DatasetDownloader(AbstractTransporter):
             mode = "ab" if existing_size > 0 else "wb"
 
             self.logger.debug(
-                f"Starting stream download, total_size={total_size}, mode={mode}"
+                f"Starting stream download: total_size={total_size}, mode={mode}"
             )
 
             with (
@@ -269,11 +276,11 @@ class DatasetDownloader(AbstractTransporter):
                         pbar.update(len(chunk))
 
         if not tmp_path.exists() or tmp_path.stat().st_size == 0:
-            self.logger.error(f"Empty download detected, url={url}")
+            self.logger.error(f"Empty download detected: url={url}")
             raise RuntimeError("Empty download")
 
         tmp_path.rename(output_path)
 
         self.logger.debug(
-            f"Temporary file renamed to final output, output_path={str(output_path)}"
+            f"Temporary file renamed to final output: output_path={str(output_path)}"
         )
