@@ -69,25 +69,25 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             self.logger.info("IDMT SMT Guitar ingestion pipeline start...")
 
             if self.dataset1:
-                self.logger.info("  Ingestion of subset number 1")
+                self.logger.info("Ingestion of subset number 1...")
                 self._dataset1_ingestion()
 
             if self.dataset2:
-                self.logger.info("  Ingestion of subset number 2")
+                self.logger.info("Ingestion of subset number 2...")
                 self._dataset_ingestion(
                     dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset2_path,
                     dataset_number=2,
                 )
 
             if self.dataset3:
-                self.logger.info("  Ingestion of subset number 3")
+                self.logger.info("Ingestion of subset number 3...")
                 self._dataset_ingestion(
                     dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset3_path,
                     dataset_number=3,
                 )
 
             if self.dataset4:
-                self.logger.info("  Ingestion of subset number 4")
+                self.logger.info("Ingestion of subset number 4...")
                 self._dataset4_ingestion()
 
             self.logger.info(
@@ -327,7 +327,7 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
 
         Args:
             dataset_path (Path): Path of dataset.
-            dataset_number (int): The number of the dataset (Between 1 and 4).
+            dataset_number (int): The number of the dataset (2 or 3).
         """
         if not dataset_path.exists():
             raise FileNotFoundError(f"Directory does not exist: path={dataset_path}")

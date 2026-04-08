@@ -13,10 +13,10 @@ class GuitarSetIngestionPipelineConfig:
         )
     )
     annotation_path: Path = dataset_path / "annotation"
-    audio_hex_pickup_debleeded_path: Path = dataset_path / "audio_hex_pickup_debleeded"
-    audio_hex_pickup_original_path: Path = dataset_path / "audio_hex_pickup_original"
-    audio_mono_mic_path: Path = dataset_path / "audio_mono_mic"
-    audio_mono_pickup_mix_path: Path = dataset_path / "audio_mono_pickup_mix"
+    audio_hex_pickup_debleeded_path: Path = dataset_path / "audio_hex-pickup_debleeded"
+    audio_hex_pickup_original_path: Path = dataset_path / "audio_hex-pickup_original"
+    audio_mono_mic_path: Path = dataset_path / "audio_mono-mic"
+    audio_mono_pickup_mix_path: Path = dataset_path / "audio_mono-pickup_mix"
     ingestion_limit: int | None = None
 
 

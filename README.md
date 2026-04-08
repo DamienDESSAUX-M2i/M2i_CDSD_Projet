@@ -406,8 +406,8 @@ Créer, à la racine du projet, un fichier environement `./env` comprenant les v
 # ===
 
 LOG_NAME="app"
-GUITARSET_PATH="C:/Users/Administrateur/Documents/M2i_CDSD_Projet_Data/guitarset"
-IDMT_SMT_GUITAR_PATH="C:/Users/Administrateur/Documents/M2i_CDSD_Projet_Data/idmt-smt-guitar"
+GUITARSET_PATH="./app/data/raw/guitarset"
+IDMT_SMT_GUITAR_PATH=".app/data/raw/idmt-smt-guitar/IDMT_SMT_GUITAR_V2"
 
 # ===
 # MinIO
@@ -486,10 +486,11 @@ M2i_CDSD_Projet_Data\
 │   ├───audio_mono-mic
 │   └───audio_mono-pickup_mix
 └───idmt-smt-guitar
-    ├───dataset1
-    ├───dataset2
-    ├───dataset3
-    └───dataset4
+    └───IDMT_SMT_GUITAR_V2
+        ├───dataset1
+        ├───dataset2
+        ├───dataset3
+        └───dataset4
 ```
 
 ## 11. Utilisation
@@ -519,24 +520,31 @@ python app/main.py --ml
 
 | Option | Description |
 |--------|-------------|
-| `--guitar_set` | Lance la pipeline d'ingestion pour le dataset `GuitarSet` |
-| `--idmt_smt_guitar` | Lance la pipeline d'ingestion pour le dataset `IDMT-SMT-Guitar` |
+| `--download_datasets` | Lance la pipeline de téléchargement des datasets |
+| `--no_guitar_set` | Désective le téléchargement du dataset `GuitarSet` |
+| `--no_idmt_smt_guitar` | Désective le téléchargement du dataset `IDMT-SMT-Guitar` |
+| `--ingest_datasets` | Lance la pipeline d'ingestion des datasets |
+| `--ingest_guitar_set` | Lance la pipeline d'ingestion pour le dataset `GuitarSet` |
+| `--ingest_idmt_smt_guitar` | Lance la pipeline d'ingestion pour le dataset `IDMT-SMT-Guitar` |
 | `--limit` | Type: int | None, Défaut: None, Limite le nombre données ingérées |
-| `--no-dataset1` | Désactive l'ingestion du sous ensemble numéro 1 du dataset `IDMT-SMT-Guitar` |
-| `--no-dataset2` | Désactive l'ingestion du sous ensemble numéro 2 du dataset `IDMT-SMT-Guitar` |
-| `--no-dataset3` | Désactive l'ingestion du sous ensemble numéro 3 du dataset `IDMT-SMT-Guitar` |
-| `--no-dataset4` | Désactive l'ingestion du sous ensemble numéro 4 du dataset `IDMT-SMT-Guitar` |
+| `--no_dataset1` | Désactive l'ingestion du sous ensemble numéro 1 du dataset `IDMT-SMT-Guitar` |
+| `--no_dataset2` | Désactive l'ingestion du sous ensemble numéro 2 du dataset `IDMT-SMT-Guitar` |
+| `--no_dataset3` | Désactive l'ingestion du sous ensemble numéro 3 du dataset `IDMT-SMT-Guitar` |
+| `--no_dataset4` | Désactive l'ingestion du sous ensemble numéro 4 du dataset `IDMT-SMT-Guitar` |
 | `--preprocessor` | Lance la pipeline de prétraitement |
 | `--ml` | Lance la pipeline de machine learning |
 
 ### 11.4. Exemples d'utilisations des options
 
 ```bash
+# Téléchargement du dataset GuitaSet uniquement
+python app/main.py --download_datasets --no_idmt_smt_guitar
+
 # Ingestion des 10 premières données du dataset GuitarSet
-python app/main.py --guitar_set --limit 10
+python app/main.py --ingest_guitar_set --limit 10
 
 # Ingestion des 10 premières données des sous ensembles de données numéros 1 et 3 du dataset IDMT-SMT-Guitar
-python app/main.py --idmt_smt_guitar --limit 10 --no-dataset2 --no-dataset4
+python app/main.py --ingest_idmt_smt_guitar --limit 10 --no-dataset2 --no-dataset4
 ```
 
 ### 11.5. Commandes utiles

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime
 from enum import StrEnum
 
 import pandas as pd
@@ -81,7 +80,7 @@ class ExcitationStyle(StrEnum):
 
 
 class ExpressionStyle(StrEnum):
-    BENDING = "DE"
+    BENDING = "BE"
     DEAD_NOTES = "DN"
     FLUTTER = "FL"
     HARMONICS = "HA"

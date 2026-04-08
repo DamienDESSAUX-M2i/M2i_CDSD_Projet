@@ -23,10 +23,10 @@ guitar_set_config = DatasetSettings(
     ],
     archive_names=[
         "annotation.zip",
-        "audio_hex_pickup_debleeded.zip",
-        "audio_hex_pickup_original.zip",
-        "audio_mono_mic.zip",
-        "audio_mono_pickup_mix.zip",
+        "audio_hex-pickup_debleeded.zip",
+        "audio_hex-pickup_original.zip",
+        "audio_mono-mic.zip",
+        "audio_mono-pickup_mix.zip",
     ],
     extract_dir="guitarset",
 )
