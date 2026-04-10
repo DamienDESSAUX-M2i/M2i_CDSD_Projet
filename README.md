@@ -506,8 +506,11 @@ M2i_CDSD_Projet_Data\
 ### 11.2. Exécution des pipelines
 
 ```bash
+# Download pipeline
+python app/main.py --download_datasets
+
 # Ingestion pipeline
-python app/main.py --guitarset --idmtsmtguitar
+python app/main.py --ingest_datasets
 
 # Preprocessor pipeline
 python app/main.py --preprocessor
