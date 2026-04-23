@@ -7,6 +7,9 @@ from typing import Iterator
 
 import jams
 import numpy as np
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 import soundfile as sf
 from config import minio_config
 from minio.datatypes import Object
@@ -223,7 +226,7 @@ class MinIOStorage:
 
             sf.write(
                 file=buffer,
-                data=audio_data,
+                data=audio_data.T,  # librosa: (n_channels, n_samples) and soundfile: (n_samples, n_channels)
                 samplerate=sample_rate,
                 format="WAV",
             )
@@ -247,6 +250,53 @@ class MinIOStorage:
 
         except S3Error as exception:
             self.logger.error(f"Audio upload failed: {exception}")
+            return None
+
+    def put_parquet(
+        self,
+        bucket_name: str,
+        file_name: str,
+        dataframe: pd.DataFrame,
+    ) -> str | None:
+        """
+        Upload a Pandas DataFrame as a Parquet file to MinIO.
+
+        Args:
+            bucket_name: Target bucket
+            file_name: Object name (.parquet recommended)
+            dataframe: DataFrame to store
+
+        Returns:
+            MinIO URI or None
+        """
+        try:
+            if not file_name.endswith(".parquet"):
+                file_name = f"{file_name}.parquet"
+
+            self.logger.debug("Converting DataFrame to Parquet...")
+
+            buffer = io.BytesIO()
+
+            table = pa.Table.from_pandas(dataframe)
+            pq.write_table(table, buffer, compression="snappy")
+
+            buffer.seek(0)
+            size = buffer.getbuffer().nbytes
+
+            self.client.put_object(
+                bucket_name=bucket_name,
+                object_name=file_name,
+                data=buffer,
+                length=size,
+                content_type="application/octet-stream",
+            )
+
+            uri = f"minio://{bucket_name}/{file_name}"
+            self.logger.debug(f"Parquet uploaded: {uri}, bytes={size}")
+            return uri
+
+        except Exception as e:
+            self.logger.error(f"Parquet upload failed: {e}")
             return None
 
     def get_object(self, bucket_name: str, file_name: str) -> bytes | None:
@@ -289,7 +339,25 @@ class MinIOStorage:
             file_name=file_name,
         )
         if len(audio_bytes) > 0:
-            return sf.read(io.BytesIO(audio_bytes))
+            audio_data, sample_rate = sf.read(io.BytesIO(audio_bytes))
+            return (
+                audio_data.T,  # librosa: (n_channels, n_samples) and soundfile: (n_samples, n_channels)
+                sample_rate,
+            )
+        return None
+
+    def get_parquet(self, bucket_name: str, file_name: str) -> pd.DataFrame | None:
+        """
+        Load Parquet file from MinIO into a DataFrame.
+        """
+        parquet_bytes = self.get_object(
+            bucket_name=bucket_name,
+            file_name=file_name,
+        )
+        if len(parquet_bytes) > 0:
+            buffer = io.BytesIO(parquet_bytes)
+            parquet = pq.read_table(buffer)
+            return parquet.to_pandas()
         return None
 
     def list_objects(self, bucket_name: str, prefix: str = "") -> Iterator[Object]:

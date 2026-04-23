@@ -9,10 +9,11 @@ from tqdm import tqdm
 
 from src.extractors import WAVExtractor, XMLExtractor
 from src.pipelines import AbstractPipeline
+from src.utils import Statistics
 
 
 @dataclass
-class IDMTSMTGuitarIngestionPipelineStatistics:
+class IDMTSMTGuitarIngestionPipelineStatistics(Statistics):
     xml_loaded: int = 0
     xml_uploaded: int = 0
     xml_metadata_inserted: int = 0
@@ -23,17 +24,6 @@ class IDMTSMTGuitarIngestionPipelineStatistics:
     wav_loaded: int = 0
     wav_uploaded: int = 0
     wav_error: int = 0
-
-    def to_dict(self) -> dict:
-        """Cast the dataclass to a dictionary whose
-        keys are attributes of the dataclass and
-        values are values of the attributes."""
-        return self.__dict__
-
-    def to_string(self) -> str:
-        """Create a string containing values of all attributes."""
-        strs = [f"{k}={v}" for k, v in self.__dict__.items()]
-        return ", ".join(strs)
 
 
 class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):

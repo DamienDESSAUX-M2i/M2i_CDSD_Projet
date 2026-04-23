@@ -7,8 +7,10 @@ from .ingestion_pipelines_settings import (
 from .minio_settings import minio_config
 from .mongodb_settings import mongo_config
 from .postgresql_settings import postgres_config
+from .preprocessing_pipeline_settings import preprocessing_pipeline_config
 
 __all__ = [
+    "preprocessing_pipeline_config",
     "download_datasets_pipeline_config",
     "guitar_set_config",
     "idmt_smt_guitar_config",

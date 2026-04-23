@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from src.extractors import JAMSExtractor, WAVExtractor
 from src.pipelines import AbstractPipeline
+from src.utils import Statistics
 
 TITLE_REGEX = re.compile(
     r"(?P<title>\d{2}_[A-Za-z0-9]+-\d+-[A-G](?:b|\#)?_[A-Za-z]+)",
@@ -18,7 +19,7 @@ TITLE_REGEX = re.compile(
 
 
 @dataclass
-class GuitarSetIngestionPipelineStatistics:
+class GuitarSetIngestionPipelineStatistics(Statistics):
     jams_loaded: int = 0
     jams_uploaded: int = 0
     jams_metadata_inserted: int = 0
@@ -29,17 +30,6 @@ class GuitarSetIngestionPipelineStatistics:
     wav_loaded: int = 0
     wav_uploaded: int = 0
     wav_error: int = 0
-
-    def to_dict(self) -> dict:
-        """Cast the dataclass to a dictionary whose
-        keys are attributes of the dataclass and
-        values are values of the attributes."""
-        return self.__dict__
-
-    def to_string(self) -> str:
-        """Create a string containing values of all attributes."""
-        strs = [f"{k}={v}" for k, v in self.__dict__.items()]
-        return ", ".join(strs)
 
 
 class GuitarSetIngestionPipeline(AbstractPipeline):

@@ -82,7 +82,7 @@ def main() -> None:
 
     # Preprocess datasets
     parser.add_argument(
-        "--preprocessor",
+        "--preprocess_datasets",
         action="store_true",
         help="Launch preprocessing pipeline",
     )
@@ -134,10 +134,14 @@ def main() -> None:
         ingestion_pipeline.run()
         ingestion_pipeline.close()
 
-    if args.preprocessor:
-        preprocessing_pipeline = PreprocessingPipeline()
+    if args.preprocess_datasets:
+        preprocessing_pipeline = PreprocessingPipeline(
+            preprocessing_limit=args.limit,
+            guitarset=args.guitar_set,
+            idmt_smt_guitar=args.idmt_smt_guitar,
+        )
         preprocessing_pipeline.run()
-        ingestion_pipeline.close()
+        preprocessing_pipeline.close()
 
 
 if __name__ == "__main__":

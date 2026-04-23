@@ -10,25 +10,15 @@ from config import (
 from src.extractors import ZipExtractor
 from src.pipelines import AbstractPipeline
 from src.transporters import DatasetDownloader
+from src.utils import Statistics
 
 
 @dataclass
-class DownloadDatasetsPipelineStatistics:
+class DownloadDatasetsPipelineStatistics(Statistics):
     dataset_download: int = 0
     dataset_download_error: int = 0
     dataset_unzip: int = 0
     dataset_unzip_error: int = 0
-
-    def to_dict(self) -> dict:
-        """Cast the dataclass to a dictionary whose
-        keys are attributes of the dataclass and
-        values are values of the attributes."""
-        return self.__dict__
-
-    def to_string(self) -> str:
-        """Create a string containing values of all attributes."""
-        strs = [f"{k}={v}" for k, v in self.__dict__.items()]
-        return ", ".join(strs)
 
 
 class DownloadDatasetsPipeline(AbstractPipeline):
