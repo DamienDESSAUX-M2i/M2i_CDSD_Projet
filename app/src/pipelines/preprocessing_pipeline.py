@@ -233,7 +233,7 @@ class PreprocessingPipeline(AbstractPipeline):
 
         self.logger.debug("Sample saving completed.")
 
-    def _process_audio(self, file_name: str) -> None:
+    def _process_audio(self, file_name: str, df_annotations: pd.DataFrame) -> None:
         """
         Process a single audio file end-to-end.
 
@@ -294,14 +294,9 @@ class PreprocessingPipeline(AbstractPipeline):
             )
             self.statistics.feature_extracted += 1
 
-            file_name_split = file_name.split("/")
-            dataset_name = file_name_split[0]
-            title = file_name_split[1]
             n_frames = features.shape[0]
             piano_roll = self.piano_roll_builder.transform(
-                df_annotations=self._load_annotations(
-                    dataset_name=dataset_name, title=title
-                ),
+                df_annotations=df_annotations,
                 n_frames=n_frames,
             )
             self.statistics.piano_roll_builded += 1
@@ -316,7 +311,7 @@ class PreprocessingPipeline(AbstractPipeline):
         except Exception as e:
             self.logger.error(f"Error processing {file_name}: {e}", exc_info=True)
 
-    def _load_annotations(self, dataset_name: str, title: str) -> pd.DataFrame:
+    def _load_annotations(self, dataset_name: str) -> pd.DataFrame:
         """
         Load note-level annotations from MongoDB and convert them into a flat DataFrame.
 
@@ -332,7 +327,6 @@ class PreprocessingPipeline(AbstractPipeline):
 
         Args:
             dataset_name: Name of the source dataset (e.g. GuitarSet).
-            title: Song title identifier.
 
         Returns:
             A pandas DataFrame containing flattened note annotations with columns such as:
@@ -341,7 +335,7 @@ class PreprocessingPipeline(AbstractPipeline):
                 - value
         """
 
-        pipeline = [{"$match": {"dataset_name": dataset_name, "title": title}}]
+        pipeline = [{"$match": {"dataset_name": dataset_name}}]
 
         annotations = self.mongo_storage.aggregate_documents(
             collection_name="note_midi", pipeline=pipeline
@@ -352,9 +346,7 @@ class PreprocessingPipeline(AbstractPipeline):
         df_annotations = df_annotations.join(
             pd.json_normalize(df_annotations["note_midi"])
         )
-        df_annotations = df_annotations.drop(
-            columns=["title", "data_source", "note_midi"]
-        )
+        df_annotations = df_annotations.drop(columns=["data_source", "note_midi"])
 
         return df_annotations
 
@@ -383,13 +375,20 @@ class PreprocessingPipeline(AbstractPipeline):
         if self.preprocessing_limit is not None:
             files_names = files_names[: self.preprocessing_limit]
 
+        df_annotations = self._load_annotations(dataset_name="GuitarSet")
+
         nb_ingestion = 0
         for file_name in tqdm(
             files_names,
             desc="GuitarSet audio preprocessing",
             colour="green",
         ):
-            self._process_audio(file_name=file_name)
+            self._process_audio(
+                file_name=file_name,
+                df_annotations=df_annotations[
+                    df_annotations["title"] == file_name.split("/")[1]
+                ],
+            )
             nb_ingestion += 1
 
         self.logger.debug(
