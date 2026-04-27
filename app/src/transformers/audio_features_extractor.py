@@ -1,7 +1,6 @@
-from typing import Dict
-
 import librosa
 import numpy as np
+import pandas as pd
 
 from src.transformers import AbstractTransformer
 
@@ -164,7 +163,7 @@ class AudioFeatureExtractor(AbstractTransformer):
         use_cqt: bool = True,
         use_chroma: bool = True,
         use_mfcc: bool = False,
-    ) -> Dict[str, np.ndarray]:
+    ) -> pd.DataFrame:
         """
         Extract selected audio features independently.
 
@@ -185,7 +184,7 @@ class AudioFeatureExtractor(AbstractTransformer):
 
         self.logger.debug("Starting feature extraction.")
 
-        output: Dict[str, np.ndarray] = {}
+        output: dict[str, np.ndarray] = {}
 
         if not any([use_stft, use_mel, use_cqt, use_chroma, use_mfcc]):
             self.logger.warning("No features selected. Returning empty dictionary.")
@@ -215,4 +214,26 @@ class AudioFeatureExtractor(AbstractTransformer):
             f"Feature extraction completed. Extracted: {list(output.keys())}"
         )
 
-        return output
+        return self._to_dataframe(output=output)
+
+    def _to_dataframe(self, output: dict[str, np.ndarray]) -> pd.DataFrame:
+        dfs: list[pd.DataFrame] = []
+
+        for feature_name, matrix in output.items():
+            dfs.append(pd.DataFrame({feature_name: list(matrix.T)}))
+
+        return pd.concat(dfs, axis=1)
+
+    # def _to_dataframe(self, output: dict[str, np.ndarray]) -> pd.DataFrame:
+    #     dfs: list[pd.DataFrame] = []
+
+    #     for feature_name, matrix in output.items():
+    #         if matrix.ndim == 2:
+    #             df = pd.DataFrame(matrix.T)
+    #         else:
+    #             df = pd.DataFrame({feature_name: matrix})
+
+    #         df.columns = [f"{feature_name}_{x}" for x in df.columns]
+    #         dfs.append(df)
+
+    #     return pd.concat(dfs, axis=1)

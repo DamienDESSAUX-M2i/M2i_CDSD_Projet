@@ -13,6 +13,7 @@ class MongoConfig:
     collection_note_midi: str = "note_midi"
     collection_beat_position: str = "beat_position"
     collection_chord: str = "chord"
+    collection_pipeline_metadata: str = "pipeline_metadata"
 
     @property
     def connection_string(self) -> str:

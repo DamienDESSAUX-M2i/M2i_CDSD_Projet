@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone
+from typing import Any
 
 from config import mongo_config
 from pymongo import MongoClient
@@ -18,11 +19,13 @@ class MongoStorage:
         self.note_midi = self.db[mongo_config.collection_note_midi]
         self.beat_position = self.db[mongo_config.collection_beat_position]
         self.chord = self.db[mongo_config.collection_chord]
+        self.pipeline_metadata = self.db[mongo_config.collection_pipeline_metadata]
         self.collections = {
             "pitch_contour": self.pitch_contour,
             "note_midi": self.note_midi,
             "beat_position": self.beat_position,
             "chord": self.chord,
+            "pipeline_metadata": self.pipeline_metadata,
         }
 
     def _get_client(self) -> MongoClient:
@@ -31,7 +34,7 @@ class MongoStorage:
         self.logger.info("Connecting to the Mongo service")
         return client
 
-    def _insert_document(self, collection_name: str, document: dict) -> str | None:
+    def _insert_annotations(self, collection_name: str, document: dict) -> str | None:
         """Insert or update a document. The update is based on 'dataset_name' and 'title'.
 
         Args:
@@ -72,69 +75,7 @@ class MongoStorage:
             self.logger.error(f"Document insert failed: {exception}")
             return None
 
-    def insert_pitch_contour(
-        self, pitch_contour: dict[str, str | list[PitchContourDict]]
-    ) -> str | None:
-        """Insert or update a pitch contour. The update is based on 'dataset_name' and 'title'.
-
-        Args:
-            pitch_contour (PitchContourDict): Dictionary representing pitch contour. {dataset_name: str, title: str, pitch_contour: list[PitchContourDict]}
-
-        Returns:
-            str | None: "inserted", "updated" or None
-        """
-        return self._insert_document(
-            collection_name=mongo_config.collection_pitch_contour,
-            document=pitch_contour,
-        )
-
-    def insert_note_midi(
-        self, note_midi: dict[str, str | list[NoteMidiDict]]
-    ) -> str | None:
-        """Insert or update a note midi. The update is based on 'dataset_name' and 'title'.
-
-        Args:
-            note_midi (NoteMidiDict): Dictionary representing note midi. {dataset_name: str, title: str, note_midi: list[NoteMidiDict]}
-
-        Returns:
-            str | None: "inserted", "updated" or None
-        """
-        return self._insert_document(
-            collection_name=mongo_config.collection_note_midi,
-            document=note_midi,
-        )
-
-    def insert_beat_position(
-        self, beat_position: dict[str, str | list[BeatPositionDict]]
-    ) -> str | None:
-        """Insert or update a beat position. The update is based on 'dataset_name' and 'title'.
-
-        Args:
-            beat_position (BeatPositionDict): Dictionary representing beat position. {dataset_name: str, title: str, beat_position: list[BeatPositionDict]}
-
-        Returns:
-            str | None: "inserted", "updated" or None
-        """
-        return self._insert_document(
-            collection_name=mongo_config.collection_beat_position,
-            document=beat_position,
-        )
-
-    def insert_chord(self, chord: dict[str, str | list[ChordDict]]) -> str | None:
-        """Insert or update a chord. The update is based on 'dataset_name' and 'title'.
-
-        Args:
-            chord (ChordDict): Dictionary representing chord. {dataset_name: str, title: str, chord: list[ChordDict]}
-
-        Returns:
-            str | None: "inserted", "updated" or None
-        """
-        return self._insert_document(
-            collection_name=mongo_config.collection_chord,
-            document=chord,
-        )
-
-    def _insert_many_documents(
+    def _insert_many_annotations(
         self, collection_name: str, documents: list[dict]
     ) -> dict:
         """Insert or update many documents. The update is based on 'dataset_name' and 'title'.
@@ -154,7 +95,7 @@ class MongoStorage:
         results = {"inserted": 0, "updated": 0, "errors": 0}
 
         for document in documents:
-            result = self._insert_document(
+            result = self._insert_annotations(
                 collection_name=collection_name, document=document
             )
             match result:
@@ -166,6 +107,118 @@ class MongoStorage:
                     results["errors"] += 1
 
         return results
+
+    def insert_pitch_contour(
+        self, pitch_contour: dict[str, str | list[PitchContourDict]]
+    ) -> str | None:
+        """Insert or update a pitch contour. The update is based on 'dataset_name' and 'title'.
+
+        Args:
+            pitch_contour (PitchContourDict): Dictionary representing pitch contour. {dataset_name: str, title: str, pitch_contour: list[PitchContourDict]}
+
+        Returns:
+            str | None: "inserted", "updated" or None
+        """
+        return self._insert_annotations(
+            collection_name=mongo_config.collection_pitch_contour,
+            document=pitch_contour,
+        )
+
+    def insert_note_midi(
+        self, note_midi: dict[str, str | list[NoteMidiDict]]
+    ) -> str | None:
+        """Insert or update a note midi. The update is based on 'dataset_name' and 'title'.
+
+        Args:
+            note_midi (NoteMidiDict): Dictionary representing note midi. {dataset_name: str, title: str, note_midi: list[NoteMidiDict]}
+
+        Returns:
+            str | None: "inserted", "updated" or None
+        """
+        return self._insert_annotations(
+            collection_name=mongo_config.collection_note_midi,
+            document=note_midi,
+        )
+
+    def insert_beat_position(
+        self, beat_position: dict[str, str | list[BeatPositionDict]]
+    ) -> str | None:
+        """Insert or update a beat position. The update is based on 'dataset_name' and 'title'.
+
+        Args:
+            beat_position (BeatPositionDict): Dictionary representing beat position. {dataset_name: str, title: str, beat_position: list[BeatPositionDict]}
+
+        Returns:
+            str | None: "inserted", "updated" or None
+        """
+        return self._insert_annotations(
+            collection_name=mongo_config.collection_beat_position,
+            document=beat_position,
+        )
+
+    def insert_chord(self, chord: dict[str, str | list[ChordDict]]) -> str | None:
+        """Insert or update a chord. The update is based on 'dataset_name' and 'title'.
+
+        Args:
+            chord (ChordDict): Dictionary representing chord. {dataset_name: str, title: str, chord: list[ChordDict]}
+
+        Returns:
+            str | None: "inserted", "updated" or None
+        """
+        return self._insert_annotations(
+            collection_name=mongo_config.collection_chord,
+            document=chord,
+        )
+
+    def _insert_metadata(self, collection_name: str, document: dict) -> str | None:
+        """Insert or update a document. The update is based on '_id'.
+
+        Args:
+            collection_name (str): Name of the collection in which to insert the document.
+            document (dict): Dictionary representing document.
+
+        Returns:
+            str | None: "inserted", "updated" or None
+        """
+        try:
+            if document.get("_id", None) is None:
+                raise RuntimeError("'dataset_name' key does not exist")
+
+            document["inserted_at"] = datetime.now(timezone.utc)
+
+            # Upsert based on hash
+            result = self.collections[collection_name].update_one(
+                {"_id": document["_id"]},
+                {"$set": document},
+                upsert=True,
+            )
+
+            if result.did_upsert:
+                self.logger.debug(f"Document inserted: _id={document['_id']}")
+                return "inserted"
+
+            self.logger.debug(f"Document updated: _id={document['_id']}")
+            return "updated"
+
+        except PyMongoError as exception:
+            self.logger.error(f"Document insert failed: {exception}")
+            return None
+
+    def insert_pipeline_metadata(
+        self, pipeline_metadata: dict[str, dict[str, Any]]
+    ) -> str | None:
+        """Insert or update a metadata from preprocessing pipeline. The update is based on 'dataset_name' and 'title'.
+
+        Args:
+            preprocessing_metadata (dict): Dictionary representing metadata from preprocessing pipeline.
+
+        Returns:
+            str | None: "inserted", "updated" or None
+        """
+        return self._insert_metadata(
+            collection_name=mongo_config.collection_pipeline_metadata,
+            document=pipeline_metadata,
+        )
 
     def find_document(
         self,
