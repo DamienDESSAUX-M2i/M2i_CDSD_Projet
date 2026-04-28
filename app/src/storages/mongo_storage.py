@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
 from config import mongo_config
 from pymongo import MongoClient
@@ -20,12 +20,14 @@ class MongoStorage:
         self.beat_position = self.db[mongo_config.collection_beat_position]
         self.chord = self.db[mongo_config.collection_chord]
         self.pipeline_metadata = self.db[mongo_config.collection_pipeline_metadata]
+        self.sample_metadata = self.db[mongo_config.collection_sample_metadata]
         self.collections = {
             "pitch_contour": self.pitch_contour,
             "note_midi": self.note_midi,
             "beat_position": self.beat_position,
             "chord": self.chord,
             "pipeline_metadata": self.pipeline_metadata,
+            "sample_metadata": self.sample_metadata,
         }
 
     def _get_client(self) -> MongoClient:
@@ -34,55 +36,90 @@ class MongoStorage:
         self.logger.info("Connecting to the Mongo service")
         return client
 
-    def _insert_annotations(self, collection_name: str, document: dict) -> str | None:
+    def _insert_document(
+        self,
+        collection_name: str,
+        document: dict,
+        filter: Literal["annotation", "pipeline_metadata", "sample_metadata"],
+    ) -> str | None:
         """Insert or update a document. The update is based on 'dataset_name' and 'title'.
 
         Args:
             collection_name (str): Name of the collection in which to insert the document.
             document (dict): Dictionary representing document.
+            filter (str): Filter on which the upsert is based.
 
         Returns:
             str | None: "inserted", "updated" or None
         """
         try:
-            if document.get("dataset_name", None) is None:
-                raise RuntimeError("'dataset_name' key does not exist")
+            match filter:
+                case "annotation":
+                    if document.get("dataset_name", None) is None:
+                        raise RuntimeError("'dataset_name' key does not exist")
 
-            if document.get("title", None) is None:
-                raise RuntimeError("'title' key does not exist")
+                    if document.get("title", None) is None:
+                        raise RuntimeError("'title' key does not exist")
+
+                    filter = {
+                        "dataset_name": document["dataset_name"],
+                        "title": document["title"],
+                    }
+
+                case "pipeline_metadata":
+                    if document.get("_id", None) is None:
+                        raise RuntimeError("'_id' key does not exist")
+
+                    filter = {"_id": document["_id"]}
+
+                case "sample_metadata":
+                    if document.get("bucket_name", None) is None:
+                        raise RuntimeError("'bucket_name' key does not exist")
+
+                    if document.get("object_name", None) is None:
+                        raise RuntimeError("'object_name' key does not exist")
+
+                    filter = {
+                        "bucket_name": document["bucket_name"],
+                        "object_name": document["object_name"],
+                    }
+
+                case _:
+                    raise ValueError(
+                        "filter must be 'annotation', 'pipeline_metadata'or 'sample_metadata'"
+                    )
 
             document["inserted_at"] = datetime.now(timezone.utc)
 
-            # Upsert based on dataset_name and title
             result = self.collections[collection_name].update_one(
-                {"dataset_name": document["dataset_name"], "title": document["title"]},
+                filter,
                 {"$set": document},
                 upsert=True,
             )
 
             if result.did_upsert:
-                self.logger.debug(
-                    f"Document inserted: dataset_name={document['dataset_name']}, title={document['title']}"
-                )
+                self.logger.debug(f"Document inserted: filter={filter}")
                 return "inserted"
 
-            self.logger.debug(
-                f"Document updated: dataset_name={document['dataset_name']}, title={document['title']}"
-            )
+            self.logger.debug(f"Document updated: filter={filter}")
             return "updated"
 
         except PyMongoError as exception:
             self.logger.error(f"Document insert failed: {exception}")
             return None
 
-    def _insert_many_annotations(
-        self, collection_name: str, documents: list[dict]
+    def _insert_many_documents(
+        self,
+        collection_name: str,
+        documents: list[dict],
+        filter: Literal["annotation", "pipeline_metadata", "sample_metadata"],
     ) -> dict:
         """Insert or update many documents. The update is based on 'dataset_name' and 'title'.
 
         Args:
             collection_name (str): Name of the collection in which to insert the document.
             documents (list[dict]): List of dictionaries representing documents.
+            filter (str): Filter on which the upsert is based.
 
         Returns:
             dict: Numbers of inserted pitch_contours, updated pitch_contours and errors.
@@ -95,8 +132,8 @@ class MongoStorage:
         results = {"inserted": 0, "updated": 0, "errors": 0}
 
         for document in documents:
-            result = self._insert_annotations(
-                collection_name=collection_name, document=document
+            result = self._insert_document(
+                collection_name=collection_name, document=document, filter=filter
             )
             match result:
                 case "updated":
@@ -119,9 +156,10 @@ class MongoStorage:
         Returns:
             str | None: "inserted", "updated" or None
         """
-        return self._insert_annotations(
+        return self._insert_document(
             collection_name=mongo_config.collection_pitch_contour,
             document=pitch_contour,
+            filter="annotation",
         )
 
     def insert_note_midi(
@@ -135,9 +173,10 @@ class MongoStorage:
         Returns:
             str | None: "inserted", "updated" or None
         """
-        return self._insert_annotations(
+        return self._insert_document(
             collection_name=mongo_config.collection_note_midi,
             document=note_midi,
+            filter="annotation",
         )
 
     def insert_beat_position(
@@ -151,9 +190,10 @@ class MongoStorage:
         Returns:
             str | None: "inserted", "updated" or None
         """
-        return self._insert_annotations(
+        return self._insert_document(
             collection_name=mongo_config.collection_beat_position,
             document=beat_position,
+            filter="annotation",
         )
 
     def insert_chord(self, chord: dict[str, str | list[ChordDict]]) -> str | None:
@@ -165,59 +205,42 @@ class MongoStorage:
         Returns:
             str | None: "inserted", "updated" or None
         """
-        return self._insert_annotations(
+        return self._insert_document(
             collection_name=mongo_config.collection_chord,
             document=chord,
+            filter="annotation",
         )
-
-    def _insert_metadata(self, collection_name: str, document: dict) -> str | None:
-        """Insert or update a document. The update is based on '_id'.
-
-        Args:
-            collection_name (str): Name of the collection in which to insert the document.
-            document (dict): Dictionary representing document.
-
-        Returns:
-            str | None: "inserted", "updated" or None
-        """
-        try:
-            if document.get("_id", None) is None:
-                raise RuntimeError("'dataset_name' key does not exist")
-
-            document["inserted_at"] = datetime.now(timezone.utc)
-
-            # Upsert based on hash
-            result = self.collections[collection_name].update_one(
-                {"_id": document["_id"]},
-                {"$set": document},
-                upsert=True,
-            )
-
-            if result.did_upsert:
-                self.logger.debug(f"Document inserted: _id={document['_id']}")
-                return "inserted"
-
-            self.logger.debug(f"Document updated: _id={document['_id']}")
-            return "updated"
-
-        except PyMongoError as exception:
-            self.logger.error(f"Document insert failed: {exception}")
-            return None
 
     def insert_pipeline_metadata(
         self, pipeline_metadata: dict[str, dict[str, Any]]
     ) -> str | None:
-        """Insert or update a metadata from preprocessing pipeline. The update is based on 'dataset_name' and 'title'.
+        """Insert or update a pipeline metadata. The update is based on '_id.
 
         Args:
-            preprocessing_metadata (dict): Dictionary representing metadata from preprocessing pipeline.
+            preprocessing_metadata (dict): Dictionary representing pipeline metadata.
 
         Returns:
             str | None: "inserted", "updated" or None
         """
-        return self._insert_metadata(
+        return self._insert_document(
             collection_name=mongo_config.collection_pipeline_metadata,
             document=pipeline_metadata,
+            filter="pipeline_metadata",
+        )
+
+    def insert_sample_metadata(self, sample_metadata: dict[str, Any]) -> str | None:
+        """Insert or update a sample metadata. The update is based on 'bucket_name' and 'object_name'.
+
+        Args:
+            preprocessing_metadata (dict): Dictionary representing sample metadata.
+
+        Returns:
+            str | None: "inserted", "updated" or None
+        """
+        return self._insert_document(
+            collection_name=mongo_config.collection_sample_metadata,
+            document=sample_metadata,
+            filter="sample_metadata",
         )
 
     def find_document(

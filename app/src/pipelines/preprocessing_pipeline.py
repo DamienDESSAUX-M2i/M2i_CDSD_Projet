@@ -26,6 +26,7 @@ class PreprocessingPipelineStatistics(Statistics):
     Statistics tracker for the preprocessing pipeline.
 
     Attributes:
+        pipeline_metadata_upload: Pipeline metadata uploading status.
         audio_loaded: Number of successfully loaded raw audio files.
         audio_normalized: Number of successfully normalized audio files.
         audio_cleaned: Number of successfully cleaned audio files.
@@ -35,8 +36,10 @@ class PreprocessingPipelineStatistics(Statistics):
         piano_roll_builded: Number of successfully generated piano-roll targets.
         sample_uploaded: Number of final samples successfully uploaded.
         sample_error: Number of sample saving failures.
+        sample_metadata_upload: Number of sample metadata upload in MongoDB.
     """
 
+    pipeline_metadata_upload: bool = False
     audio_loaded: int = 0
     audio_normalized: int = 0
     audio_cleaned: int = 0
@@ -46,6 +49,7 @@ class PreprocessingPipelineStatistics(Statistics):
     piano_roll_builded: int = 0
     sample_uploaded: int = 0
     sample_error: int = 0
+    sample_metadata_upload: int = 0
 
 
 class PreprocessingPipeline(AbstractPipeline):
@@ -211,9 +215,9 @@ class PreprocessingPipeline(AbstractPipeline):
         try:
             sample_file_name = f"{'/'.join(file_name.split('/')[:-1])}/sample_{self.pipeline_metadata['_id']}.parquet"
 
-            self.logger.debug(
-                f"Saving samples: uri={minio_config.bucket_processed}/{sample_file_name}"
-            )
+            uri = f"{minio_config.bucket_processed}/{sample_file_name}"
+            self.logger.debug(f"Saving samples: uri={uri}")
+
             result = self.minio_storage.put_parquet(
                 bucket_name=minio_config.bucket_processed,
                 file_name=sample_file_name,
@@ -225,6 +229,15 @@ class PreprocessingPipeline(AbstractPipeline):
             else:
                 self.statistics.sample_uploaded += 1
 
+                file_name_split = file_name.split("/")
+                self._upload_sample_metadata(
+                    dataset_name=file_name_split[0],
+                    title=file_name_split[1],
+                    bucket_name=minio_config.bucket_processed,
+                    object_name=sample_file_name,
+                    n_frames=sample.shape[0],
+                )
+
         except Exception as e:
             self.logger.error(
                 f"Failed to save samples: uri={minio_config.bucket_processed}/{sample_file_name}: {e}",
@@ -232,6 +245,58 @@ class PreprocessingPipeline(AbstractPipeline):
             )
 
         self.logger.debug("Sample saving completed.")
+
+    def _upload_sample_metadata(
+        self,
+        dataset_name: str,
+        title: str,
+        bucket_name: str,
+        object_name: str,
+        n_frames: int,
+    ) -> None:
+        """
+        Save sample metadata in MongoDB.
+
+        This metadata is used later by the ML pipeline to:
+            - retrieve all samples associated with a preprocessing pipeline
+            - perform train / validation / test split at title level
+            - load samples from MinIO for model training
+
+        The metadata acts as a registry layer between MongoDB and MinIO.
+
+        Stored fields:
+            - preprocessing_pipeline_id: Unique preprocessing pipeline identifier
+            - dataset_name: Source dataset name (e.g. GuitarSet)
+            - title: Audio title identifier
+            - bucket_name: MinIO bucket containing the sample
+            - object_name: Object path of the sample Parquet file
+            - n_frames: Number of temporal frames in the sample
+
+        Args:
+            dataset_name: Name of the source dataset.
+            title: Unique title identifier of the audio sample.
+            bucket_name: MinIO bucket where the sample is stored.
+            object_name: Full object path of the sample file in MinIO.
+            n_frames: Number of time frames contained in the sample.
+
+        Returns:
+            None
+        """
+
+        sample_metadata = {
+            "preprocessing_pipeline_id": self.pipeline_metadata["_id"],
+            "dataset_name": dataset_name,
+            "title": title,
+            "bucket_name": bucket_name,
+            "object_name": object_name,
+            "n_frames": n_frames,
+        }
+        result = self.mongo_storage.insert_sample_metadata(
+            sample_metadata=sample_metadata
+        )
+
+        if result is not None:
+            self.statistics.sample_metadata_upload += 1
 
     def _process_audio(self, file_name: str, df_annotations: pd.DataFrame) -> None:
         """
@@ -417,9 +482,12 @@ class PreprocessingPipeline(AbstractPipeline):
         It ensures experiment traceability across multiple preprocessing runs.
         """
 
-        self.mongo_storage.insert_pipeline_metadata(
+        result = self.mongo_storage.insert_pipeline_metadata(
             pipeline_metadata=self.pipeline_metadata
         )
+
+        if result is not None:
+            self.statistics.pipeline_metadata_upload = True
 
     def run(self):
         """
