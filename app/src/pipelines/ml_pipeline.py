@@ -62,7 +62,7 @@ class MLPipeline(AbstractPipeline):
                 If no sample metadata is found.
         """
         self.logger.info(
-            f"Loading sample metadata for pipeline_id={self.preprocessing_pipeline_id}"
+            f"Loading sample metadata for preprocessing_pipeline_id={self.preprocessing_pipeline_id}"
         )
 
         pipeline = [
@@ -82,7 +82,7 @@ class MLPipeline(AbstractPipeline):
 
         if df_metadata.empty:
             raise ValueError(
-                f"No sample metadata found for pipeline_id={self.preprocessing_pipeline_id}"
+                f"No sample metadata found for preprocessing_pipeline_id={self.preprocessing_pipeline_id}"
             )
 
         self.logger.info(f"Loaded {len(df_metadata)} sample metadata entries.")
@@ -120,9 +120,19 @@ class MLPipeline(AbstractPipeline):
             shuffle=self.shuffle,
         )
 
+        self.pipeline_metadata["train_objects_names"] = self.df_train_metadata[
+            "object_name"
+        ].to_list()
+        self.pipeline_metadata["test_objects_names"] = self.df_test_metadata[
+            "object_name"
+        ].to_list()
+        self.pipeline_metadata["val_objects_names"] = self.df_val_metadata[
+            "object_name"
+        ].to_list()
+
         self.logger.info(
             "Dataset split completed: "
-            f"dataset={len(self.df_metadata)}"
+            f"dataset={len(self.df_metadata)}, "
             f"train={len(self.df_train_metadata)}, "
             f"val={len(self.df_val_metadata)}, "
             f"test={len(self.df_test_metadata)}"
@@ -180,16 +190,79 @@ class MLPipeline(AbstractPipeline):
 
         return dataset_df
 
+    def _upload_pipeline_metadata(self) -> None:
+        """
+        Save pipeline execution metadata into MongoDB.
+        It ensures experiment traceability across multiple preprocessing runs.
+        """
+
+        result = self.mongo_storage.insert_pipeline_metadata(
+            pipeline_metadata=self.pipeline_metadata
+        )
+
+    def _build_datasets(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """
+        Build train, validation, and test datasets from sample metadata.
+
+        Workflow:
+            1. Load sample metadata associated with the preprocessing pipeline
+            2. Perform title-level dataset split
+            3. Load train dataset from MinIO
+            4. Load validation dataset from MinIO
+            5. Load test dataset from MinIO
+
+        This method is designed to externalize dataset construction so that
+        datasets can be easily reused in notebooks for model exploration,
+        prototyping, and experimentation without re-running the full pipeline.
+
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+                A tuple containing:
+                    - train_dataset
+                    - val_dataset
+                    - test_dataset
+
+        Raises:
+            ValueError:
+                If no sample metadata is found or dataset loading fails.
+        """
+        self.logger.info("Building train / validation / test datasets.")
+
+        self.df_metadata = self._load_sample_metadata()
+
+        if self.df_metadata.empty:
+            raise ValueError("No sample metadata found for the selected pipeline.")
+
+        self.logger.info(f"Loaded {len(self.df_metadata)} sample metadata entries.")
+
+        self._split_dataset()
+
+        self.logger.info("Loading datasets from MinIO after metadata split.")
+
+        train_dataset = self._load_dataset(df_metadata=self.df_train_metadata)
+        val_dataset = self._load_dataset(df_metadata=self.df_val_metadata)
+        test_dataset = self._load_dataset(df_metadata=self.df_test_metadata)
+
+        self.logger.info(
+            "Datasets successfully built: "
+            f"train_shape={train_dataset.shape}, "
+            f"val_shape={val_dataset.shape}, "
+            f"test_shape={test_dataset.shape}"
+        )
+
+        return train_dataset, val_dataset, test_dataset
+
     def run(self) -> None:
         """
         Execute the ML dataset preparation pipeline.
 
         Steps:
-            1. Load sample metadata
-            2. Perform title-level train / validation / test split
-            3. Load train dataset
-            4. Load validation dataset
-            5. Load test dataset
+            1. Build train / validation / test datasets
+            2. Upload ML pipeline metadata to MongoDB
+
+        This method is intended for production execution of the ML pipeline,
+        while `_build_datasets()` can be reused independently inside notebooks
+        for experimentation and model exploration.
 
         Raises:
             RuntimeError:
@@ -198,13 +271,9 @@ class MLPipeline(AbstractPipeline):
         try:
             self.logger.info("Starting ML pipeline.")
 
-            self.df_metadata = self._load_sample_metadata()
+            train_dataset, val_dataset, test_dataset = self._build_datasets()
 
-            self._split_dataset()
-
-            train_dataset = self._load_dataset(self.df_train_metadata)
-            val_dataset = self._load_dataset(self.df_val_metadata)
-            test_dataset = self._load_dataset(self.df_test_metadata)
+            self._upload_pipeline_metadata()
 
             self.logger.info(
                 "ML pipeline completed successfully: "
