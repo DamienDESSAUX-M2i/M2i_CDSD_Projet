@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from config import ml_pipeline_config, mongo_config
 from sklearn.model_selection import train_test_split
@@ -37,10 +38,16 @@ class MLPipeline(AbstractPipeline):
         self.use_idmt_smt_guitar = idmt_smt_guitar
 
         self.pipeline_metadata = ml_pipeline_config.to_mongo_dict()
+
         self.preprocessing_pipeline_id = ml_pipeline_config.preprocessing_pipeline_id
+
         self.test_size = ml_pipeline_config.test_size
         self.val_size = ml_pipeline_config.val_size
         self.shuffle = ml_pipeline_config.shuffle
+
+        self.use_context_window = ml_pipeline_config.use_context_window
+        self.context_size = ml_pipeline_config.context_size
+
         self.random_state = ml_pipeline_config.random_state
 
         self.df_metadata: pd.DataFrame | None = None
@@ -138,6 +145,134 @@ class MLPipeline(AbstractPipeline):
             f"test={len(self.df_test_metadata)}"
         )
 
+    def _split_features_target(
+        self,
+        dataset: pd.DataFrame,
+        prefix_features: tuple[str] = ("cqt_",),
+        prefix_target: tuple[str] = ("pitch_",),
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Extract features and targets from dataset.
+
+        Args:
+            dataset:
+                Frame-wise dataset.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]:
+                X:
+                    Feature matrix of shape
+                    (n_frames, n_features)
+
+                y:
+                    Piano-roll target matrix of shape
+                    (n_frames, n_pitches)
+        """
+        feature_columns = [
+            column for column in dataset.columns if column.startswith(prefix_features)
+        ]
+
+        target_columns = [
+            column for column in dataset.columns if column.startswith(prefix_target)
+        ]
+
+        if not feature_columns:
+            raise ValueError("No feature columns found.")
+
+        if not target_columns:
+            raise ValueError("No target columns found.")
+
+        features = dataset[feature_columns]
+        target = dataset[target_columns]
+
+        return features, target
+
+    def _build_context_windows(
+        self,
+        features: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """
+        Build centered temporal context windows from a frame-wise feature DataFrame.
+
+        Example:
+            context_size = 2
+
+            input:
+                frame_0
+                frame_1
+                frame_2
+                frame_3
+
+            output:
+                [
+                    [x0, x0, x0, x1, x2],
+                    [x0, x0, x1, x2, x3],
+                    [x0, x1, x2, x3, x3],
+                    [x1, x2, x3, x3, x3],
+                ]
+
+        Padding strategy:
+            Edge padding
+
+        Args:
+            X:
+                Input feature DataFrame of shape
+                (n_frames, n_features)
+
+        Returns:
+            pd.DataFrame:
+                Context-window feature DataFrame of shape
+                (
+                    n_frames,
+                    n_features * (2 * context_size + 1)
+                )
+        """
+        self.logger.info(f"Building context windows: context_size={self.context_size}")
+
+        if features.empty:
+            raise ValueError("Input DataFrame is empty.")
+
+        padding = self.context_size
+        window_size = 2 * padding + 1
+
+        feature_columns = list(features.columns)
+
+        features_array = features.to_numpy(dtype=np.float32)
+
+        features_padded = np.pad(
+            features_array,
+            pad_width=((padding, padding), (0, 0)),
+            mode="edge",
+        )
+
+        windows: list[np.ndarray] = []
+
+        for i in range(len(features)):
+            window = features_padded[i : i + window_size]
+            windows.append(window.reshape(-1))
+
+        features_context_array = np.stack(windows)
+
+        context_columns = []
+
+        for offset in range(-padding, padding + 1):
+            for column in feature_columns:
+                context_columns.append(f"{column}_t{offset:+d}")
+
+        features_context = pd.DataFrame(
+            data=features_context_array,
+            columns=context_columns,
+            index=features.index,
+        )
+
+        self.logger.info(
+            f"Context windows built: "
+            f"input={features.shape}, "
+            f"output={features_context.shape}"
+        )
+
+        return features_context
+
     def _load_dataset(
         self,
         df_metadata: pd.DataFrame,
@@ -168,6 +303,13 @@ class MLPipeline(AbstractPipeline):
                 )
 
                 if sample_df is not None:
+                    if self.use_context_window:
+                        features, target = self._split_features_target(
+                            dataset=sample_df
+                        )
+                        features = self._build_context_windows(features=features)
+                        dataset = pd.concat([features, target], axis=1)
+
                     dataset.append(sample_df)
 
             except Exception as exception:

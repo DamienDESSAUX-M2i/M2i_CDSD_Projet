@@ -161,4 +161,10 @@ class PianoRollBuilder(AbstractTransformer):
         return self._to_dataframe(piano_roll=piano_roll)
 
     def _to_dataframe(self, piano_roll: np.ndarray) -> pd.DataFrame:
-        return pd.DataFrame({"piano_roll": list(piano_roll)})
+        return pd.DataFrame(
+            data=piano_roll,
+            columns=[
+                f"pitch_{midi}"
+                for midi in range(self.pitch.midi_min, self.pitch.midi_max + 1)
+            ],
+        )

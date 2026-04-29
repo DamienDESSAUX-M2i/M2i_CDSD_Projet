@@ -220,20 +220,12 @@ class AudioFeatureExtractor(AbstractTransformer):
         dfs: list[pd.DataFrame] = []
 
         for feature_name, matrix in output.items():
-            dfs.append(pd.DataFrame({feature_name: list(matrix.T)}))
+            matrix = matrix.T
+            dfs.append(
+                pd.DataFrame(
+                    data=matrix,
+                    columns=[f"{feature_name}_{k}" for k in range(matrix.shape[1])],
+                )
+            )
 
         return pd.concat(dfs, axis=1)
-
-    # def _to_dataframe(self, output: dict[str, np.ndarray]) -> pd.DataFrame:
-    #     dfs: list[pd.DataFrame] = []
-
-    #     for feature_name, matrix in output.items():
-    #         if matrix.ndim == 2:
-    #             df = pd.DataFrame(matrix.T)
-    #         else:
-    #             df = pd.DataFrame({feature_name: matrix})
-
-    #         df.columns = [f"{feature_name}_{x}" for x in df.columns]
-    #         dfs.append(df)
-
-    #     return pd.concat(dfs, axis=1)

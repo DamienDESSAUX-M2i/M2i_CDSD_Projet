@@ -34,6 +34,9 @@ class MLPipelineSettings:
     test_size: float = 0.1
     shuffle: bool = True
 
+    use_context_window: bool = True
+    context_size: int = 11
+
     def to_mongo_dict(self) -> dict[str, Any]:
         """
         Convert settings into a MongoDB-compatible dictionary.
@@ -61,6 +64,10 @@ class MLPipelineSettings:
                     "val_size": self.val_size,
                     "test_size": self.test_size,
                     "shuffle": self.shuffle,
+                },
+                "context_window": {
+                    "use_context_window": self.use_context_window,
+                    "context_size": self.context_size,
                 },
             },
         }
