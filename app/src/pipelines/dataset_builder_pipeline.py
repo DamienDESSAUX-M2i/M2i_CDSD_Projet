@@ -1,72 +1,84 @@
 import numpy as np
 import pandas as pd
-from config import ml_pipeline_config, mongo_config
+from config import dataset_builder_pipeline_config, mongo_config
 from sklearn.model_selection import train_test_split
 
 from src.pipelines import AbstractPipeline
 
 
-class MLPipeline(AbstractPipeline):
-    """
-    Machine Learning pipeline for dataset preparation.
-
-    Responsibilities:
-        1. Load sample metadata associated with a preprocessing pipeline
-        2. Split samples into train / validation / test sets at title level
-        3. Load train / validation / test datasets from MinIO
-
-    Notes:
-        - Split is performed title-wise to avoid data leakage
-        - Each sample corresponds to one processed audio title
-        - This class does not handle model training yet
-    """
-
+class DatasetBuilderPipeline(AbstractPipeline):
     def __init__(
         self,
-        guitarset: bool = True,
-        idmt_smt_guitar: bool = True,
     ) -> None:
-        """
-        Initialize the ML pipeline.
-
-        Args:
-            guitarset: Whether to process GuitarSet dataset.
-            idmt_smt_guitar: Whether to process IDMT-SMT-Guitar dataset.
-        """
         super().__init__()
-        self.use_guitar_set = guitarset
-        self.use_idmt_smt_guitar = idmt_smt_guitar
+        self.dataset_name = dataset_builder_pipeline_config.dataset_name
 
-        self.pipeline_metadata = ml_pipeline_config.to_mongo_dict()
+        self.use_guitar_set = dataset_builder_pipeline_config.use_guitarset
+        self.use_idmt_smt_guitar = dataset_builder_pipeline_config.use_idmt_smt_guitar
+        self.max_samples_per_datasets = (
+            dataset_builder_pipeline_config.max_samples_per_datasets
+        )
 
-        self.preprocessing_pipeline_id = ml_pipeline_config.preprocessing_pipeline_id
+        self.preprocessing_pipeline_id = (
+            dataset_builder_pipeline_config.preprocessing_pipeline_id
+        )
+        if self.preprocessing_pipeline_id is None:
+            self._get_latest_preprocessing_pipeline_id()
 
-        self.test_size = ml_pipeline_config.test_size
-        self.val_size = ml_pipeline_config.val_size
-        self.random_state = ml_pipeline_config.random_state
-        self.shuffle = ml_pipeline_config.shuffle
+        self.train_size = dataset_builder_pipeline_config.train_size
+        self.test_size = dataset_builder_pipeline_config.test_size
+        self.validation_size = dataset_builder_pipeline_config.validation_size
+        self.random_state = dataset_builder_pipeline_config.random_state
+        self.shuffle = dataset_builder_pipeline_config.shuffle
 
-        self.use_context_window = ml_pipeline_config.use_context_window
-        self.context_size = ml_pipeline_config.context_size
+        self.use_context_window = dataset_builder_pipeline_config.use_context_window
+        self.context_size = dataset_builder_pipeline_config.context_size
 
         self.df_metadata: pd.DataFrame | None = None
         self.df_train_metadata: pd.DataFrame | None = None
         self.df_validation_metadata: pd.DataFrame | None = None
         self.df_test_metadata: pd.DataFrame | None = None
 
+    def _get_latest_preprocessing_pipeline_id(self) -> None:
+        self.logger.info("Getting latest preprocessing pipeline id")
+
+        pipeline = [
+            {
+                "$match": {
+                    "pipeline_name": "preprocessing",
+                    # "pipeline_type": PipelineType.PREPROCESSOR.value
+                },
+            },
+            {
+                "$sort": {
+                    "inserted_at": -1,
+                }
+            },
+            {
+                "$limit": 1,
+            },
+            {
+                "$project": {
+                    "_id": 1,
+                }
+            },
+        ]
+
+        documents = self.mongo_storage.aggregate_documents(
+            collection_name=mongo_config.collection_pipeline_metadata,
+            pipeline=pipeline,
+        )
+
+        if not documents:
+            raise RuntimeError("No preprocessing pipeline fetch")
+
+        self.preprocessing_pipeline_id = documents[0]["_id"]
+
+        self.logger.info(
+            f"Preprocessing pipeline fetch: preprocessing_pipeline_id={self.preprocessing_pipeline_id}"
+        )
+
     def _load_sample_metadata(self) -> pd.DataFrame:
-        """
-        Load sample metadata associated with a preprocessing pipeline.
-
-        Returns:
-            pd.DataFrame:
-                DataFrame containing all samples metadata for the given
-                preprocessing pipeline.
-
-        Raises:
-            ValueError:
-                If no sample metadata is found.
-        """
         self.logger.info(
             f"Loading sample metadata for preprocessing_pipeline_id={self.preprocessing_pipeline_id}"
         )
@@ -96,17 +108,6 @@ class MLPipeline(AbstractPipeline):
         return df_metadata
 
     def _split_dataset(self) -> None:
-        """
-        Split dataset into train / validation / test sets using title-level split.
-
-        Important:
-            Split is performed on unique titles to avoid data leakage between
-            train and test sets.
-
-        Raises:
-            ValueError:
-                If metadata is not loaded.
-        """
         if self.df_metadata is None:
             raise ValueError("Metadata must be loaded before splitting.")
 
@@ -121,20 +122,27 @@ class MLPipeline(AbstractPipeline):
 
         self.df_train_metadata, self.df_validation_metadata = train_test_split(
             df_train_metadata,
-            test_size=self.val_size,
+            test_size=self.validation_size,
             random_state=self.random_state,
             shuffle=self.shuffle,
         )
 
-        self.pipeline_metadata["train_objects_names"] = self.df_train_metadata[
+        dataset_builder_pipeline_config["train_objects_names"] = self.df_train_metadata[
             "object_name"
         ].to_list()
-        self.pipeline_metadata["test_objects_names"] = self.df_test_metadata[
+        dataset_builder_pipeline_config["train_samples"] = len(self.df_train_metadata)
+
+        dataset_builder_pipeline_config["test_objects_names"] = self.df_test_metadata[
             "object_name"
         ].to_list()
-        self.pipeline_metadata["validation_objects_names"] = (
+        dataset_builder_pipeline_config["validation_samples"] = len(
+            self.df_validation_metadata
+        )
+
+        dataset_builder_pipeline_config["validation_objects_names"] = (
             self.df_validation_metadata["object_name"].to_list()
         )
+        dataset_builder_pipeline_config["test_samples"] = len(self.df_test_metadata)
 
         self.logger.info(
             "Dataset split completed: "
@@ -144,29 +152,31 @@ class MLPipeline(AbstractPipeline):
             f"test={len(self.df_test_metadata)}"
         )
 
+    def build_datasets(self):
+        self.logger.info("Building train / validation / test datasets.")
+
+        self.df_metadata = self._load_sample_metadata()
+
+        if self.df_metadata.empty:
+            raise ValueError("No sample metadata found for the selected pipeline.")
+
+        self.logger.info(f"Loaded {len(self.df_metadata)} sample metadata entries.")
+
+        self._split_dataset()
+
+        result = self.mongo_storage.insert_pipeline_metadata(
+            pipeline_metadata=dataset_builder_pipeline_config.to_mongo_dict()
+        )
+
+        if result:
+            self.logger.info("Datasets metadata successfully loaded to mongo")
+
     def _split_features_target(
         self,
         dataset: pd.DataFrame,
         prefix_features: tuple[str] = ("cqt_",),
         prefix_target: tuple[str] = ("pitch_",),
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Extract features and targets from dataset.
-
-        Args:
-            dataset:
-                Frame-wise dataset.
-
-        Returns:
-            tuple[np.ndarray, np.ndarray]:
-                X:
-                    Feature matrix of shape
-                    (n_frames, n_features)
-
-                y:
-                    Piano-roll target matrix of shape
-                    (n_frames, n_pitches)
-        """
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
         feature_columns = [
             column for column in dataset.columns if column.startswith(prefix_features)
         ]
@@ -185,6 +195,66 @@ class MLPipeline(AbstractPipeline):
         target = dataset[target_columns]
 
         return features, target
+
+    def _load_dataset(
+        self,
+        df_metadata: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """
+        Load dataset samples from MinIO using metadata.
+
+        Args:
+            df_metadata: Metadata DataFrame containing sample locations.
+
+        Returns:
+            pd.DataFrame:
+                Concatenated dataset.
+
+        Raises:
+            ValueError:
+                If no samples could be loaded.
+        """
+        self.logger.info(f"Loading dataset from {len(df_metadata)} metadata entries.")
+
+        dataset: list[tuple[pd.DataFrame, pd.DataFrame]] = []
+
+        for row in df_metadata.itertuples():
+            try:
+                sample_df = self.minio_storage.get_parquet(
+                    bucket_name=row.bucket_name,
+                    file_name=row.object_name,
+                )
+
+                if sample_df is not None:
+                    sample_features, sample_target = self._split_features_target(
+                        dataset=sample_df
+                    )
+                    if self.use_context_window:
+                        sample_features = self._build_context_windows(
+                            features=sample_features
+                        )
+
+                    dataset.append((sample_features, sample_target))
+
+            except Exception as exception:
+                self.logger.error(
+                    f"Failed loading sample: "
+                    f"uri={row.bucket_name}/{row.object_name} "
+                    f"error={exception}"
+                )
+
+        if not dataset:
+            raise ValueError("No samples could be loaded.")
+
+        dataset_df = pd.concat(
+            dataset,
+            axis=0,
+            ignore_index=True,
+        )
+
+        self.logger.info(f"Loaded dataset with shape={dataset_df.shape}")
+
+        return dataset_df
 
     def _build_context_windows(
         self,
@@ -271,65 +341,6 @@ class MLPipeline(AbstractPipeline):
         )
 
         return features_context
-
-    def _load_dataset(
-        self,
-        df_metadata: pd.DataFrame,
-    ) -> pd.DataFrame:
-        """
-        Load dataset samples from MinIO using metadata.
-
-        Args:
-            df_metadata: Metadata DataFrame containing sample locations.
-
-        Returns:
-            pd.DataFrame:
-                Concatenated dataset.
-
-        Raises:
-            ValueError:
-                If no samples could be loaded.
-        """
-        self.logger.info(f"Loading dataset from {len(df_metadata)} metadata entries.")
-
-        dataset = []
-
-        for row in df_metadata.itertuples():
-            try:
-                sample_df = self.minio_storage.get_parquet(
-                    bucket_name=row.bucket_name,
-                    file_name=row.object_name,
-                )
-
-                if sample_df is not None:
-                    if self.use_context_window:
-                        features, target = self._split_features_target(
-                            dataset=sample_df
-                        )
-                        features = self._build_context_windows(features=features)
-                        dataset = pd.concat([features, target], axis=1)
-
-                    dataset.append(sample_df)
-
-            except Exception as exception:
-                self.logger.error(
-                    f"Failed loading sample: "
-                    f"uri={row.bucket_name}/{row.object_name} "
-                    f"error={exception}"
-                )
-
-        if not dataset:
-            raise ValueError("No samples could be loaded.")
-
-        dataset_df = pd.concat(
-            dataset,
-            axis=0,
-            ignore_index=True,
-        )
-
-        self.logger.info(f"Loaded dataset with shape={dataset_df.shape}")
-
-        return dataset_df
 
     def _upload_pipeline_metadata(self) -> None:
         """

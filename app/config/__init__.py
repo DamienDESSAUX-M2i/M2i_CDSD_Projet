@@ -1,3 +1,4 @@
+from .dataset_builder_pipeline_settings import dataset_builder_pipeline_config
 from .dataset_settings import guitar_set_config, idmt_smt_guitar_config
 from .download_datasets_pipeline_settings import download_datasets_pipeline_config
 from .ingestion_pipelines_settings import (
@@ -11,7 +12,7 @@ from .postgresql_settings import postgres_config
 from .preprocessing_pipeline_settings import preprocessing_pipeline_config
 
 __all__ = [
-    "preprocessing_pipeline_config",
+    "dataset_builder_pipeline_config",
     "download_datasets_pipeline_config",
     "guitar_set_config",
     "idmt_smt_guitar_config",
@@ -21,4 +22,5 @@ __all__ = [
     "minio_config",
     "mongo_config",
     "postgres_config",
+    "preprocessing_pipeline_config",
 ]
