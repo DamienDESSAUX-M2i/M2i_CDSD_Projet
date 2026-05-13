@@ -478,7 +478,7 @@ Le service `minio-init` s'arrête après l'initialisation du service `minio`.
 Les données doivent absolument respecter la structure suivante :
 
 ```txt
-M2i_CDSD_Projet_Data\
+M2i_CDSD_Projet\
 ├───guitarset
 │   ├───annotation
 │   ├───audio_hex-pickup_debleeded
