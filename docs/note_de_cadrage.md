@@ -240,7 +240,7 @@ Le projet vise principalement :
 
 | Rôle | Ressource |
 | :- | :- |
-| Développement ML / MLOps | Damien DESSAUX |
+| Développeur concepteur en science des données | Damien DESSAUX |
 
 ## 7.2. Infrastructure prévisionnelle
 
@@ -267,16 +267,15 @@ L’infrastructure prévisionnelle repose principalement sur des composants grat
 | Échéance | Livrable / activité |
 | :- | :- |
 | J0 | Kick-off projet |
-| J+4 | Validation de la note de cadrage |
-| J+10 | Ingestion des datasets |
-| J+15 | Analyse exploratoire des données |
-| J+22 | Préprocessing audio et extraction des features |
+| J+7 | Validation de la note de cadrage |
+| J+14 | Ingestion des datasets |
+| J+20 | Analyse exploratoire des données |
+| J+25 | Préprocessing audio et extraction des features |
 | J+28 | Construction des datasets frame-wise |
-| J+35 | Benchmark des modèles candidats |
-| J+45 | Implémentation du pipeline ML |
-| J+55 | Développement de l’API d’inférence |
-| J+62 | Dockerisation |
-| J+68 | Déploiement sur Hugging Face Spaces |
+| J+42 | Benchmark des modèles candidats |
+| J+49 | Implémentation du pipeline ML complet |
+| J+63 | Développement de l’API d’inférence |
+| J+70 | Dockerisation et déploiement sur Hugging Face Spaces |
 | 31/07/2026 | Démonstration de restitution phase 1 |
 
 ## 9.1. Jalons de pilotage
@@ -294,10 +293,10 @@ L’infrastructure prévisionnelle repose principalement sur des composants grat
 
 | Poste | Charge estimée |
 | :- | :- |
-| Data preparation | 10 jours |
-| Développement ML | 20 jours |
-| API / Backend | 5 jours |
-| Déploiement / DevOps | 3 jours |
+| Data preparation | 15 jours |
+| Développement ML | 15 jours |
+| API / Backend | 10 jours |
+| Déploiement / DevOps | 5 jours |
 
 ## 9.4. Cout du développement
 
@@ -323,7 +322,7 @@ Une phase 2 d’industrialisation fera l’objet d’un chiffrage distinct.
 | Temps moyen d’inférence | < 10 s | À mesurer |
 | Taux de correction manuelle | < 10 % | À mesurer |
 | Satisfaction utilisateur | > 80 % | À mesurer |
-| Disponibilité démonstrateur | 100 % lors de la soutenance | À mesurer |
+| Disponibilité démonstrateur | 100 % lors de la présentation | À mesurer |
 
 # 11. Critères de succès
 
