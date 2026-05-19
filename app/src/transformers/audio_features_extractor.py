@@ -1,3 +1,5 @@
+import logging
+
 import librosa
 import numpy as np
 import pandas as pd
@@ -23,6 +25,7 @@ class AudioFeatureExtractor(AbstractTransformer):
 
     def __init__(
         self,
+        logger: logging.Logger,
         n_fft: int = 2048,  # 4096 ?
         hop_length: int = 512,  # 256 ?
         n_mels: int = 128,
@@ -41,7 +44,7 @@ class AudioFeatureExtractor(AbstractTransformer):
             bins_per_octave: Frequency resolution of CQT
             fmin: Minimum frequency for CQT
         """
-        super().__init__()
+        super().__init__(logger)
 
         self.n_fft = n_fft
         self.hop_length = hop_length

@@ -1,3 +1,4 @@
+import logging
 from typing import Literal, Tuple
 
 import librosa
@@ -20,12 +21,12 @@ class AudioNormalizer(AbstractTransformer):
         - Shape: (n,) or (channels, n)
     """
 
-    def __init__(self, target_sample_rate: int = 22050) -> None:
+    def __init__(self, logger: logging.Logger, target_sample_rate: int = 22050) -> None:
         """
         Args:
             target_sample_rate: Target sampling rate in Hz
         """
-        super().__init__()
+        super().__init__(logger)
         self.target_sample_rate = target_sample_rate
 
     def to_mono(self, audio_data: np.ndarray) -> np.ndarray:

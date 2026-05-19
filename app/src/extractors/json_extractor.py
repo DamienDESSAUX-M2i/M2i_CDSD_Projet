@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from src.extractors import AbstractExtractor
+from src.utils import validate_file_path
 
 
 class JSONExtractor(AbstractExtractor):
@@ -26,7 +27,7 @@ class JSONExtractor(AbstractExtractor):
         Returns:
             Any: Data extract from the JSON file.
         """
-        self._validate_file_path(file_path=file_path, suffix=".json")
+        validate_file_path(file_path=file_path, suffix=".json")
 
         try:
             self.logger.info(

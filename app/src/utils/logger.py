@@ -1,44 +1,84 @@
+from __future__ import annotations
+
 import logging
-import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-LOGGER_DIR_PATH = Path("./app/logs")  # /app/logs in container
-LOGGER_NAME = os.getenv("LOGGER_NAME", "app")
+LOGGER_DIR_PATH = Path("./app/logs")
+LOGGER_NAME = "app"
+LOG_FORMAT = "{asctime} | {levelname:<8} | {name} | {module}: {funcName} | {message}"
 
 
-def set_up_logger(
-    name: str, logger_file_path: Path = None, level=logging.DEBUG
-) -> logging.Logger:
-    """Set up a logger.
+def _ensure_log_directory(path: Path) -> None:
+    """
+    Ensure that the log directory exists.
 
     Args:
-        name (str): Name of the logger.
-        log_path (Path, optional): Path of the logger file. Defaults to None.
-        level (_type_, optional): Level of the logger. Defaults to logging.INFO.
+        path: Directory path to create if missing.
+    """
+
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def _build_formatter() -> logging.Formatter:
+    """
+    Create a shared log formatter.
 
     Returns:
-        logging.Logger: A configured logger.
+        Configured logging formatter using structured format.
     """
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
 
-    formatter = logging.Formatter(
-        "{asctime} | {levelname:<8} | {name} | {module}: {funcName} | {message}",
+    return logging.Formatter(
+        LOG_FORMAT,
         style="{",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+
+
+def _set_up_logger(
+    name: str,
+    logger_file_path: Path | None = None,
+    level: int = logging.DEBUG,
+    *,
+    propagate: bool = False,
+    force_reset: bool = True,
+) -> logging.Logger:
+    """
+    Configure and return a logger instance.
+
+    This function is idempotent when `force_reset=True`: it clears existing
+    handlers to avoid duplicate logs.
+
+    Args:
+        name: Logger name.
+        logger_file_path: Optional file path for rotating file logging.
+        level: Minimum logging level for the logger.
+        propagate: Whether to propagate logs to parent loggers.
+        force_reset: If True, remove existing handlers before configuration.
+
+    Returns:
+        Configured logging.Logger instance.
+    """
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.propagate = propagate
+
+    if force_reset:
+        logger.handlers.clear()
+
+    formatter = _build_formatter()
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    if logger_file_path:
+    if logger_file_path is not None:
         file_handler = RotatingFileHandler(
             logger_file_path,
             mode="a",
-            maxBytes=5242880,
+            maxBytes=5_242_880,
             backupCount=3,
             encoding="utf-8",
         )
@@ -49,10 +89,34 @@ def set_up_logger(
     return logger
 
 
-def initialize_logger() -> bool:
-    if not LOGGER_DIR_PATH.exists():
-        LOGGER_DIR_PATH.mkdir(parents=True, exist_ok=True)
+def initialize_logger() -> logging.Logger:
+    """
+    Initialize application logger with default configuration.
 
-    set_up_logger(
-        name=LOGGER_NAME, logger_file_path=LOGGER_DIR_PATH / f"{LOGGER_NAME}.log"
+    Ensures log directory exists and sets up a rotating file logger
+    alongside console logging.
+
+    Returns:
+        Configured root application logger.
+    """
+
+    _ensure_log_directory(LOGGER_DIR_PATH)
+
+    return _set_up_logger(
+        name=LOGGER_NAME,
+        logger_file_path=LOGGER_DIR_PATH / f"{LOGGER_NAME}.log",
     )
+
+
+def get_logger() -> logging.Logger:
+    """
+    Retrieve the preconfigured application logger.
+
+    This function assumes that `initialize_logger()` has already been
+    called during application startup. It does not modify logger state.
+
+    Returns:
+        The application logger instance identified by LOGGER_NAME.
+    """
+
+    return logging.getLogger(LOGGER_NAME)

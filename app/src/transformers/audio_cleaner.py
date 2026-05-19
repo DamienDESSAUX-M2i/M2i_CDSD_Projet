@@ -1,3 +1,5 @@
+import logging
+
 import librosa
 import numpy as np
 import scipy.signal as signal
@@ -19,6 +21,7 @@ class AudioCleaner(AbstractTransformer):
 
     def __init__(
         self,
+        logger: logging.Logger,
         n_fft: int = 2048,
         hop_length: int = 512,
     ) -> None:
@@ -27,7 +30,7 @@ class AudioCleaner(AbstractTransformer):
             n_fft: FFT window size for spectral operations
             hop_length: Hop length for STFT
         """
-        super().__init__()
+        super().__init__(logger)
         self.n_fft = n_fft
         self.hop_length = hop_length
 

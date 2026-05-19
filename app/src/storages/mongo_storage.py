@@ -2,17 +2,18 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from config import mongo_config
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
+from settings import mongo_config
 
 from src.models import BeatPositionDict, ChordDict, NoteMidiDict, PitchContourDict
-from src.utils import LOGGER_NAME
+
+from .abstract_storage import AbstractStorage
 
 
-class MongoStorage:
-    def __init__(self):
-        self.logger = logging.getLogger(LOGGER_NAME)
+class MongoStorage(AbstractStorage):
+    def __init__(self, logger: logging.Logger):
+        super().__init__(logger)
         self.client = self._get_client()
         self.db = self.client[mongo_config.dbname]
         self.pitch_contour = self.db[mongo_config.collection_pitch_contour]
@@ -317,6 +318,6 @@ class MongoStorage:
         return deleted_result.deleted_count
 
     def close(self) -> None:
-        """Close the connection"""
+        """Close the connection."""
         self.client.close()
         self.logger.info("Mongo connection closed")

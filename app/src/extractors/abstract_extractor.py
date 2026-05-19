@@ -1,23 +1,33 @@
-import logging
-from abc import ABC
-from pathlib import Path
+from __future__ import annotations
 
-from src.utils import LOGGER_NAME
+import logging
+from abc import ABC, abstractmethod
+from typing import Any
 
 
 class AbstractExtractor(ABC):
-    def __init__(self, logger_name: logging.Logger = LOGGER_NAME) -> None:
-        self.logger = logging.getLogger(logger_name)
+    """
+    Base class for data extractors.
+    """
 
-    def _validate_file_path(self, file_path: Path, suffix: str = None) -> None:
-        """Raise an Exception if path is invalid."""
-        if not isinstance(file_path, Path):
-            raise ValueError("file_path must be a pathlib.Path.")
+    def __init__(
+        self,
+        logger: logging.Logger,
+    ) -> None:
+        """
+        Initialize the extractor.
 
-        if not file_path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
+        Args:
+            logger: Logger instance.
+        """
+        self.logger = logger
 
-        if suffix and (file_path.suffix.lower() != suffix):
-            raise ValueError(
-                f"Invalid file extension '{file_path.suffix}'. Expected '{suffix}'."
-            )
+    @abstractmethod
+    def extract(self) -> Any:
+        """
+        Extract data from a given input source.
+
+        Returns:
+            The extracted data in an implementation-defined format.
+        """
+        raise NotImplementedError

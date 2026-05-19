@@ -1,15 +1,16 @@
 import logging
 
 import psycopg
-from config import postgres_config
+from settings import postgres_config
 
 from src.models import JAMSMetadata, XMLMetadata
-from src.utils import LOGGER_NAME
+
+from .abstract_storage import AbstractStorage
 
 
-class PostgresStorage:
-    def __init__(self):
-        self.logger = logging.getLogger(LOGGER_NAME)
+class PostgresStorage(AbstractStorage):
+    def __init__(self, logger: logging.Logger):
+        super().__init__(logger)
         self.connection = self._get_connection()
         self.cursor = self.connection.cursor()
 

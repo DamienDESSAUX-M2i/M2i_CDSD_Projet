@@ -4,6 +4,7 @@ from typing import Any
 import pandas as pd
 
 from src.extractors import AbstractExtractor
+from src.utils import validate_file_path
 
 
 class ExcelExtractor(AbstractExtractor):
@@ -27,7 +28,7 @@ class ExcelExtractor(AbstractExtractor):
         Returns:
             dict[str, pd.DataFrame]: Dictionary whose keys are the names of the sheets and whose values ​​are the loaded DataFrames.
         """
-        self._validate_file_path(file_path=file_path, suffix=".xlsx")
+        validate_file_path(file_path=file_path, suffix=".xlsx")
 
         try:
             self.logger.info(

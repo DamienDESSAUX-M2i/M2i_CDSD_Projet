@@ -1,6 +1,8 @@
+import logging
+
 import numpy as np
 import pandas as pd
-from config import ml_pipeline_config, mongo_config
+from settings import ml_pipeline_config, mongo_config
 from sklearn.model_selection import train_test_split
 
 from src.pipelines import AbstractPipeline
@@ -23,6 +25,7 @@ class MLPipeline(AbstractPipeline):
 
     def __init__(
         self,
+        logger: logging.Logger,
         guitarset: bool = True,
         idmt_smt_guitar: bool = True,
     ) -> None:
@@ -33,7 +36,7 @@ class MLPipeline(AbstractPipeline):
             guitarset: Whether to process GuitarSet dataset.
             idmt_smt_guitar: Whether to process IDMT-SMT-Guitar dataset.
         """
-        super().__init__()
+        super().__init__(logger)
         self.use_guitar_set = guitarset
         self.use_idmt_smt_guitar = idmt_smt_guitar
 

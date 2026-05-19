@@ -1,8 +1,9 @@
+import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from config import (
+from settings import (
     guitar_set_ingestion_pipeline_config,
     minio_config,
 )
@@ -35,8 +36,8 @@ class GuitarSetIngestionPipelineStatistics(Statistics):
 class GuitarSetIngestionPipeline(AbstractPipeline):
     """Ingestion Pipeline."""
 
-    def __init__(self, ingestion_limit: int | None = None):
-        super().__init__()
+    def __init__(self, logger: logging.Logger, ingestion_limit: int | None = None):
+        super().__init__(logger)
         self.jams_extractor = JAMSExtractor()
         self.wav_extractor = WAVExtractor()
         self.ingestion_limit = (

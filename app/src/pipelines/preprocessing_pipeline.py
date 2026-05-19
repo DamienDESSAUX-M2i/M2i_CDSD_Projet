@@ -1,9 +1,10 @@
+import logging
 from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 import pandas as pd
-from config import minio_config, preprocessing_pipeline_config
+from settings import minio_config, preprocessing_pipeline_config
 from tqdm import tqdm
 
 from src.pipelines import AbstractPipeline
@@ -83,6 +84,7 @@ class PreprocessingPipeline(AbstractPipeline):
 
     def __init__(
         self,
+        logger: logging.Logger,
         guitarset: bool = True,
         idmt_smt_guitar: bool = True,
         preprocessing_limit: int | None = None,
@@ -97,7 +99,7 @@ class PreprocessingPipeline(AbstractPipeline):
                 If None, the default value from configuration is used.
         """
 
-        super().__init__()
+        super().__init__(logger)
         self.guitarset = guitarset
         self.idmt_smt_guitar = idmt_smt_guitar
         self.preprocessing_limit = (

@@ -1,7 +1,7 @@
 import argparse
 
 from src.pipelines import (
-    DownloadDatasetsPipeline,
+    DatasetsDownloadPipeline,
     GuitarSetIngestionPipeline,
     IDMTSMTGuitarIngestionPipeline,
     MLPipeline,
@@ -11,7 +11,7 @@ from src.utils import initialize_logger
 
 
 def main() -> None:
-    initialize_logger()
+    logger = initialize_logger()
 
     parser = argparse.ArgumentParser(description="Audio Midi Pipeline")
 
@@ -98,17 +98,18 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.download_datasets:
-        download_datasets_pipeline = DownloadDatasetsPipeline(
-            guitarset=args.guitar_set,
+        download_datasets_pipeline = DatasetsDownloadPipeline(
+            logger=logger,
+            guitar_set=args.guitar_set,
             idmt_smt_guitar=args.idmt_smt_guitar,
         )
         download_datasets_pipeline.run()
-        download_datasets_pipeline.close()
 
     if args.ingest_datasets:
         for ingestion_pipeline in [
-            GuitarSetIngestionPipeline(ingestion_limit=args.limit),
+            GuitarSetIngestionPipeline(logger=logger, ingestion_limit=args.limit),
             IDMTSMTGuitarIngestionPipeline(
+                logger=logger,
                 ingestion_limit=args.limit,
                 dataset1=args.dataset1,
                 dataset2=args.dataset2,
@@ -120,12 +121,16 @@ def main() -> None:
             ingestion_pipeline.close()
 
     if args.ingest_guitar_set:
-        ingestion_pipeline = GuitarSetIngestionPipeline(ingestion_limit=args.limit)
+        ingestion_pipeline = GuitarSetIngestionPipeline(
+            logger=logger,
+            ingestion_limit=args.limit,
+        )
         ingestion_pipeline.run()
         ingestion_pipeline.close()
 
     if args.ingest_idmt_smt_guitar:
         ingestion_pipeline = IDMTSMTGuitarIngestionPipeline(
+            logger=logger,
             ingestion_limit=args.limit,
             dataset1=args.dataset1,
             dataset2=args.dataset2,
@@ -137,6 +142,7 @@ def main() -> None:
 
     if args.preprocess_datasets:
         preprocessing_pipeline = PreprocessingPipeline(
+            logger=logger,
             preprocessing_limit=args.limit,
             guitarset=args.guitar_set,
             idmt_smt_guitar=args.idmt_smt_guitar,
@@ -146,6 +152,7 @@ def main() -> None:
 
     if args.run_ml:
         ml_pipeline = MLPipeline(
+            logger=logger,
             guitarset=args.guitar_set,
             idmt_smt_guitar=args.idmt_smt_guitar,
         )

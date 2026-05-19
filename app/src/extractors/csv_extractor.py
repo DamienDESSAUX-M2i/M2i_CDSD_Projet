@@ -4,6 +4,7 @@ from typing import Any
 import pandas as pd
 
 from src.extractors import AbstractExtractor
+from src.utils import validate_file_path
 
 
 class CSVExtractor(AbstractExtractor):
@@ -27,7 +28,7 @@ class CSVExtractor(AbstractExtractor):
         Returns:
             pd.DataFrame: DataFrame of the CSV file.
         """
-        self._validate_file_path(file_path=file_path, suffix=".csv")
+        validate_file_path(file_path=file_path, suffix=".csv")
 
         try:
             self.logger.info(

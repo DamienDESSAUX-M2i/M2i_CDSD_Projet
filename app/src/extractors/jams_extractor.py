@@ -19,6 +19,7 @@ from src.models import (
     Scale,
     Style,
 )
+from src.utils import validate_file_path
 
 TITLE_REGEX = re.compile(
     r"^(?P<guitarist_id>\d{2})_(?P<style>[A-Za-z0-9]+)-(?P<tempo>\d+)-(?P<scale>[A-G](?:b|\#)?)_(?P<playing_version>[A-Za-z]+)$",
@@ -47,7 +48,7 @@ class JAMSExtractor(AbstractExtractor):
         Returns:
             jams.JAMS: jams.JAMS loaded from the JAMS file.
         """
-        self._validate_file_path(file_path=file_path, suffix=".jams")
+        validate_file_path(file_path=file_path, suffix=".jams")
 
         try:
             self.logger.debug(f"Reading JAMS file: path: {file_path.as_posix()}")

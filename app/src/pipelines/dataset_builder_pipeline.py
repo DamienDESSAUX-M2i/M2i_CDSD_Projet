@@ -1,16 +1,16 @@
+import logging
+
 import numpy as np
 import pandas as pd
-from config import dataset_builder_pipeline_config, mongo_config
+from settings import dataset_builder_pipeline_config, mongo_config
 from sklearn.model_selection import train_test_split
 
 from src.pipelines import AbstractPipeline
 
 
 class DatasetBuilderPipeline(AbstractPipeline):
-    def __init__(
-        self,
-    ) -> None:
-        super().__init__()
+    def __init__(self, logger: logging.Logger) -> None:
+        super().__init__(logger)
         self.dataset_name = dataset_builder_pipeline_config.dataset_name
 
         self.use_guitar_set = dataset_builder_pipeline_config.use_guitarset

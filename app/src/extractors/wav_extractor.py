@@ -5,6 +5,7 @@ import numpy as np
 import soundfile as sf
 
 from src.extractors import AbstractExtractor
+from src.utils import validate_file_path
 
 
 class WAVExtractor(AbstractExtractor):
@@ -29,7 +30,7 @@ class WAVExtractor(AbstractExtractor):
             ValueError: If inputs are invalid.
             RuntimeError: If reading the WAV file fails.
         """
-        self._validate_file_path(file_path=file_path, suffix=".wav")
+        validate_file_path(file_path=file_path, suffix=".wav")
 
         try:
             self.logger.debug(

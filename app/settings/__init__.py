@@ -1,6 +1,7 @@
 from .dataset_builder_pipeline_settings import dataset_builder_pipeline_config
-from .dataset_settings import guitar_set_config, idmt_smt_guitar_config
-from .download_datasets_pipeline_settings import download_datasets_pipeline_config
+from .dataset_downloader_settings import DATASETS_DOWNLOADER_SETTINGS
+from .dataset_settings import GUITAR_SET_CONFIG, IDMT_SMT_GUITAR_CONFIG
+from .datasets_download_pipeline_settings import DATASETS_DOWNLOAD_PIPELINE_SETTINGS
 from .ingestion_pipelines_settings import (
     guitar_set_ingestion_pipeline_config,
     idmt_smt_guitar_ingestion_pipeline_config,
@@ -13,9 +14,10 @@ from .preprocessing_pipeline_settings import preprocessing_pipeline_config
 
 __all__ = [
     "dataset_builder_pipeline_config",
-    "download_datasets_pipeline_config",
-    "guitar_set_config",
-    "idmt_smt_guitar_config",
+    "DATASETS_DOWNLOADER_SETTINGS",
+    "GUITAR_SET_CONFIG",
+    "IDMT_SMT_GUITAR_CONFIG",
+    "DATASETS_DOWNLOAD_PIPELINE_SETTINGS",
     "guitar_set_ingestion_pipeline_config",
     "idmt_smt_guitar_ingestion_pipeline_config",
     "ml_pipeline_config",

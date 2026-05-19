@@ -1,7 +1,8 @@
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from config import (
+from settings import (
     idmt_smt_guitar_ingestion_pipeline_config,
     minio_config,
 )
@@ -31,13 +32,14 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
 
     def __init__(
         self,
+        logger: logging.Logger,
         ingestion_limit: int | None = None,
         dataset1: bool = True,
         dataset2: bool = True,
         dataset3: bool = True,
         dataset4: bool = True,
     ):
-        super().__init__()
+        super().__init__(logger)
         self.xml_extractor = XMLExtractor()
         self.wav_extractor = WAVExtractor()
         self.ingestion_limit = (

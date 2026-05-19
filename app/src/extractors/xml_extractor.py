@@ -15,6 +15,7 @@ from src.models import (
     XMLMetadata,
 )
 from src.transformers import ElementTreeWrapper
+from src.utils import validate_file_path
 
 DIRECTORY_NAME_REGEX = re.compile(
     r"(?P<instrument_model>(Fender\ Strat|Ibanez\ Power\ Strat))\ (?P<amp_channel>Clean)\ (?P<pick_up_setting>Neck|Bridge|Bridge\+Neck)\ (?P<pick_up_type>SC|HU)\ ?(?P<polyphony>(?:Chords)?)",
@@ -43,7 +44,7 @@ class XMLExtractor(AbstractExtractor):
         Returns:
             ET.Element: ElementTree loaded from the XML file.
         """
-        self._validate_file_path(file_path=file_path, suffix=".xml")
+        validate_file_path(file_path=file_path, suffix=".xml")
 
         try:
             self.logger.debug(f"Reading XML file: path={file_path.as_posix()}")

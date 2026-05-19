@@ -11,17 +11,18 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import soundfile as sf
-from config import minio_config
 from minio.datatypes import Object
 from minio.error import S3Error
+from settings import minio_config
 
 from minio import Minio
-from src.utils import LOGGER_NAME
+
+from .abstract_storage import AbstractStorage
 
 
-class MinIOStorage:
-    def __init__(self):
-        self.logger = logging.getLogger(LOGGER_NAME)
+class MinIOStorage(AbstractStorage):
+    def __init__(self, logger: logging.Logger):
+        super().__init__(logger)
         self.client = self._get_client()
         self._ensure_buckets()
 
