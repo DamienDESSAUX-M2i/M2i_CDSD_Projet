@@ -4,8 +4,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-LOGGER_DIR_PATH = Path("./app/logs")
-LOGGER_NAME = "app"
+LOGGER_DIR_PATH = Path("./audio_midi/logs")
+LOGGER_NAME = "audio_midi"
 LOG_FORMAT = "{asctime} | {levelname:<8} | {name} | {module}: {funcName} | {message}"
 
 

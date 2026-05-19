@@ -1,18 +1,16 @@
 # ===
-# app
+# audio_midi
 # ===
 
 # log
-app/logs/*
+audio_midi/logs/*
 
 # data
-app/data/raw/*
-app/data/processed/*
-app/data/output/*
+audio_midi/data/*
 
 # experiments
-app/experiments
-app/main_xp.py
+audio_midi/experiments
+audio_midi/main_xp.py
 
 # ===
 # MinIO

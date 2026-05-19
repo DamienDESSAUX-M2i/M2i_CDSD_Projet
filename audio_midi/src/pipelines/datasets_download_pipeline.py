@@ -3,11 +3,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from settings import (
+    DATA_DIRECTORY,
     DATASETS_DOWNLOADER_SETTINGS,
     GUITAR_SET_CONFIG,
     IDMT_SMT_GUITAR_CONFIG,
 )
-from settings.dataset_settings import DatasetSettings
+from settings.datasets_settings import DatasetSettings
 
 from src.downloaders import DatasetDownloader
 from src.extractors import ZipExtractor
@@ -39,7 +40,7 @@ class DatasetsDownloadPipeline:
         logger: logging.Logger,
         guitar_set: bool,
         idmt_smt_guitar: bool,
-        base_directory: Path = Path("./app/data/raw").resolve(),
+        base_directory: Path = DATA_DIRECTORY,
     ) -> None:
         """Initialize the datasets download pipeline.
 

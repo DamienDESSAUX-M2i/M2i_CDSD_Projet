@@ -9,7 +9,7 @@ class GuitarSetIngestionPipelineConfig:
     dataset_path: Path = Path(
         os.getenv(
             "GUITARSET_PATH",
-            "./app/data/raw/guitarset",
+            "./audio_midi/data/guitarset",
         )
     )
     annotation_path: Path = dataset_path / "annotation"
@@ -29,7 +29,7 @@ class IDMTSMTGuitarIngestionPipelineConfig:
     dataset_path: Path = Path(
         os.getenv(
             "IDMT_SMT_GUITAR_PATH",
-            "./app/data/raw/idmt_smt_guitar/IDMT-SMT-GUITAR_V2",
+            "./audio_midi/data/idmt_smt_guitar/idmt_smt_guitar/IDMT-SMT-GUITAR_V2",
         )
     )
     dataset1_path = dataset_path / "dataset1"
