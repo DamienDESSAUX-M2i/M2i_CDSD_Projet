@@ -21,3 +21,4 @@ create_bucket() {
 create_bucket $BUCKET_RAW
 create_bucket $BUCKET_PROCESSED
 create_bucket $BUCKET_OUTPUT
+create_bucket $BUCKET_MLFLOW

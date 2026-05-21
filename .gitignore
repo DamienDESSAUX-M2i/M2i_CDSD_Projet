@@ -37,6 +37,18 @@ postgres/volume/*
 pgadmin/volume/*
 
 # ===
+# Postgres_mlflow
+# ===
+
+postgres_mlflow/volume/*
+
+# ===
+# MLflow
+# ===
+
+mlflow/volume/*
+
+# ===
 # Python
 # ===
 

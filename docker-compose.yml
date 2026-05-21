@@ -2,32 +2,32 @@ name: audio_midi
 
 services:
   minio:
-    container_name: minio
     image: quay.io/minio/minio
+    restart: unless-stopped
     env_file:
       - ./.env
     environment:
       - MINIO_ROOT_USER=${MINIO_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-    restart: unless-stopped
+    command: ["server", "/data", "--console-address" ,":9001"]
     ports:
       - 9000:9000
       - 9001:9001
     volumes:
       - ./minio/volume:/data
-    networks:
-      - network_minio
-    command: ["server", "/data", "--console-address" ,":9001"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    networks:
+      - network_minio
 
   minio-init:
-    build: ./minio/init
-    container_name: minio-init
+    build:
+      context: ./minio/init
+    restart: "no"
     env_file:
       - ./.env
     environment:
@@ -36,80 +36,90 @@ services:
       - BUCKET_RAW=${BUCKET_RAW}
       - BUCKET_PROCESSED=${BUCKET_PROCESSED}
       - BUCKET_OUTPUT=${BUCKET_OUTPUT}
+      - BUCKET_MLFLOW=${BUCKET_MLFLOW}
     depends_on:
       minio:
         condition: service_healthy
     networks:
       - network_minio
-    restart: "no"
 
   mongo:
     image: mongo
-    container_name: mongo
+    restart: unless-stopped
     env_file:
       - ./.env
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
       MONGO_INITDB_DATABASE: ${MONGO_DBNAME}
-    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
       - ./mongo/initdb/01_collections.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - ./mongo/volume:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - network_mongo
 
   mongo-express:
-    depends_on:
-      - mongo
     image: mongo-express
-    container_name: mongo-express
-    ports:
-      - "8081:8081"
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
     env_file:
       - ./.env
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
       ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_PORTE: 27017
+      ME_CONFIG_MONGODB_PORT: 27017
       ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER}
       ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD}
-    restart: unless-stopped
+    ports:
+      - "8081:8081"
     networks:
       - network_mongo
 
   postgres:
     image: postgres
-    container_name: postgres
+    restart: unless-stopped
     env_file:
       - ./.env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DBNAME}
-    restart: unless-stopped
     ports:
       - 5432:5432
     volumes:
       - ./postgres/volume:/var/lib/postgresql
       - ./postgres/initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - network_postgres
 
   pgadmin:
-    depends_on:
-      - postgres
     image: dpage/pgadmin4
-    container_name: pgadmin
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     env_file:
       - ./.env
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-    restart: unless-stopped
     ports:
       - 8080:80
     volumes:
@@ -118,12 +128,137 @@ services:
     networks:
       - network_postgres
 
+  postgres_mlflow:
+    image: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_MLFLOW_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_MLFLOW_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_MLFLOW_DBNAME}
+    volumes:
+      - ./postgres_mlflow/volume:/var/lib/postgresql
+    networks:
+      - network_postgres_mlflow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_MLFLOW_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow
+    restart: unless-stopped
+    depends_on:
+      postgres_mlflow:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://${POSTGRES_MLFLOW_USER}:${POSTGRES_MLFLOW_PASSWORD}@postgres_mlflow:5432/${POSTGRES_MLFLOW_DBNAME}
+      AWS_ACCESS_KEY_ID: ${MINIO_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_REGION: us-east-1
+    ports:
+      - "5000:5000"
+    networks:
+      - network_postgres_mlflow
+      - network_minio
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://${POSTGRES_MLFLOW_USER}:${POSTGRES_MLFLOW_PASSWORD}@postgres_mlflow:5432/${POSTGRES_MLFLOW_DBNAME}
+      --default-artifact-root s3://mlflow/
+
+  spark-master:
+    build:
+      context: ./spark
+    hostname: spark-master
+    restart: unless-stopped
+    command: >
+      /opt/spark/bin/spark-class
+      org.apache.spark.deploy.master.Master
+      --host spark-master
+      --port 7077
+      --webui-port 8080
+    environment:
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: 7077
+      SPARK_MASTER_WEBUI_PORT: 8080
+    ports:
+      - "7077:7077"
+      - "8082:8080"
+    volumes:
+      - ./spark/apps:/opt/spark/apps
+      - ./spark/data:/opt/spark/data
+      - ./spark/events:/opt/spark/events
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - network_spark
+      - network_minio
+
+  spark-worker-1:
+    build:
+      context: ./spark
+    restart: unless-stopped
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    command: >
+      /opt/spark/bin/spark-class
+      org.apache.spark.deploy.worker.Worker
+      spark://spark-master:7077
+    environment:
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2G
+    volumes:
+      - ./spark/apps:/opt/spark/apps
+      - ./spark/data:/opt/spark/data
+      - ./spark/events:/opt/spark/events
+    networks:
+      - network_spark
+      - network_minio
+
+  spark-worker-2:
+    build:
+      context: ./spark
+    restart: unless-stopped
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    command: >
+      /opt/spark/bin/spark-class
+      org.apache.spark.deploy.worker.Worker
+      spark://spark-master:7077
+    environment:
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2G
+    volumes:
+      - ./spark/apps:/opt/spark/apps
+      - ./spark/data:/opt/spark/data
+      - ./spark/events:/opt/spark/events
+    networks:
+      - network_spark
+      - network_minio
+
   # TODO
-  # mlflow
   # api
-  # spark ?
 
 networks:
   network_minio:
+    driver: bridge
   network_mongo:
+    driver: bridge
   network_postgres:
+    driver: bridge
+  network_postgres_mlflow:
+    driver: bridge
+  network_spark:
+    driver: bridge
