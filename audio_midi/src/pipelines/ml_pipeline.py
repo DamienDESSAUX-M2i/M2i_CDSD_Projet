@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 import pandas as pd
-from settings import ml_pipeline_config, mongo_config
+from settings import MONGO_SETTINGS, ml_pipeline_config
 from sklearn.model_selection import train_test_split
 
 from src.pipelines import AbstractPipeline
@@ -83,7 +83,7 @@ class MLPipeline(AbstractPipeline):
         ]
 
         documents = self.mongo_storage.aggregate_documents(
-            collection_name=mongo_config.collection_sample_metadata,
+            collection_name=MONGO_SETTINGS.collection_sample_metadata,
             pipeline=pipeline,
         )
 

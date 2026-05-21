@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from settings import (
-    idmt_smt_guitar_ingestion_pipeline_config,
-    minio_config,
+    IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS,
+    MINIO_SETTINGS,
 )
 from tqdm import tqdm
 
@@ -43,7 +43,8 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
         self.xml_extractor = XMLExtractor()
         self.wav_extractor = WAVExtractor()
         self.ingestion_limit = (
-            ingestion_limit or idmt_smt_guitar_ingestion_pipeline_config.ingestion_limit
+            ingestion_limit
+            or IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.ingestion_limit
         )
         self.dataset1 = dataset1
         self.dataset2 = dataset2
@@ -67,14 +68,14 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             if self.dataset2:
                 self.logger.info("Ingestion of subset number 2...")
                 self._dataset_ingestion(
-                    dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset2_path,
+                    dataset_path=IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.dataset2_path,
                     dataset_number=2,
                 )
 
             if self.dataset3:
                 self.logger.info("Ingestion of subset number 3...")
                 self._dataset_ingestion(
-                    dataset_path=idmt_smt_guitar_ingestion_pipeline_config.dataset3_path,
+                    dataset_path=IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.dataset3_path,
                     dataset_number=3,
                 )
 
@@ -105,8 +106,8 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             self.statistics.xml_loaded += 1
 
             self.minio_storage.put_xml(
-                bucket_name=minio_config.bucket_raw,
-                file_name=f"{idmt_smt_guitar_ingestion_pipeline_config.dataset_name}_{dataset_number}/{xml_file_path.stem}/annotation.xml",
+                bucket_name=MINIO_SETTINGS.bucket_raw,
+                file_name=f"{IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.dataset_name}_{dataset_number}/{xml_file_path.stem}/annotation.xml",
                 tree=tree,
             )
             self.statistics.xml_uploaded += 1
@@ -207,8 +208,8 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             self.statistics.wav_loaded += 1
 
             result = self.minio_storage.put_audio(
-                bucket_name=minio_config.bucket_raw,
-                file_name=f"{idmt_smt_guitar_ingestion_pipeline_config.dataset_name}_{dataset_number}/{wav_file_path.stem}/audio.wav",
+                bucket_name=MINIO_SETTINGS.bucket_raw,
+                file_name=f"{IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.dataset_name}_{dataset_number}/{wav_file_path.stem}/audio.wav",
                 audio_data=audio_data,
                 sample_rate=sample_rate,
             )
@@ -292,12 +293,12 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
 
     def _dataset1_ingestion(self) -> None:
         """Ingestion of the dataset number 1."""
-        if not idmt_smt_guitar_ingestion_pipeline_config.dataset1_path.exists():
+        if not IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.dataset1_path.exists():
             raise FileNotFoundError(
-                f"Directory does not exist: path={idmt_smt_guitar_ingestion_pipeline_config.dataset1_path}"
+                f"Directory does not exist: path={IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.dataset1_path}"
             )
 
-        paths = idmt_smt_guitar_ingestion_pipeline_config.dataset1_path.glob("*")
+        paths = IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.dataset1_path.glob("*")
         dir_paths = [p for p in paths if p.is_dir()]
 
         for dir_path in dir_paths:
@@ -336,9 +337,9 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
     # TODO
     def _dataset4_ingestion(self) -> None:
         """Ingestion of the dataset number 4."""
-        if not idmt_smt_guitar_ingestion_pipeline_config.dataset4_path.exists():
+        if not IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.dataset4_path.exists():
             raise FileNotFoundError(
-                f"Directory does not exist: path={idmt_smt_guitar_ingestion_pipeline_config.dataset1_path}"
+                f"Directory does not exist: path={IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS.dataset1_path}"
             )
 
         chords_paths = Path(

@@ -143,6 +143,7 @@ class JAMSAnnotation:
             dict[str, str]: Dictionary whose keys are attributes of the JAMSAnnotation class
             and values are DataFrame converted into dictionaries.
         """
+
         return {
             "pitch_contour": {
                 "dataset_name": self.dataset_name,

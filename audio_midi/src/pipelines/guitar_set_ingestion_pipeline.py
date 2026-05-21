@@ -3,9 +3,10 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from models import AnnotationType
 from settings import (
-    guitar_set_ingestion_pipeline_config,
-    minio_config,
+    GUITAR_SET_INGESTION_PIPELINE_SETTINGS,
+    MINIO_SETTINGS,
 )
 from tqdm import tqdm
 
@@ -21,15 +22,42 @@ TITLE_REGEX = re.compile(
 
 @dataclass
 class GuitarSetIngestionPipelineStatistics(Statistics):
+    """Statistics container for GuitarSet ingestion pipeline.
+
+    Attributes:
+        jams_loaded: Number of JAMS files successfully loaded from the dataset.
+        jams_uploaded: Number of JAMS files successfully uploaded to MinIO.
+        recordings_inserted: Number of new recording rows inserted into PostgreSQL.
+        recordings_updated: Number of existing recording rows updated in PostgreSQL.
+        jams_metadata_inserted: Number of new GuitarSet metadata rows inserted into PostgreSQL.
+        jams_metadata_updated: Number of existing GuitarSet metadata rows updated in PostgreSQL.
+        jams_annotation_file_inserted: Number of new annotation file rows inserted into PostgreSQL.
+        jams_annotation_file_updated: Number of existing annotation file rows updated in PostgreSQL.
+        jams_annotation_inserted: Number of new annotation documents inserted into MongoDB.
+        jams_annotation_updated: Number of existing annotation documents updated in MongoDB.
+        jams_error: Number of errors encountered during JAMS ingestion and processing.
+        wav_loaded: Number of WAV audio files successfully loaded from the dataset.
+        wav_uploaded: Number of WAV audio files successfully uploaded to MinIO.
+        audio_file_inserted: Number of new audio file rows inserted into PostgreSQL.
+        audio_file_updated: Number of existing audio file rows updated in PostgreSQL.
+        wav_error: Number of errors encountered during WAV ingestion and processing.
+    """
+
     jams_loaded: int = 0
     jams_uploaded: int = 0
+    recordings_inserted: int = 0
+    recordings_updated: int = 0
     jams_metadata_inserted: int = 0
     jams_metadata_updated: int = 0
+    jams_annotation_file_inserted: int = 0
+    jams_annotation_file_updated: int = 0
     jams_annotation_inserted: int = 0
     jams_annotation_updated: int = 0
     jams_error: int = 0
     wav_loaded: int = 0
     wav_uploaded: int = 0
+    audio_file_inserted: int = 0
+    audio_file_updated: int = 0
     wav_error: int = 0
 
 
@@ -38,10 +66,10 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
 
     def __init__(self, logger: logging.Logger, ingestion_limit: int | None = None):
         super().__init__(logger)
-        self.jams_extractor = JAMSExtractor()
-        self.wav_extractor = WAVExtractor()
+        self.jams_extractor = JAMSExtractor(logger=self.logger)
+        self.wav_extractor = WAVExtractor(logger=self.logger)
         self.ingestion_limit = (
-            ingestion_limit or guitar_set_ingestion_pipeline_config.ingestion_limit
+            ingestion_limit or GUITAR_SET_INGESTION_PIPELINE_SETTINGS.ingestion_limit
         )
         self.statistics = GuitarSetIngestionPipelineStatistics()
 
@@ -51,30 +79,31 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
         Raises:
             RuntimeError: If pipeline failed.
         """
+
         try:
             self.logger.info("GuitarSet ingestion pipeline start...")
 
             self.logger.info("[1/2] JAMS ingestion")
             self._jams_ingestion(
-                directory_jams_path=guitar_set_ingestion_pipeline_config.annotation_path
+                directory_jams_path=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.annotation_path
             )
 
             self.logger.info("[2/2] WAV ingestion")
             self.logger.info("\t[1/4] Directory: audio_hex_pickup_debleeded")
             self._wav_ingestion(
-                directory_wav_path=guitar_set_ingestion_pipeline_config.audio_hex_pickup_debleeded_path
+                directory_wav_path=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.audio_hex_pickup_debleeded_path
             )
             self.logger.info("\t[2/4] Directory: audio_hex_pickup_original_path")
             self._wav_ingestion(
-                directory_wav_path=guitar_set_ingestion_pipeline_config.audio_hex_pickup_original_path
+                directory_wav_path=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.audio_hex_pickup_original_path
             )
             self.logger.info("\t[3/4] Directory: audio_mono_mic_path")
             self._wav_ingestion(
-                directory_wav_path=guitar_set_ingestion_pipeline_config.audio_mono_mic_path
+                directory_wav_path=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.audio_mono_mic_path
             )
             self.logger.info("\t[4/4] Directory: audio_mono_pickup_mix_path")
             self._wav_ingestion(
-                directory_wav_path=guitar_set_ingestion_pipeline_config.audio_mono_pickup_mix_path
+                directory_wav_path=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.audio_mono_pickup_mix_path
             )
 
             self.logger.info(
@@ -90,69 +119,145 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
         Args:
             jam_file_path (Path): Path of the JAMS file
         """
+
         try:
+            # Load JAMS
             jam = self.jams_extractor.read(file_path=jam_file_path)
             self.statistics.jams_loaded += 1
 
-            self.minio_storage.put_jams(
-                bucket_name=minio_config.bucket_raw,
-                file_name=f"{guitar_set_ingestion_pipeline_config.dataset_name}/{jam_file_path.stem}/annotation.jams",
+            # Strore raw JAMS (MinIO)
+            jam_uri = self.minio_storage.put_jams(
+                bucket_name=MINIO_SETTINGS.bucket_raw,
+                file_name=(
+                    f"{GUITAR_SET_INGESTION_PIPELINE_SETTINGS.dataset_name}/"
+                    f"{jam_file_path.stem}/annotation.jams"
+                ),
                 jam=jam,
             )
+
+            if jam_uri is None:
+                self.logger.error(
+                    f"Failed to upload JAMS file to MinIO: {jam_file_path}"
+                )
+                raise
+
             self.statistics.jams_uploaded += 1
 
-            jam_metadata = self.jams_extractor.extract_metadata(jam=jam)
+            # Extract metadata and annotations
+            jam_metadata, annotations = self.jams_extractor.extract(jam=jam)
             jam_metadata = self.jams_extractor.enrich_with_directory_name(
                 jam_metadata=jam_metadata, jam_file_path=jam_file_path
             )
-            id_metadata = self.postgres_storage.select_metadata_title(
-                title=jam_metadata.title
+
+            # Upsert recording (PostgreSQL)
+            recording = self.postgres_storage.select_recording(
+                dataset_name=jam_metadata.dataset_name, title=jam_metadata.title
             )
-            if id_metadata:
-                result = self.postgres_storage.update_metadata(
-                    id_metadata=id_metadata, metadata=jam_metadata
+
+            if recording is None:
+                recording = self.postgres_storage.insert_recording(
+                    dataset_name=jam_metadata.dataset_name,
+                    title=jam_metadata.title,
+                    duration=jam_metadata.duration,
                 )
-                if result:
-                    self.statistics.jams_metadata_updated += 1
-                else:
-                    self.statistics.jams_error += 1
+                if recording is None:
+                    self.logger.error(
+                        f"Failed to insert recording to PostgreSQL: {jam_file_path}"
+                    )
+                    raise
+                self.statistics.recordings_inserted += 1
+
             else:
-                result = self.postgres_storage.insert_into_metadata(
-                    metadata=jam_metadata
+                recording = self.postgres_storage.update_recording(
+                    id_recording=recording["id_recording"],
+                    dataset_name=jam_metadata.dataset_name,
+                    title=jam_metadata.title,
+                    duration=jam_metadata.duration,
                 )
-                if result:
-                    self.statistics.jams_metadata_inserted += 1
-                else:
-                    self.statistics.jams_error += 1
+                if recording is None:
+                    self.logger.error(
+                        f"Failed to update recording to PostgreSQL: {jam_file_path}"
+                    )
+                    raise
+                self.statistics.recordings_updated += 1
 
-            annotations = self.jams_extractor.extract_annotation(jam=jam)
-            dict_annotation = annotations.to_dict()
+            id_recording = recording["id_recording"]
 
-            result = self.mongo_storage.insert_pitch_contour(
-                pitch_contour=dict_annotation["pitch_contour"]
+            # Upsert annotation_file (PostgreSQL)
+            annotation_file = self.postgres_storage.select_annotation_file(
+                id_recording=id_recording, annotation_type=AnnotationType.JAMS
             )
-            self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
-            self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
-            self.statistics.jams_error += 1 if result == "errors" else 0
+
+            if annotation_file is None:
+                result = self.postgres_storage.insert_annotation_file(
+                    id_recording=id_recording,
+                    annotation_type=AnnotationType.JAMS,
+                    uri=jam_uri,
+                )
+                if result is None:
+                    self.logger.error(
+                        f"Failed to insert annotation_file to PostgreSQL: {jam_file_path}"
+                    )
+                    raise
+                self.statistics.jams_annotation_file_inserted += 1
+
+            else:
+                result = self.postgres_storage.update_annotation_file(
+                    id_annotation=annotation_file["id_annotation"],
+                    annotation_type=AnnotationType.JAMS,
+                    uri=jam_uri,
+                )
+                if result is None:
+                    self.logger.error(
+                        f"Failed to update annotation_file to PostgreSQL: {jam_file_path}"
+                    )
+                    raise
+                self.statistics.jams_annotation_file_updated += 1
+
+            # Upsert guitarset_metadata (PostgreSQL)
+            guitars_set_metadata = self.postgres_storage.select_guitarset_metadata(
+                id_recording=id_recording
+            )
+
+            if guitars_set_metadata is None:
+                result = self.postgres_storage.insert_guitarset_metadata(
+                    id_recording=id_recording,
+                    metadata=jam_metadata,
+                )
+                if result is None:
+                    self.logger.error(
+                        f"Failed to insert guitarset_metadata to PostgreSQL: {jam_file_path}"
+                    )
+                    raise
+                self.statistics.jams_metadata_inserted += 1
+
+            else:
+                result = self.postgres_storage.update_guitarset_metadata(
+                    id_recording=id_recording,
+                    metadata=jam_metadata,
+                )
+                if result is None:
+                    self.logger.error(
+                        f"Failed to update guitarset_metadata to PostgreSQL: {jam_file_path}"
+                    )
+                    raise
+                self.statistics.jams_metadata_updated += 1
+
+            # Insert annotation_midi (Mongo)
+            dict_annotation = annotations.to_dict()
 
             result = self.mongo_storage.insert_note_midi(
                 note_midi=dict_annotation["note_midi"]
             )
-            self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
-            self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
-            self.statistics.jams_error += 1 if result == "errors" else 0
-
-            result = self.mongo_storage.insert_beat_position(
-                beat_position=dict_annotation["beat_position"]
-            )
-            self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
-            self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
-            self.statistics.jams_error += 1 if result == "errors" else 0
-
-            result = self.mongo_storage.insert_chord(chord=dict_annotation["chord"])
-            self.statistics.jams_annotation_inserted += 1 if result == "inserted" else 0
-            self.statistics.jams_annotation_updated += 1 if result == "updated" else 0
-            self.statistics.jams_error += 1 if result == "errors" else 0
+            if result == "inserted":
+                self.statistics.jams_annotation_inserted += 1
+            elif result == "updated":
+                self.statistics.jams_annotation_updated += 1
+            else:
+                self.logger.error(
+                    f"Failed to insert annotation to MongoDB: {jam_file_path}"
+                )
+                raise
 
         except Exception as exception:
             self.statistics.jams_error += 1
@@ -164,6 +269,7 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
         Args:
             directory_jams_path (Path): Path of the directory containing JAMS files.
         """
+
         self.logger.debug("JAMS ingestion...")
 
         if not directory_jams_path.exists():
@@ -192,26 +298,94 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
         Args:
             wav_file_path (Path): Path of the WAV file
         """
+
         try:
+            # Load audio
             audio_data, sample_rate = self.wav_extractor.extract(
                 file_path=wav_file_path
             )
             self.statistics.wav_loaded += 1
 
-            title = TITLE_REGEX.match(wav_file_path.stem)
-            if not title:
-                raise RuntimeError(f"No title found: title = {title}")
+            # Extract title
+            title_match = TITLE_REGEX.match(wav_file_path.stem)
+            if not title_match:
+                self.logger.error(
+                    f"Failed to extract title from file name: {wav_file_path.stem}"
+                )
+                raise
 
-            result = self.minio_storage.put_audio(
-                bucket_name=minio_config.bucket_raw,
-                file_name=f"{guitar_set_ingestion_pipeline_config.dataset_name}/{title.group('title')}/{wav_file_path.parent.name}.wav",
+            title = title_match.group("title")
+
+            # Fetch recording (PostgreSQL)
+            recording = self.postgres_storage.select_recording(
+                dataset_name=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.dataset_name,
+                title=title,
+            )
+
+            if recording is None:
+                self.logger.error(f"Recording not found for WAV file: {wav_file_path}")
+                raise
+
+            id_recording = recording["id_recording"]
+
+            # Store audio (MinIO)
+            audio_type = wav_file_path.parent.name
+
+            audio_uri = self.minio_storage.put_audio(
+                bucket_name=MINIO_SETTINGS.bucket_raw,
+                file_name=(
+                    f"{GUITAR_SET_INGESTION_PIPELINE_SETTINGS.dataset_name}/"
+                    f"{title}/{audio_type}.wav"
+                ),
                 audio_data=audio_data,
                 sample_rate=sample_rate,
             )
-            if result:
-                self.statistics.wav_uploaded += 1
+
+            if audio_uri is None:
+                self.logger.error(
+                    f"Failed to upload WAV file to MinIO: {wav_file_path}"
+                )
+                raise
+
+            self.statistics.wav_uploaded += 1
+
+            # Upsert audio_file (PostgreSQL)
+            audio_file = self.postgres_storage.select_audio_file(
+                id_recording=id_recording,
+                audio_type=audio_type,
+            )
+
+            if audio_file is None:
+                result = self.postgres_storage.insert_audio_file(
+                    id_recording=id_recording,
+                    audio_type=audio_type,
+                    uri=audio_uri,
+                    sample_rate=sample_rate,
+                    channels=audio_data.shape[1] if audio_data.ndim > 1 else 1,
+                )
+
+                if result is None:
+                    self.logger.error(
+                        f"Failed to insert audio_file to PostgreSQL: {wav_file_path}"
+                    )
+                    raise
+                self.statistics.audio_file_inserted += 1
+
             else:
-                self.statistics.wav_error += 1
+                result = self.postgres_storage.update_audio_file(
+                    id_audio=audio_file["id_audio"],
+                    audio_type=audio_type,
+                    uri=audio_uri,
+                    sample_rate=sample_rate,
+                    channels=audio_data.shape[1] if audio_data.ndim > 1 else 1,
+                )
+
+                if result is None:
+                    self.logger.error(
+                        f"Failed to insert audio_file to PostgreSQL: {wav_file_path}"
+                    )
+                    raise
+                self.statistics.audio_file_updated += 1
 
         except Exception as exception:
             self.statistics.wav_error += 1

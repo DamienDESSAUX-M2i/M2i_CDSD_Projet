@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 from .jams_models import (
     SCALE_MAP,
     BeatPositionDict,
@@ -26,7 +28,16 @@ from .xml_models import (
     XMLMetadata,
 )
 
+
+class AnnotationType(StrEnum):
+    """Enumeration representing annotation type."""
+
+    JAMS = "jams"
+    XML = "xml"
+
+
 __all__ = [
+    "AnnotationType",
     "SCALE_MAP",
     "BeatPositionDict",
     "ChordDict",

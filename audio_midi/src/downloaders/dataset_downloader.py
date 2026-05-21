@@ -195,7 +195,7 @@ class DatasetDownloader(AbstractDatasetDownloader):
                     unit="B",
                     unit_scale=True,
                     desc=output_path.name,
-                    ascii=True,
+                    colour="green",
                 ) as progress_bar,
             ):
                 for chunk in response.iter_content(

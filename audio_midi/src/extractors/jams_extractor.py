@@ -4,6 +4,7 @@ from typing import Any
 
 import jams
 import pandas as pd
+from settings import GUITAR_SET_SETTINGS
 
 from src.extractors import AbstractExtractor
 from src.models import (
@@ -21,6 +22,7 @@ from src.models import (
 )
 from src.utils import validate_file_path
 
+DATASET_NAME = GUITAR_SET_SETTINGS.name
 TITLE_REGEX = re.compile(
     r"^(?P<guitarist_id>\d{2})_(?P<style>[A-Za-z0-9]+)-(?P<tempo>\d+)-(?P<scale>[A-G](?:b|\#)?)_(?P<playing_version>[A-Za-z]+)$",
     re.VERBOSE,
@@ -48,6 +50,7 @@ class JAMSExtractor(AbstractExtractor):
         Returns:
             jams.JAMS: jams.JAMS loaded from the JAMS file.
         """
+
         validate_file_path(file_path=file_path, suffix=".jams")
 
         try:
@@ -61,7 +64,7 @@ class JAMSExtractor(AbstractExtractor):
 
     def enrich_with_directory_name(
         self, jam_metadata: JAMSMetadata, jam_file_path: Path
-    ) -> JAMSAnnotation:
+    ) -> JAMSMetadata:
         """Enrich a JAMSMetadata with information content into directory name.
 
         Args:
@@ -69,8 +72,9 @@ class JAMSExtractor(AbstractExtractor):
             jam_file_path (Path): Path of the JAMS file.
 
         Returns:
-            JAMSAnnotation: JAMSAnnotation enriched.
+            JAMSMetadata: JAMSMetadata enriched.
         """
+
         self.logger.debug(f"Enrich JAMSMetadata: title={jam_metadata.title}")
 
         if re.search(r"\bmic\b", jam_file_path.as_posix()):
@@ -82,13 +86,13 @@ class JAMSExtractor(AbstractExtractor):
         return jam_metadata
 
     def extract_metadata(
-        self, jam: jams.JAMS, dataset_name: str = "GuitarSet"
+        self, jam: jams.JAMS, dataset_name: str = DATASET_NAME
     ) -> JAMSMetadata:
         """Extract metadata from a jams.JAMS.
 
         Args:
             jam (jams.JAMS): A jams.JAMS.
-            dataset_name (str) : Name of the dataset. Default "GuitarSet".
+            dataset_name (str, optional): Name of the dataset. Default "GuitarSet".
 
         Raises:
             RunTimeError: If JAMS metadata extraction fails.
@@ -96,6 +100,7 @@ class JAMSExtractor(AbstractExtractor):
         Returns:
             JAMSMetadata: Metadata extracted from a jams.JAMS.
         """
+
         try:
             self.logger.debug("Extracting JAMS metadata...")
 
@@ -107,11 +112,20 @@ class JAMSExtractor(AbstractExtractor):
             if not title_match:
                 raise RuntimeError(f"Invalid title format: {title}")
 
-            guitarist_id = int(title_match.group("guitarist_id"))
+            guitarist_id_str = title_match.group("guitarist_id")
+            guitarist_id = int(guitarist_id_str)
+
             style_str = title_match.group("style")
-            tempo = int(title_match.group("tempo"))
+            style = Style(style_str)
+
+            tempo_str = title_match.group("tempo")
+            tempo = int(tempo_str)
+
             scale_str = title_match.group("scale")
+            scale = Scale(SCALE_MAP.get(scale_str, scale_str))
+
             playing_version_str = title_match.group("playing_version")
+            playing_version = PlayingVersion(playing_version_str)
 
             mode_str = None
             for annotation in jam.annotations:
@@ -125,19 +139,10 @@ class JAMSExtractor(AbstractExtractor):
             if mode_str is None:
                 raise RuntimeError("No key_mode annotation found")
 
-            duration = float(jam.file_metadata.duration)
+            mode = Mode(mode_str)
 
-            # enum cast
-            try:
-                style = Style(style_str)
-                scale = Scale(SCALE_MAP.get(scale_str, scale_str))
-                mode = Mode(mode_str)
-                playing_version = PlayingVersion(playing_version_str)
-            except ValueError as exception:
-                self.logger.error(
-                    f"enum cast has failed: style={style_str}, scale={scale_str}, mode={mode_str}, playing_version={playing_version_str}"
-                )
-                raise RuntimeError("enum cast has failed") from exception
+            duration_str = jam.file_metadata.duration
+            duration = float(duration_str)
 
             self.logger.debug(f"JAMS metadata extracted: title: {title}")
             return JAMSMetadata(
@@ -170,6 +175,7 @@ class JAMSExtractor(AbstractExtractor):
         Returns:
             list[PitchContourDict]: Pitch contour annotation extracted.
         """
+
         return [
             {
                 "data_source": data_source,
@@ -193,6 +199,7 @@ class JAMSExtractor(AbstractExtractor):
         Returns:
             list[NoteMidiDict]: Note midi annotation extracted.
         """
+
         return [
             {
                 "data_source": data_source,
@@ -216,6 +223,7 @@ class JAMSExtractor(AbstractExtractor):
         Returns:
             list[BeatPositionDict]: Beat position annotation extracted.
         """
+
         return [
             {
                 "time": data.time,
@@ -236,6 +244,7 @@ class JAMSExtractor(AbstractExtractor):
         Returns:
             list[ChordDict]: Chord annotation extracted.
         """
+
         return [
             {
                 "time": data.time,
@@ -245,13 +254,14 @@ class JAMSExtractor(AbstractExtractor):
             for data in annotation.data
         ]
 
-    def extract_annotation(
-        self, jam: jams.JAMS, dataset_name: str = "GuitarSet"
+    def extract_annotations(
+        self, jam: jams.JAMS, dataset_name: str = DATASET_NAME
     ) -> JAMSAnnotation:
         """Extract annotation from a jams.JAMS.
 
         Args:
             jam (jams.JAMS): A jams.JAMS.
+            dataset_name (str, optional): Name of the dataset. Default "GuitarSet".
 
         Raises:
             RunTimeError: If JAMS annotation extraction fails.
@@ -259,6 +269,7 @@ class JAMSExtractor(AbstractExtractor):
         Returns:
             JAMSAnnotation: Annotations extracted from a jams.JAMS.
         """
+
         try:
             self.logger.debug("Extracting JAMS annotation...")
 
@@ -300,13 +311,11 @@ class JAMSExtractor(AbstractExtractor):
                     chord.extend(self._extract_chord(annotation=annotation))
 
             self.logger.debug(
-                "JAMS annotation extracted",
-                extra={
-                    "pitch_contour": len(pitch_contour),
-                    "note_midi": len(note_midi),
-                    "beat_position": len(beat_position),
-                    "chord": len(chord),
-                },
+                "JAMS annotation extracted: "
+                f"pitch_contour={len(pitch_contour)}"
+                f"note_midi={len(note_midi)}, "
+                f"beat_position={len(beat_position)}, "
+                f"chord={len(chord)}"
             )
             return JAMSAnnotation(
                 dataset_name=dataset_name,
@@ -350,3 +359,20 @@ class JAMSExtractor(AbstractExtractor):
         except Exception as exception:
             self.logger.error("JAMS annotation extraction has failed", exc_info=True)
             raise RuntimeError("JAMS annotation extraction has failed") from exception
+
+    def extract(
+        self, jam: jams.JAMS, dataset_name: str = DATASET_NAME
+    ) -> tuple[JAMSMetadata, JAMSAnnotation]:
+        """Extract metadata and annotations from a jams.JAMS.
+
+        Args:
+            jam (jams.JAMS): A jams.JAMS.
+            dataset_name (str, optional): Name of the dataset. Default "GuitarSet".
+
+        Returns:
+            tuple[JAMSMetadata, JAMSAnnotation]: Metadata and annotations extracted from a jams.JAMS.
+        """
+
+        jam_metadata = self.extract_metadata(jam=jam, dataset_name=dataset_name)
+        annotations = self.extract_annotations(jam=jam, dataset_name=dataset_name)
+        return jam_metadata, annotations

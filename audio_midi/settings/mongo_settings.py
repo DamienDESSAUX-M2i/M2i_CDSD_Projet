@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class MongoConfig:
+class MongoSettings:
     user: str = os.getenv("MONGO_USER", "admin")
     password: str = os.getenv("MONGO_PASSWORD", "admin0000")
     host: str = "localhost"  # os.getenv("MONGO_HOST", "localhost")
@@ -21,4 +21,4 @@ class MongoConfig:
         return f"mongodb://{self.user}:{self.password}@{self.host}:{self.port}/"
 
 
-mongo_config = MongoConfig()
+MONGO_SETTINGS = MongoSettings()

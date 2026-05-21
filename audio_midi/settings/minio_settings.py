@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class MinIOConfig:
+class MinIOSettings:
     minio_endpoint: str = (
         "localhost:9000"  # os.getenv("MINIO_ENDPOINT", "localhost:9000")
     )
@@ -15,4 +15,4 @@ class MinIOConfig:
     bucket_output: str = os.getenv("BUCKET_GOLD", "output")
 
 
-minio_config = MinIOConfig()
+MINIO_SETTINGS = MinIOSettings()

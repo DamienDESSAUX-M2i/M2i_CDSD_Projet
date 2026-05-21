@@ -5,8 +5,8 @@ from pathlib import Path
 from settings import (
     DATA_DIRECTORY,
     DATASETS_DOWNLOADER_SETTINGS,
-    GUITAR_SET_CONFIG,
-    IDMT_SMT_GUITAR_CONFIG,
+    GUITAR_SET_SETTINGS,
+    IDMT_SMT_GUITAR_SETTINGS,
 )
 from settings.datasets_settings import DatasetSettings
 
@@ -79,11 +79,11 @@ class DatasetsDownloadPipeline:
 
             if self.guitar_set:
                 self.logger.info("GuitarSet downloading ...")
-                self._process_dataset(GUITAR_SET_CONFIG)
+                self._process_dataset(GUITAR_SET_SETTINGS)
 
             if self.idmt_smt_guitar:
                 self.logger.info("IDMT-SMT-Guitar downloading ...")
-                self._process_dataset(IDMT_SMT_GUITAR_CONFIG)
+                self._process_dataset(IDMT_SMT_GUITAR_SETTINGS)
 
             self.logger.info(f"Pipeline completed: {self.statistics.to_string()}")
 

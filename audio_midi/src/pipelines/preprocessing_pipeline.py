@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from settings import minio_config, preprocessing_pipeline_config
+from settings import MINIO_SETTINGS, preprocessing_pipeline_config
 from tqdm import tqdm
 
 from src.pipelines import AbstractPipeline
@@ -136,16 +136,16 @@ class PreprocessingPipeline(AbstractPipeline):
             Returns None if loading fails.
         """
 
-        self.logger.debug(f"Loading audio: uri={minio_config.bucket_raw}/{file_name}")
+        self.logger.debug(f"Loading audio: uri={MINIO_SETTINGS.bucket_raw}/{file_name}")
 
         result = self.minio_storage.get_audio(
-            bucket_name=minio_config.bucket_raw,
+            bucket_name=MINIO_SETTINGS.bucket_raw,
             file_name=file_name,
         )
 
         if result is None:
             self.logger.error(
-                f"Failed to load audio: uri={minio_config.bucket_raw}/{file_name}"
+                f"Failed to load audio: uri={MINIO_SETTINGS.bucket_raw}/{file_name}"
             )
             self.statistics.audio_error += 1
             return None
@@ -176,7 +176,7 @@ class PreprocessingPipeline(AbstractPipeline):
         file_name_audio_cleaned = f"{'/'.join(file_name.split('/')[:-1])}/audio_cleaned_{self.pipeline_metadata['_id']}.wav"
 
         result = self.minio_storage.put_audio(
-            bucket_name=minio_config.bucket_processed,
+            bucket_name=MINIO_SETTINGS.bucket_processed,
             file_name=file_name_audio_cleaned,
             audio_data=audio_data,
             sample_rate=sample_rate,
@@ -217,11 +217,11 @@ class PreprocessingPipeline(AbstractPipeline):
         try:
             sample_file_name = f"{'/'.join(file_name.split('/')[:-1])}/sample_{self.pipeline_metadata['_id']}.parquet"
 
-            uri = f"{minio_config.bucket_processed}/{sample_file_name}"
+            uri = f"{MINIO_SETTINGS.bucket_processed}/{sample_file_name}"
             self.logger.debug(f"Saving samples: uri={uri}")
 
             result = self.minio_storage.put_parquet(
-                bucket_name=minio_config.bucket_processed,
+                bucket_name=MINIO_SETTINGS.bucket_processed,
                 file_name=sample_file_name,
                 dataframe=sample,
             )
@@ -235,14 +235,14 @@ class PreprocessingPipeline(AbstractPipeline):
                 self._upload_sample_metadata(
                     dataset_name=file_name_split[0],
                     title=file_name_split[1],
-                    bucket_name=minio_config.bucket_processed,
+                    bucket_name=MINIO_SETTINGS.bucket_processed,
                     object_name=sample_file_name,
                     n_frames=sample.shape[0],
                 )
 
         except Exception as e:
             self.logger.error(
-                f"Failed to save samples: uri={minio_config.bucket_processed}/{sample_file_name}: {e}",
+                f"Failed to save samples: uri={MINIO_SETTINGS.bucket_processed}/{sample_file_name}: {e}",
                 exc_info=True,
             )
 

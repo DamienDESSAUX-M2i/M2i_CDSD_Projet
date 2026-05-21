@@ -35,6 +35,7 @@ Transcription automatique d'un signal audio de guitare en fichier MIDI à l’ai
   - [11.2. Exécution des pipelines](#112-exécution-des-pipelines)
   - [11.3. Options disponibles](#113-options-disponibles)
   - [11.4. Exemples d'utilisations des options](#114-exemples-dutilisations-des-options)
+  - [Temps d'exécution estimés](#temps-dexécution-estimés)
   - [11.5. Commandes utiles](#115-commandes-utiles)
 - [12. Auteur](#12-auteur)
 
@@ -478,7 +479,7 @@ Le service `minio-init` s'arrête après l'initialisation du service `minio`.
 Les données doivent absolument respecter la structure suivante :
 
 ```txt
-M2i_CDSD_Projet\
+data\
 ├───guitarset
 │   ├───annotation
 │   ├───audio_hex-pickup_debleeded
@@ -486,11 +487,12 @@ M2i_CDSD_Projet\
 │   ├───audio_mono-mic
 │   └───audio_mono-pickup_mix
 └───idmt-smt-guitar
-    └───IDMT_SMT_GUITAR_V2
-        ├───dataset1
-        ├───dataset2
-        ├───dataset3
-        └───dataset4
+    └───idmt-smt-guitar
+        └───IDMT_SMT_GUITAR_V2
+            ├───dataset1
+            ├───dataset2
+            ├───dataset3
+            └───dataset4
 ```
 
 ## 11. Utilisation
@@ -549,6 +551,19 @@ python app/main.py --ingest_guitar_set --limit 10
 # Ingestion des 10 premières données des sous ensembles de données numéros 1 et 3 du dataset IDMT-SMT-Guitar
 python app/main.py --ingest_idmt_smt_guitar --limit 10 --no-dataset2 --no-dataset4
 ```
+
+### Temps d'exécution estimés
+
+| Pipeline | Temps |
+| :- | :- |
+| Télécharment GuitarSet | 20 minutes |
+| Télécharment IDMT-SMT-Guitar | 5 minutes |
+| Ingestion GuitarSet |  minutes |
+| Ingestion IDMT-SMT-Guitar |  minutes |
+| Prétraitement GuitarSet |  minutes |
+| Prétraitement IDMT-SMT-Guitar |  minutes |
+| Construction Dataset frame-wise |  minutes |
+| Entrainement modèle |  minutes |
 
 ### 11.5. Commandes utiles
 

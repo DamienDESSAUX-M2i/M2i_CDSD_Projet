@@ -48,7 +48,7 @@ class DatasetSettings:
             raise ValueError("extract_dir_name must be a non-empty string")
 
 
-GUITAR_SET_CONFIG = DatasetSettings(
+GUITAR_SET_SETTINGS = DatasetSettings(
     name="GuitarSet",
     urls=(
         "https://zenodo.org/api/records/3371780/files/annotation.zip/content",
@@ -67,7 +67,7 @@ GUITAR_SET_CONFIG = DatasetSettings(
     extract_dir_name="guitarset",
 )
 
-IDMT_SMT_GUITAR_CONFIG = DatasetSettings(
+IDMT_SMT_GUITAR_SETTINGS = DatasetSettings(
     name="IDMT-SMT-Guitar",
     urls=(
         "https://zenodo.org/api/records/7544110/files/IDMT-SMT-GUITAR_V2.zip/content",

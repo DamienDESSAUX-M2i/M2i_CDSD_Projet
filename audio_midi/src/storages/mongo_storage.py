@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-from settings import mongo_config
+from settings import MONGO_SETTINGS
 
 from src.models import BeatPositionDict, ChordDict, NoteMidiDict, PitchContourDict
 
@@ -12,16 +12,28 @@ from .abstract_storage import AbstractStorage
 
 
 class MongoStorage(AbstractStorage):
-    def __init__(self, logger: logging.Logger):
+    """MongoDB storage backend implementation for feature and metadata persistence.
+
+    This class provides an abstraction layer for interacting with a MongoDB
+    database through the `pymongo` client SDK. It initializes the database
+    connection and exposes dedicated collections used throughout the audio
+    processing pipeline.
+
+    Collection names and connection parameters are configured through `MONGO_SETTINGS`.
+    """
+
+    def __init__(self, logger: logging.Logger) -> None:
         super().__init__(logger)
         self.client = self._get_client()
-        self.db = self.client[mongo_config.dbname]
-        self.pitch_contour = self.db[mongo_config.collection_pitch_contour]
-        self.note_midi = self.db[mongo_config.collection_note_midi]
-        self.beat_position = self.db[mongo_config.collection_beat_position]
-        self.chord = self.db[mongo_config.collection_chord]
-        self.pipeline_metadata = self.db[mongo_config.collection_pipeline_metadata]
-        self.sample_metadata = self.db[mongo_config.collection_sample_metadata]
+        self.db = self.client[MONGO_SETTINGS.dbname]
+
+        self.pitch_contour = self.db[MONGO_SETTINGS.collection_pitch_contour]
+        self.note_midi = self.db[MONGO_SETTINGS.collection_note_midi]
+        self.beat_position = self.db[MONGO_SETTINGS.collection_beat_position]
+        self.chord = self.db[MONGO_SETTINGS.collection_chord]
+        self.pipeline_metadata = self.db[MONGO_SETTINGS.collection_pipeline_metadata]
+        self.sample_metadata = self.db[MONGO_SETTINGS.collection_sample_metadata]
+
         self.collections = {
             "pitch_contour": self.pitch_contour,
             "note_midi": self.note_midi,
@@ -32,8 +44,14 @@ class MongoStorage(AbstractStorage):
         }
 
     def _get_client(self) -> MongoClient:
+        """Build a MongoDB client.
+
+        Returns:
+            MongoClient: A MongoDB client.
+        """
+
         self.logger.info("Connexion to the Mongo service...")
-        client = MongoClient(mongo_config.connection_string)
+        client = MongoClient(MONGO_SETTINGS.connection_string)
         self.logger.info("Connecting to the Mongo service")
         return client
 
@@ -53,6 +71,7 @@ class MongoStorage(AbstractStorage):
         Returns:
             str | None: "inserted", "updated" or None
         """
+
         try:
             match filter:
                 case "annotation":
@@ -130,6 +149,7 @@ class MongoStorage(AbstractStorage):
                 "errors": (int) Number of errors
             }
         """
+
         results = {"inserted": 0, "updated": 0, "errors": 0}
 
         for document in documents:
@@ -155,10 +175,11 @@ class MongoStorage(AbstractStorage):
             pitch_contour (PitchContourDict): Dictionary representing pitch contour. {dataset_name: str, title: str, pitch_contour: list[PitchContourDict]}
 
         Returns:
-            str | None: "inserted", "updated" or None
+            str | None: "inserted", "updated" or None.
         """
+
         return self._insert_document(
-            collection_name=mongo_config.collection_pitch_contour,
+            collection_name=MONGO_SETTINGS.collection_pitch_contour,
             document=pitch_contour,
             filter="annotation",
         )
@@ -172,10 +193,11 @@ class MongoStorage(AbstractStorage):
             note_midi (NoteMidiDict): Dictionary representing note midi. {dataset_name: str, title: str, note_midi: list[NoteMidiDict]}
 
         Returns:
-            str | None: "inserted", "updated" or None
+            str | None: "inserted", "updated" or None.
         """
+
         return self._insert_document(
-            collection_name=mongo_config.collection_note_midi,
+            collection_name=MONGO_SETTINGS.collection_note_midi,
             document=note_midi,
             filter="annotation",
         )
@@ -189,10 +211,11 @@ class MongoStorage(AbstractStorage):
             beat_position (BeatPositionDict): Dictionary representing beat position. {dataset_name: str, title: str, beat_position: list[BeatPositionDict]}
 
         Returns:
-            str | None: "inserted", "updated" or None
+            str | None: "inserted", "updated" or None.
         """
+
         return self._insert_document(
-            collection_name=mongo_config.collection_beat_position,
+            collection_name=MONGO_SETTINGS.collection_beat_position,
             document=beat_position,
             filter="annotation",
         )
@@ -204,10 +227,11 @@ class MongoStorage(AbstractStorage):
             chord (ChordDict): Dictionary representing chord. {dataset_name: str, title: str, chord: list[ChordDict]}
 
         Returns:
-            str | None: "inserted", "updated" or None
+            str | None: "inserted", "updated" or None.
         """
+
         return self._insert_document(
-            collection_name=mongo_config.collection_chord,
+            collection_name=MONGO_SETTINGS.collection_chord,
             document=chord,
             filter="annotation",
         )
@@ -221,10 +245,11 @@ class MongoStorage(AbstractStorage):
             preprocessing_metadata (dict): Dictionary representing pipeline metadata.
 
         Returns:
-            str | None: "inserted", "updated" or None
+            str | None: "inserted", "updated" or None.
         """
+
         return self._insert_document(
-            collection_name=mongo_config.collection_pipeline_metadata,
+            collection_name=MONGO_SETTINGS.collection_pipeline_metadata,
             document=pipeline_metadata,
             filter="pipeline_metadata",
         )
@@ -236,10 +261,11 @@ class MongoStorage(AbstractStorage):
             preprocessing_metadata (dict): Dictionary representing sample metadata.
 
         Returns:
-            str | None: "inserted", "updated" or None
+            str | None: "inserted", "updated" or None.
         """
+
         return self._insert_document(
-            collection_name=mongo_config.collection_sample_metadata,
+            collection_name=MONGO_SETTINGS.collection_sample_metadata,
             document=sample_metadata,
             filter="sample_metadata",
         )
@@ -266,6 +292,7 @@ class MongoStorage(AbstractStorage):
         Returns:
             list[dict]: List of documents.
         """
+
         cursor = self.collections[collection_name].find(
             filter=filter, projection=projection
         )
@@ -287,6 +314,7 @@ class MongoStorage(AbstractStorage):
         Returns:
             list[dict]: List of documents.
         """
+
         return list(self.collections[collection_name].aggregate(pipeline))
 
     def count_documents(self, collection_name: str, filter: dict = {}) -> int:
@@ -299,6 +327,7 @@ class MongoStorage(AbstractStorage):
         Returns:
             int: Number of documents matching the filter.
         """
+
         return self.collections[collection_name].count_documents(filter)
 
     def delete_document(self, collection_name: str, filter: dict = {}) -> int:
@@ -311,6 +340,7 @@ class MongoStorage(AbstractStorage):
         Returns:
             int: Number of documents deleted.
         """
+
         deleted_result = self.collections[collection_name].delete_many(filter=filter)
 
         self.logger.warning(f"Documents deleted: {deleted_result.deleted_count}")
@@ -319,5 +349,6 @@ class MongoStorage(AbstractStorage):
 
     def close(self) -> None:
         """Close the connection."""
+
         self.client.close()
         self.logger.info("Mongo connection closed")

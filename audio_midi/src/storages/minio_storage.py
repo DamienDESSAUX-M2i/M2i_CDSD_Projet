@@ -13,7 +13,7 @@ import pyarrow.parquet as pq
 import soundfile as sf
 from minio.datatypes import Object
 from minio.error import S3Error
-from settings import minio_config
+from settings import MINIO_SETTINGS
 
 from minio import Minio
 
@@ -21,28 +21,49 @@ from .abstract_storage import AbstractStorage
 
 
 class MinIOStorage(AbstractStorage):
-    def __init__(self, logger: logging.Logger):
+    """Storage backend implementation based on MinIO object storage.
+
+    This class provides an abstraction layer for interacting with a MinIO
+    service through the `minio` client SDK. It is responsible for:
+
+    - Initializing the MinIO client connection
+    - Verifying the availability of required buckets
+    - Creating missing buckets automatically at startup
+    - Managing object storage operations implemented in inherited methods
+
+    The storage service relies on the application MinIO configuration defined
+    in `MINIO_SETTINGS`.
+    """
+
+    def __init__(self, logger: logging.Logger) -> None:
         super().__init__(logger)
         self.client = self._get_client()
         self._ensure_buckets()
 
     def _get_client(self) -> Minio:
+        """Build a Minio client.
+
+        Returns:
+            Minio: A minio client.
+        """
+
         self.logger.info("Connexion to the MinIO service...")
         client = Minio(
-            endpoint=minio_config.minio_endpoint,
-            access_key=minio_config.minio_user,
-            secret_key=minio_config.minio_password,
-            secure=minio_config.minio_secure,
+            endpoint=MINIO_SETTINGS.minio_endpoint,
+            access_key=MINIO_SETTINGS.minio_user,
+            secret_key=MINIO_SETTINGS.minio_password,
+            secure=MINIO_SETTINGS.minio_secure,
         )
         self.logger.info("Connecting to the MinIO service")
         return client
 
     def _ensure_buckets(self) -> None:
         """Check if buckets exist; if not, create them."""
+
         bucket_names = [
-            minio_config.bucket_raw,
-            minio_config.bucket_processed,
-            minio_config.bucket_output,
+            MINIO_SETTINGS.bucket_raw,
+            MINIO_SETTINGS.bucket_processed,
+            MINIO_SETTINGS.bucket_output,
         ]
 
         try:
@@ -73,6 +94,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             str | None: URI MinIO or None.
         """
+
         try:
             self.client.put_object(
                 bucket_name=bucket_name,
@@ -101,6 +123,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             str | None: URI MinIO or None.
         """
+
         self.logger.debug("Convert dictionary to JSON bytes...")
         json_bytes = json.dumps(
             obj=data, indent=4, ensure_ascii=False, default=str
@@ -127,6 +150,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             str | None: URI MinIO or None.
         """
+
         self.logger.debug("Convert ElementTree to XML bytes...")
         xml_bytes = etree.tostring(
             tree.getroot(), encoding="utf-8", xml_declaration=True
@@ -151,6 +175,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             str | None: URI MinIO or None.
         """
+
         self.logger.debug("Convert jams.JAMS to JSON bytes...")
         jam_bytes = jam.dumps(indent=4).encode("utf-8")
 
@@ -180,6 +205,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             str | None: MinIO URI or None.
         """
+
         try:
             self.logger.debug("Upload image...")
             self.client.put_object(
@@ -218,6 +244,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             str | None: MinIO URI or None.
         """
+
         try:
             if not file_name.lower().endswith(".wav"):
                 file_name = f"{file_name}.wav"
@@ -227,7 +254,7 @@ class MinIOStorage(AbstractStorage):
 
             sf.write(
                 file=buffer,
-                data=audio_data.T,  # librosa: (n_channels, n_samples) and soundfile: (n_samples, n_channels)
+                data=audio_data.T,  # Matrix translation because librosa: (n_channels, n_samples) and soundfile: (n_samples, n_channels).
                 samplerate=sample_rate,
                 format="WAV",
             )
@@ -270,6 +297,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             MinIO URI or None
         """
+
         try:
             if not file_name.endswith(".parquet"):
                 file_name = f"{file_name}.parquet"
@@ -310,6 +338,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             bytes | None: Object get or None.
         """
+
         try:
             response = self.client.get_object(bucket_name, file_name)
             data = response.read()
@@ -335,6 +364,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             tuple[np.ndarray, int] | None: A tuple containing audio_data, a numpy array of shape (n_samples,) or (n_samples, n_channels), and sample_rate, a sampling rate in Hz or None.
         """
+
         audio_bytes = self.get_object(
             bucket_name=bucket_name,
             file_name=file_name,
@@ -342,15 +372,22 @@ class MinIOStorage(AbstractStorage):
         if len(audio_bytes) > 0:
             audio_data, sample_rate = sf.read(io.BytesIO(audio_bytes))
             return (
-                audio_data.T,  # librosa: (n_channels, n_samples) and soundfile: (n_samples, n_channels)
+                audio_data.T,  # Matrix translation because librosa: (n_channels, n_samples) and soundfile: (n_samples, n_channels)
                 sample_rate,
             )
         return None
 
     def get_parquet(self, bucket_name: str, file_name: str) -> pd.DataFrame | None:
+        """Load Parquet file from MinIO into a DataFrame.
+
+        Args:
+            bucket_name (str): Bucket name.
+            file_name (str): File name.
+
+        Returns:
+            pd.DataFrame | None: Parquet file loaded into a DataFrame.
         """
-        Load Parquet file from MinIO into a DataFrame.
-        """
+
         parquet_bytes = self.get_object(
             bucket_name=bucket_name,
             file_name=file_name,
@@ -371,6 +408,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             Iterator[Object]: Iterator of minio.Object.
         """
+
         return self.client.list_objects(bucket_name, prefix=prefix, recursive=True)
 
     def list_raw(self, prefix: str = "") -> Iterator[Object]:
@@ -382,7 +420,8 @@ class MinIOStorage(AbstractStorage):
         Returns:
             Iterator[Object]: Iterator of minio.Object.
         """
-        return self.list_objects(minio_config.bucket_raw, prefix=prefix)
+
+        return self.list_objects(MINIO_SETTINGS.bucket_raw, prefix=prefix)
 
     def list_processed(self, prefix: str = "") -> Iterator[Object]:
         """Iterator of minio.Object in the processed bucket.
@@ -393,7 +432,8 @@ class MinIOStorage(AbstractStorage):
         Returns:
             Iterator[Object]: Iterator of minio.Object.
         """
-        return self.list_objects(minio_config.bucket_processed, prefix=prefix)
+
+        return self.list_objects(MINIO_SETTINGS.bucket_processed, prefix=prefix)
 
     def list_output(self, prefix: str = "") -> Iterator[Object]:
         """Iterator of minio.Object in the output bucket.
@@ -404,7 +444,8 @@ class MinIOStorage(AbstractStorage):
         Returns:
             Iterator[Object]: Iterator of minio.Object.
         """
-        return self.list_objects(minio_config.bucket_output, prefix=prefix)
+
+        return self.list_objects(MINIO_SETTINGS.bucket_output, prefix=prefix)
 
     def remove_object(self, bucket_name: str, file_name: str) -> bool:
         """Remove an object.
@@ -416,6 +457,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             bool: True if the object was successfully deleted, false otherwise.
         """
+
         try:
             self.logger.debug("Remove object...")
             self.client.remove_object(bucket_name, file_name)
@@ -440,6 +482,7 @@ class MinIOStorage(AbstractStorage):
         Returns:
             str | None: Pre-signed URL.
         """
+
         try:
             self.logger.debug("Get presigned URL...")
             url = self.client.presigned_get_object(
@@ -461,12 +504,13 @@ class MinIOStorage(AbstractStorage):
         Returns:
             dict: {"bucket_name": {"nb_objects": (int) number of objects, "total_size": (int) sum of objects size in bytes}, ...}
         """
+
         stats = {}
 
         bucket_names = [
-            minio_config.bucket_raw,
-            minio_config.bucket_processed,
-            minio_config.bucket_output,
+            MINIO_SETTINGS.bucket_raw,
+            MINIO_SETTINGS.bucket_processed,
+            MINIO_SETTINGS.bucket_output,
         ]
 
         for bucket_name in bucket_names:

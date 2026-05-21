@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class PostgresConfig:
+class PostgresSettings:
     user: str = os.getenv("POSTGRES_USER", "admin")
     password: str = os.getenv("POSTGRES_PASSWORD", "admin0000")
     host: str = "localhost"  # os.getenv("POSTGRES_HOST", "localhost")
@@ -15,4 +15,4 @@ class PostgresConfig:
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}"
 
 
-postgres_config = PostgresConfig()
+POSTGRES_SETTINGS = PostgresSettings()
