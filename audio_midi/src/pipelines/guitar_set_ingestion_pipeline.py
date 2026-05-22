@@ -10,7 +10,7 @@ from settings import (
 from tqdm import tqdm
 
 from src.extractors import JAMSExtractor, WAVExtractor
-from src.models import AnnotationType
+from src.models import AnnotationType, AudioType
 from src.pipelines import AbstractPipeline
 from src.utils import Statistics
 
@@ -26,39 +26,42 @@ class GuitarSetIngestionPipelineStatistics(Statistics):
 
     Attributes:
         jams_loaded: Number of JAMS files successfully loaded from the dataset.
+        jams_error: Number of errors encountered during JAMS ingestion and processing.
         jams_uploaded: Number of JAMS files successfully uploaded to MinIO.
         recordings_inserted: Number of new recording rows inserted into PostgreSQL.
         recordings_updated: Number of existing recording rows updated in PostgreSQL.
-        jams_metadata_inserted: Number of new GuitarSet metadata rows inserted into PostgreSQL.
-        jams_metadata_updated: Number of existing GuitarSet metadata rows updated in PostgreSQL.
-        jams_annotation_file_inserted: Number of new annotation file rows inserted into PostgreSQL.
-        jams_annotation_file_updated: Number of existing annotation file rows updated in PostgreSQL.
+        guitarset_metadata_inserted: Number of new GuitarSet metadata rows inserted into PostgreSQL.
+        guitarset_metadata_updated: Number of existing GuitarSet metadata rows updated in PostgreSQL.
+        annotation_file_inserted: Number of new annotation file rows inserted into PostgreSQL.
+        annotation_file_updated: Number of existing annotation file rows updated in PostgreSQL.
         jams_annotation_inserted: Number of new annotation documents inserted into MongoDB.
         jams_annotation_updated: Number of existing annotation documents updated in MongoDB.
-        jams_error: Number of errors encountered during JAMS ingestion and processing.
         wav_loaded: Number of WAV audio files successfully loaded from the dataset.
+        wav_error: Number of errors encountered during WAV ingestion and processing.
         wav_uploaded: Number of WAV audio files successfully uploaded to MinIO.
         audio_file_inserted: Number of new audio file rows inserted into PostgreSQL.
         audio_file_updated: Number of existing audio file rows updated in PostgreSQL.
-        wav_error: Number of errors encountered during WAV ingestion and processing.
     """
 
+    # JAMS metrics
     jams_loaded: int = 0
+    jams_error: int = 0
     jams_uploaded: int = 0
     recordings_inserted: int = 0
     recordings_updated: int = 0
-    jams_metadata_inserted: int = 0
-    jams_metadata_updated: int = 0
-    jams_annotation_file_inserted: int = 0
-    jams_annotation_file_updated: int = 0
+    guitarset_metadata_inserted: int = 0
+    guitarset_metadata_updated: int = 0
+    annotation_file_inserted: int = 0
+    annotation_file_updated: int = 0
     jams_annotation_inserted: int = 0
     jams_annotation_updated: int = 0
-    jams_error: int = 0
+
+    # Wav metrics
     wav_loaded: int = 0
+    wav_error: int = 0
     wav_uploaded: int = 0
     audio_file_inserted: int = 0
     audio_file_updated: int = 0
-    wav_error: int = 0
 
 
 class GuitarSetIngestionPipeline(AbstractPipeline):
@@ -89,19 +92,19 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             )
 
             self.logger.info("[2/2] WAV ingestion")
-            self.logger.info("\t[1/4] Directory: audio_hex_pickup_debleeded")
+            self.logger.info("\t[1/4] Directory: audio_hex-pickup_debleeded")
             self._wav_ingestion(
                 directory_wav_path=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.audio_hex_pickup_debleeded_path
             )
-            self.logger.info("\t[2/4] Directory: audio_hex_pickup_original_path")
+            self.logger.info("\t[2/4] Directory: audio_hex-pickup_original")
             self._wav_ingestion(
                 directory_wav_path=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.audio_hex_pickup_original_path
             )
-            self.logger.info("\t[3/4] Directory: audio_mono_mic_path")
+            self.logger.info("\t[3/4] Directory: audio_mono-mic")
             self._wav_ingestion(
                 directory_wav_path=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.audio_mono_mic_path
             )
-            self.logger.info("\t[4/4] Directory: audio_mono_pickup_mix_path")
+            self.logger.info("\t[4/4] Directory: audio_mono-pickup_mix")
             self._wav_ingestion(
                 directory_wav_path=GUITAR_SET_INGESTION_PIPELINE_SETTINGS.audio_mono_pickup_mix_path
             )
@@ -145,9 +148,6 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
 
             # Extract metadata and annotations
             jam_metadata, annotations = self.jams_extractor.extract(jam=jam)
-            jam_metadata = self.jams_extractor.enrich_with_directory_name(
-                jam_metadata=jam_metadata, jam_file_path=jam_file_path
-            )
 
             # Upsert recording (PostgreSQL)
             recording = self.postgres_storage.select_recording(
@@ -197,7 +197,7 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
                         f"Failed to insert annotation_file to PostgreSQL: {jam_file_path}"
                     )
                     raise
-                self.statistics.jams_annotation_file_inserted += 1
+                self.statistics.annotation_file_inserted += 1
 
             else:
                 result = self.postgres_storage.update_annotation_file(
@@ -210,7 +210,7 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
                         f"Failed to update annotation_file to PostgreSQL: {jam_file_path}"
                     )
                     raise
-                self.statistics.jams_annotation_file_updated += 1
+                self.statistics.annotation_file_updated += 1
 
             # Upsert guitarset_metadata (PostgreSQL)
             guitars_set_metadata = self.postgres_storage.select_guitarset_metadata(
@@ -227,7 +227,7 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
                         f"Failed to insert guitarset_metadata to PostgreSQL: {jam_file_path}"
                     )
                     raise
-                self.statistics.jams_metadata_inserted += 1
+                self.statistics.guitarset_metadata_inserted += 1
 
             else:
                 result = self.postgres_storage.update_guitarset_metadata(
@@ -239,7 +239,7 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
                         f"Failed to update guitarset_metadata to PostgreSQL: {jam_file_path}"
                     )
                     raise
-                self.statistics.jams_metadata_updated += 1
+                self.statistics.guitarset_metadata_updated += 1
 
             # Insert annotation_midi (Mongo)
             dict_annotation = annotations.to_dict()
@@ -327,7 +327,11 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
             id_recording = recording["id_recording"]
 
             # Store audio (MinIO)
-            audio_type = wav_file_path.parent.name
+            audio_type = (
+                AudioType(wav_file_path.parent.name)
+                if wav_file_path.parent.name in AudioType
+                else AudioType.UNKNOWN
+            )
 
             audio_uri = self.minio_storage.put_audio(
                 bucket_name=MINIO_SETTINGS.bucket_raw,

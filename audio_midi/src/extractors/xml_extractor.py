@@ -1,9 +1,11 @@
 import re
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from settings import IDMT_SMT_GUITAR_SETTINGS
 
 from src.extractors import AbstractExtractor
 from src.models import (
@@ -17,6 +19,7 @@ from src.models import (
 from src.transformers import ElementTreeWrapper
 from src.utils import validate_file_path
 
+DATASET_NAME = IDMT_SMT_GUITAR_SETTINGS.name
 DIRECTORY_NAME_REGEX = re.compile(
     r"(?P<instrument_model>(Fender\ Strat|Ibanez\ Power\ Strat))\ (?P<amp_channel>Clean)\ (?P<pick_up_setting>Neck|Bridge|Bridge\+Neck)\ (?P<pick_up_type>SC|HU)\ ?(?P<polyphony>(?:Chords)?)",
     re.VERBOSE,
@@ -44,6 +47,7 @@ class XMLExtractor(AbstractExtractor):
         Returns:
             ET.Element: ElementTree loaded from the XML file.
         """
+
         validate_file_path(file_path=file_path, suffix=".xml")
 
         try:
@@ -67,6 +71,7 @@ class XMLExtractor(AbstractExtractor):
         Returns:
             XMLMetadata: XMLMetadata enriched.
         """
+
         self.logger.debug(f"Enrich XMLMedata: title={xml_metadata.title}")
 
         if "dataset1" in xml_file_path.as_posix():
@@ -82,12 +87,9 @@ class XMLExtractor(AbstractExtractor):
             xml_metadata.instrument_model = directory_name_search.group(
                 "instrument_model"
             )
-            # xml_metadata.amp_channel = directory_name_search.group("amp_channel")
             xml_metadata.pick_up_setting = directory_name_search.group(
                 "pick_up_setting"
             )
-            # xml_metadata.pick_up_type = directory_name_search.group("pick_up_type")
-            # xml_metadata.polyphony = directory_name_search.group("polyphony")
 
         self.logger.debug("XMLMetadata enriched")
         return xml_metadata
@@ -101,6 +103,7 @@ class XMLExtractor(AbstractExtractor):
         Returns:
             str: title.
         """
+
         title = tree_wrapper.get_value(path="globalParameter/audioFileName")
         if not title:
             raise RuntimeError("XML title is missing")
@@ -109,18 +112,42 @@ class XMLExtractor(AbstractExtractor):
 
         return title
 
+    def _to_datetime(self, date_str: str) -> datetime | None:
+        """Cast a string to a datetime object.
+
+        Args:
+            date_str (str): String date.
+
+        Returns:
+            datetime: Date casted.
+        """
+
+        date_formats = [
+            "%d.%m.%y",
+            "%d-%m-%y",
+        ]
+
+        for date_format in date_formats:
+            try:
+                date = datetime.strptime(date_str, date_format)
+                return date
+            except Exception:
+                pass
+
+        return None
+
     def extract_metadata(
         self,
         tree: ET.ElementTree,
         title: str,
-        dataset_name: str = "IDMT_SMT_Guitar",
+        dataset_name: str = DATASET_NAME,
     ) -> XMLMetadata:
         """Extract metadata from an ET.ElementTree.
 
         Args:
             tree (ET.ElementTree): An ET.ElementTree.
             title (str): File name.
-            dataset_name (str): Name of the dataset. Default "IDMT_SMT_Guitar".
+            dataset_name (str): Name of the dataset. Default "IDMT-SMT-Guitar".
 
         Raises:
             RunTimeError: If XML metadata extraction fails.
@@ -128,6 +155,7 @@ class XMLExtractor(AbstractExtractor):
         Returns:
             XMLMetadata: Metadata extracted from a ET.ElementTree.
         """
+
         try:
             self.logger.debug("Extracting XML metadata...")
 
@@ -146,9 +174,10 @@ class XMLExtractor(AbstractExtractor):
                 path="globalParameter/instrumentTuning"
             )
             audio_effects = tree_wrapper.get_value(path="globalParameter/audioFX")
-            recording_date = tree_wrapper.get_value(
+            recording_date_str = tree_wrapper.get_value(
                 path="globalParameter/recordingDate"
             )
+            recording_date = self._to_datetime(recording_date_str)
             recording_artist = tree_wrapper.get_value(
                 path="globalParameter/recordingArtist"
             )
@@ -162,15 +191,6 @@ class XMLExtractor(AbstractExtractor):
             recording_source = tree_wrapper.get_value(
                 path="globalParameter/recordingSource"
             )
-            # pick_up_type = None
-            # amp_channel = None
-            # polyphony = None
-
-            # cast
-            try:
-                pass
-            except ValueError as exception:
-                raise RuntimeError("enum cast has failed") from exception
 
             self.logger.debug(f"XML metadata extracted: title={title}")
             return XMLMetadata(
@@ -179,9 +199,7 @@ class XMLExtractor(AbstractExtractor):
                 instrument=instrument,
                 instrument_model=instrument_model,
                 pick_up_setting=pick_up_setting,
-                # pick_up_type=pick_up_type,
                 instrument_tuning=instrument_tuning,
-                # amp_channel=amp_channel,
                 audio_effects=audio_effects,
                 recording_date=recording_date,
                 recording_artist=recording_artist,
@@ -189,21 +207,20 @@ class XMLExtractor(AbstractExtractor):
                 instrument_string_material=instrument_string_material,
                 composer=composer,
                 recording_source=recording_source,
-                # polyphony=bool(polyphony),
             )
         except Exception as exception:
             self.logger.error(f"XML metadata extraction has failed: {exception}")
             raise RuntimeError("XML metadata extraction has failed") from exception
 
     def extract_annotation(
-        self, tree: ET.ElementTree, title: str, dataset_name: str = "IDMT_SMT_Guitar"
+        self, tree: ET.ElementTree, title: str, dataset_name: str = DATASET_NAME
     ) -> XMLAnnotation:
         """Extract annotation from a ET.ElementTree.
 
         Args:
             tree (ET.ElementTree): An ET.ElementTree.
             title (str): File name.
-            dataset_name (str): Name of the dataset. Default "IDMT_SMT_Guitar".
+            dataset_name (str): Name of the dataset. Default "IDMT-SMT-Guitar".
 
         Raises:
             RunTimeError: If XML annotation extraction fails.
@@ -211,6 +228,7 @@ class XMLExtractor(AbstractExtractor):
         Returns:
             XMLAnnotation: Annotations extracted from a ET.ElementTree.
         """
+
         try:
             self.logger.debug("Extracting XML annotation...")
 
@@ -228,45 +246,77 @@ class XMLExtractor(AbstractExtractor):
             for event in events_raw:
                 try:
                     pitch_str = event.get("pitch", None)
+                    pitch = int(pitch_str) if pitch_str is not None else None
+
                     onset_str = event.get("onsetSec", None)
+                    onset = float(onset_str) if onset_str is not None else None
+
                     offset_str = event.get("offsetSec", None)
+                    offset = float(offset_str) if offset_str is not None else None
+
                     fret_number_str = event.get("fretNumber", None)
+                    fret_number = (
+                        int(fret_number_str) if fret_number_str is not None else None
+                    )
+
                     string_number_str = event.get("stringNumber", None)
+                    string_number = (
+                        int(string_number_str)
+                        if string_number_str is not None
+                        else None
+                    )
+
                     excitation_style_str = event.get("excitationStyle", None)
+                    excitation_style = (
+                        ExcitationStyle(excitation_style_str)
+                        if excitation_style_str is not None
+                        and (excitation_style_str in ExcitationStyle)
+                        else None
+                    )
+
                     expression_style_str = event.get("expressionStyle", None)
+                    expression_style = (
+                        ExpressionStyle(expression_style_str)
+                        if expression_style_str is not None
+                        and (expression_style_str in ExpressionStyle)
+                        else None
+                    )
+
                     loudness_str = event.get("loudness", None)
+                    loudness = (
+                        Loudness(loudness_str)
+                        if loudness_str is not None and (loudness_str in Loudness)
+                        else None
+                    )
+
                     modulation_frequency_range_str = event.get(
                         "modulationFrequencyRange", None
                     )
+                    modulation_frequency_range = (
+                        float(modulation_frequency_range_str)
+                        if modulation_frequency_range_str is not None
+                        else None
+                    )
+
                     modulation_frequency_str = event.get("modulationFrequency", None)
+                    modulation_frequency = (
+                        float(modulation_frequency_str)
+                        if modulation_frequency_str is not None
+                        else None
+                    )
 
                     events_processed.append(
                         Event(
-                            pitch=int(pitch_str) if pitch_str else None,
-                            onset=float(onset_str) if onset_str else None,
-                            offset=float(offset_str) if offset_str else None,
-                            fret_number=int(fret_number_str)
-                            if fret_number_str
-                            else None,
-                            string_number=int(string_number_str)
-                            if string_number_str
-                            else None,
-                            excitation_style=ExcitationStyle(excitation_style_str)
-                            if excitation_style_str
-                            else None,
-                            expression_style=ExpressionStyle(expression_style_str)
-                            if expression_style_str
-                            and (expression_style_str in ExpressionStyle)
-                            else None,
-                            loudness=Loudness(loudness_str) if loudness_str else None,
-                            modulation_frequency_range=float(
-                                modulation_frequency_range_str
-                            )
-                            if modulation_frequency_range_str
-                            else None,
-                            modulation_frequency=float(modulation_frequency_str)
-                            if modulation_frequency_str
-                            else None,
+                            pitch=pitch,
+                            onset=onset,
+                            offset=offset,
+                            fret_number=fret_number,
+                            string_number=string_number,
+                            excitation_style=excitation_style,
+                            expression_style=expression_style,
+                            loudness=loudness,
+                            modulation_frequency_range=modulation_frequency_range,
+                            modulation_frequency=modulation_frequency,
                         )
                     )
                 except ValueError as exception:
@@ -298,3 +348,25 @@ class XMLExtractor(AbstractExtractor):
         except Exception as exception:
             self.logger.error(f"XML annotation extraction has failed: {exception}")
             raise RuntimeError("XML annotation extraction has failed") from exception
+
+    def extract(
+        self, tree: ET.ElementTree, title: str, dataset_name: str = DATASET_NAME
+    ) -> tuple[XMLMetadata, XMLAnnotation]:
+        """Extract metadata and annotations from an ET.ElementTree.
+
+        Args:
+            tree (ET.ElementTree): An ET.ElementTree.
+            title (str): File name.
+            dataset_name (str): Name of the dataset. Default "IDMT-SMT-Guitar".
+
+        Returns:
+            tuple[XMLMetadata, XMLAnnotation]: Metadata and annotations extracted from an ET.ElementTree.
+        """
+
+        xml_metadata = self.extract_metadata(
+            tree=tree, title=title, dataset_name=dataset_name
+        )
+        annotations = self.extract_annotation(
+            tree=tree, title=title, dataset_name=dataset_name
+        )
+        return xml_metadata, annotations

@@ -34,30 +34,22 @@ class WAVExtractor(AbstractExtractor):
 
         try:
             self.logger.debug(
-                "Reading WAV file",
-                extra={
-                    "path": str(file_path),
-                },
+                f"Reading WAV file: path={str(file_path)}",
             )
             audio_data, sample_rate = sf.read(
                 file=file_path,
                 **kwargs,
             )
             self.logger.debug(
-                "WAV extraction completed",
-                extra={
-                    "path": str(file_path),
-                    "sample_rate": sample_rate,
-                    "shape": audio_data.shape,
-                    "dtype": audio_data.dtype,
-                },
+                f"WAV extraction completed: "
+                f"path={str(file_path)}, "
+                f"sample_rate={sample_rate}, "
+                f"shape={audio_data.shape}, "
+                f"dtype={audio_data.dtype}"
             )
             return audio_data, sample_rate
-        except Exception as exc:
+        except Exception as exception:
             self.logger.exception(
-                "Failed to load WAV file.",
-                extra={
-                    "path": str(file_path),
-                },
+                f"Failed to load WAV file: path={str(file_path)}",
             )
-            raise RuntimeError("WAV extraction failed") from exc
+            raise RuntimeError("WAV extraction failed") from exception

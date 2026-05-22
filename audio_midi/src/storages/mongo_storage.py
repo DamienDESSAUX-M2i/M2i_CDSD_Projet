@@ -6,7 +6,13 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from settings import MONGO_SETTINGS
 
-from src.models import BeatPositionDict, ChordDict, NoteMidiDict, PitchContourDict
+from src.models import (
+    BeatPositionDict,
+    ChordDict,
+    EventDict,
+    NoteMidiDict,
+    PitchContourDict,
+)
 
 from .abstract_storage import AbstractStorage
 
@@ -185,7 +191,7 @@ class MongoStorage(AbstractStorage):
         )
 
     def insert_note_midi(
-        self, note_midi: dict[str, str | list[NoteMidiDict]]
+        self, note_midi: dict[str, str | list[NoteMidiDict] | list[EventDict]]
     ) -> str | None:
         """Insert or update a note midi. The update is based on 'dataset_name' and 'title'.
 

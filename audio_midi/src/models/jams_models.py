@@ -87,16 +87,12 @@ class JAMSMetadata:
 
 
 class PitchContourDict(TypedDict):
-    dataset_name: str
-    title: str
     data_source: str
     time: float
     frequency: float
 
 
 class NoteMidiDict(TypedDict):
-    dataset_name: str
-    title: str
     data_source: str
     time: float
     duration: float
@@ -104,8 +100,6 @@ class NoteMidiDict(TypedDict):
 
 
 class BeatPositionDict(TypedDict):
-    dataset_name: str
-    title: str
     time: float
     position: int
     beat_units: int
@@ -114,11 +108,16 @@ class BeatPositionDict(TypedDict):
 
 
 class ChordDict(TypedDict):
-    dataset_name: str
-    title: str
     time: float
     duration: float
     value: str
+
+
+class JAMSAnnotationDict(TypedDict):
+    pitch_contour: dict[str, str | list[PitchContourDict]]
+    note_midi: dict[str, str | list[NoteMidiDict]]
+    beat_position: dict[str, str | list[BeatPositionDict]]
+    chord: dict[str, str | list[ChordDict]]
 
 
 @dataclass
@@ -133,7 +132,7 @@ class JAMSAnnotation:
     def to_dict(
         self,
         **kwargs,
-    ) -> dict[str, str]:
+    ) -> JAMSAnnotationDict:
         """Convert DataFrames into dictionaries with 'records' orientation.
 
         Args:

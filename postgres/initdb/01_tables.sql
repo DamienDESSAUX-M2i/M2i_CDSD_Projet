@@ -37,7 +37,6 @@ CREATE TABLE guitarset_metadata (
     scale TEXT,
     mode TEXT,
     playing_version TEXT,
-    pick_up_setting TEXT,
 
     CONSTRAINT duration_positive
         CHECK (duration IS NULL OR duration > 0),

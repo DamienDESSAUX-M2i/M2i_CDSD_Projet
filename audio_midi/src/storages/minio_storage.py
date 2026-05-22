@@ -234,6 +234,9 @@ class MinIOStorage(AbstractStorage):
     ) -> str | None:
         """Upload audio data as a WAV object to a MinIO bucket.
 
+        Convention soundfile: (n_samples, n_channels)
+        Convention librosa: (n_channels, n_samples)
+
         Args:
             bucket_name (str): Target MinIO bucket name.
             file_name (str): Object name in the bucket (must end with .wav).
@@ -254,7 +257,7 @@ class MinIOStorage(AbstractStorage):
 
             sf.write(
                 file=buffer,
-                data=audio_data.T,  # Matrix translation because librosa: (n_channels, n_samples) and soundfile: (n_samples, n_channels).
+                data=audio_data,
                 samplerate=sample_rate,
                 format="WAV",
             )

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
+from typing import TypedDict
 
 import pandas as pd
 
@@ -40,17 +42,14 @@ class XMLMetadata:
     instrument: str
     instrument_model: str
     pick_up_setting: str
-    # pick_up_type: str
     instrument_tuning: str
-    # amp_channel: str
     audio_effects: str
-    recording_date: str
+    recording_date: datetime
     recording_artist: str
     instrument_body_material: str
     instrument_string_material: str
     composer: str
     recording_source: str
-    # polyphony: bool
 
     def to_dict(self) -> dict:
         return {
@@ -59,17 +58,14 @@ class XMLMetadata:
             "instrument": self.instrument,
             "instrument_model": self.instrument_model,
             "pick_up_setting": self.pick_up_setting,
-            # "pick_up_type": self.pick_up_type,
             "instrument_tuning": self.instrument_tuning,
-            # "amp_channel": self.amp_channel,
             "audio_effects": self.audio_effects,
-            "recording_date": self.recording_date,
+            "recording_date": self.recording_date.isoformat(),
             "recording_artist": self.recording_artist,
             "instrument_body_material": self.instrument_body_material,
             "instrument_string_material": self.instrument_string_material,
             "composer": self.composer,
             "recording_source": self.recording_source,
-            # "polyphony": self.polyphony,
         }
 
 
@@ -100,6 +96,19 @@ class Loudness(StrEnum):
     FORTE = "f"
     FORTISSIMO = "ff"
     FORTISSISSIMO = "fff"
+
+
+class EventDict(TypedDict):
+    pitch: int | None
+    onset: float | None
+    offset: float | None
+    fret_number: int | None
+    string_number: int | None
+    excitation_style: ExcitationStyle | None
+    expression_style: ExpressionStyle | None
+    loudness: Loudness | None
+    modulation_frequency_range: float | None
+    modulation_frequency: float | None
 
 
 @dataclass
@@ -134,6 +143,12 @@ class Event:
         }
 
 
+class XMLAnnotationDict(TypedDict):
+    dataset_name: str
+    title: str
+    transcription: list[EventDict]
+
+
 @dataclass
 class XMLAnnotation:
     dataset_name: str
@@ -143,7 +158,7 @@ class XMLAnnotation:
     def to_dict(
         self,
         **kwargs,
-    ) -> dict[str, str]:
+    ) -> XMLAnnotationDict:
         """Convert DataFrame into dictionary with 'records' orientation.
 
         Args:

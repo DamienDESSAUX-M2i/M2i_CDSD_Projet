@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 from typing import Any, TypedDict
 
@@ -8,7 +6,7 @@ from psycopg import Connection
 from psycopg.rows import dict_row
 from settings import GUITAR_SET_SETTINGS, IDMT_SMT_GUITAR_SETTINGS, POSTGRES_SETTINGS
 
-from src.models import AnnotationType, JAMSMetadata, XMLMetadata
+from src.models import AnnotationType, AudioType, JAMSMetadata, XMLMetadata
 
 from .abstract_storage import AbstractStorage
 
@@ -236,10 +234,9 @@ class PostgresStorage(AbstractStorage):
                 tempo,
                 scale,
                 mode,
-                playing_version,
-                pick_up_setting
+                playing_version
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING *;
             """,
             params=(
@@ -251,7 +248,6 @@ class PostgresStorage(AbstractStorage):
                 metadata.scale,
                 metadata.mode,
                 metadata.playing_version,
-                metadata.pick_up_setting,
             ),
         )
 
@@ -289,8 +285,7 @@ class PostgresStorage(AbstractStorage):
                 g.tempo,
                 g.scale,
                 g.mode,
-                g.playing_version,
-                g.pick_up_setting
+                g.playing_version
             FROM recordings AS r
             INNER JOIN guitarset_metadata AS g
                 ON r.id_recording = g.id_recording
@@ -323,8 +318,7 @@ class PostgresStorage(AbstractStorage):
                 tempo = %s,
                 scale = %s,
                 mode = %s,
-                playing_version = %s,
-                pick_up_setting = %s
+                playing_version = %s
             WHERE id_recording = %s
             RETURNING *;
             """,
@@ -336,7 +330,6 @@ class PostgresStorage(AbstractStorage):
                 metadata.scale,
                 metadata.mode,
                 metadata.playing_version,
-                metadata.pick_up_setting,
                 id_recording,
             ),
         )
@@ -527,7 +520,7 @@ class PostgresStorage(AbstractStorage):
     def insert_audio_file(
         self,
         id_recording: str,
-        audio_type: str,
+        audio_type: AudioType,
         uri: str,
         sample_rate: int | None,
         channels: int | None,
@@ -536,7 +529,7 @@ class PostgresStorage(AbstractStorage):
 
         Args:
             id_recording: Recording ID.
-            audio_type: Type of audio (mix, hex, mic, etc.).
+            audio_type: Type of audio.
             uri: MinIO object URI.
             sample_rate: Sample rate in Hz.
             channels: Number of channels.
@@ -579,7 +572,7 @@ class PostgresStorage(AbstractStorage):
     def update_audio_file(
         self,
         id_audio: str,
-        audio_type: str,
+        audio_type: AudioType,
         uri: str,
         sample_rate: int | None,
         channels: int | None,
@@ -588,7 +581,7 @@ class PostgresStorage(AbstractStorage):
 
         Args:
             id_audio: Audio ID.
-            audio_type: Type of audio (mix, hex, mic, etc.).
+            audio_type: Type of audio.
             uri: MinIO object URI.
             sample_rate: Sample rate in Hz.
             channels: Number of channels.

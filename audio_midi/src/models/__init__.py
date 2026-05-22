@@ -16,6 +16,7 @@ from .jams_models import (
 from .xml_models import (
     AmpChannel,
     Event,
+    EventDict,
     ExcitationStyle,
     ExpressionStyle,
     GuitarBrand,
@@ -34,6 +35,19 @@ class AnnotationType(StrEnum):
 
     JAMS = "jams"
     XML = "xml"
+    TXT = "txt"
+    CSV = "csv"
+
+
+class AudioType(StrEnum):
+    """Enumeration representing audio type."""
+
+    AUDIO_MONO_PICKUP_MIX = "audio_mono-pickup_mix"
+    AUDIO_HEX_PICKUP_DEBLEEDED = "audio_hex-pickup_debleeded"
+    AUDIO_HEX_PICKUP_ORIGINAL = "audio_hex-pickup_original"
+    AUDIO_MONO_MIC = "audio_mono-mic"
+    WAV = "wav"
+    UNKNOWN = "unknown"
 
 
 __all__ = [
@@ -51,6 +65,7 @@ __all__ = [
     "Style",
     "AmpChannel",
     "Event",
+    "EventDict",
     "ExcitationStyle",
     "ExpressionStyle",
     "GuitarBrand",
