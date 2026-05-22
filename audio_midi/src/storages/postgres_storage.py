@@ -4,12 +4,11 @@ import logging
 from typing import Any, TypedDict
 
 import psycopg
-from models import AnnotationType
 from psycopg import Connection
 from psycopg.rows import dict_row
 from settings import GUITAR_SET_SETTINGS, IDMT_SMT_GUITAR_SETTINGS, POSTGRES_SETTINGS
 
-from src.models import JAMSMetadata, XMLMetadata
+from src.models import AnnotationType, JAMSMetadata, XMLMetadata
 
 from .abstract_storage import AbstractStorage
 

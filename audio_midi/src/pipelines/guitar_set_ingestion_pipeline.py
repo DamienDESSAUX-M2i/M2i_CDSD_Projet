@@ -3,7 +3,6 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from models import AnnotationType
 from settings import (
     GUITAR_SET_INGESTION_PIPELINE_SETTINGS,
     MINIO_SETTINGS,
@@ -11,6 +10,7 @@ from settings import (
 from tqdm import tqdm
 
 from src.extractors import JAMSExtractor, WAVExtractor
+from src.models import AnnotationType
 from src.pipelines import AbstractPipeline
 from src.utils import Statistics
 
@@ -158,7 +158,6 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
                 recording = self.postgres_storage.insert_recording(
                     dataset_name=jam_metadata.dataset_name,
                     title=jam_metadata.title,
-                    duration=jam_metadata.duration,
                 )
                 if recording is None:
                     self.logger.error(
@@ -172,7 +171,6 @@ class GuitarSetIngestionPipeline(AbstractPipeline):
                     id_recording=recording["id_recording"],
                     dataset_name=jam_metadata.dataset_name,
                     title=jam_metadata.title,
-                    duration=jam_metadata.duration,
                 )
                 if recording is None:
                     self.logger.error(

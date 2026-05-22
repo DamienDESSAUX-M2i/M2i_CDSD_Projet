@@ -3,16 +3,19 @@ from pathlib import Path
 from typing import Any
 
 from .abstract_pipeline_settings import AbstractPipelineSettings, PipelineType
+from .datasets_settings import GUITAR_SET_SETTINGS, IDMT_SMT_GUITAR_SETTINGS
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass
 class GuitarSetIngestionPipelineSettings(AbstractPipelineSettings):
     pipeline_name: str = "GuitarSet_ingestion_pipeline"
     pipeline_type: PipelineType = PipelineType.INGESTOR
     pipeline_version: str = "1.0.0"
 
-    dataset_name: str = "GuitarSet"
-    dataset_path: Path = Path("./audio_midi/data/guitarset")
+    dataset_name: str = GUITAR_SET_SETTINGS.name
+    dataset_path: Path = Path(
+        f"./audio_midi/data/{GUITAR_SET_SETTINGS.extract_dir_name}"
+    )
     annotation_path: Path = dataset_path / "annotation"
     audio_hex_pickup_debleeded_path: Path = dataset_path / "audio_hex-pickup_debleeded"
     audio_hex_pickup_original_path: Path = dataset_path / "audio_hex-pickup_original"
@@ -27,15 +30,15 @@ class GuitarSetIngestionPipelineSettings(AbstractPipelineSettings):
 GUITAR_SET_INGESTION_PIPELINE_SETTINGS = GuitarSetIngestionPipelineSettings()
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass
 class IDMTSMTGuitarIngestionPipelineSettings(AbstractPipelineSettings):
     pipeline_name: str = "IDMT_SMT_Guitar_ingestion_pipeline"
     pipeline_type: PipelineType = PipelineType.INGESTOR
     pipeline_version: str = "1.0.0"
 
-    dataset_name: str = "IDMT_SMT_Guitar"
+    dataset_name: str = IDMT_SMT_GUITAR_SETTINGS.name
     dataset_path: Path = Path(
-        "./audio_midi/data/idmt_smt_guitar/idmt_smt_guitar/IDMT-SMT-GUITAR_V2"
+        f"./audio_midi/data/{IDMT_SMT_GUITAR_SETTINGS.extract_dir_name}/idmt_smt_guitar/IDMT-SMT-GUITAR_V2"
     )
     dataset1_path = dataset_path / "dataset1"
     dataset2_path = dataset_path / "dataset2"

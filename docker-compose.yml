@@ -58,7 +58,7 @@ services:
       - ./mongo/initdb/01_collections.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - ./mongo/volume:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
       interval: 10s
       timeout: 5s
       retries: 5

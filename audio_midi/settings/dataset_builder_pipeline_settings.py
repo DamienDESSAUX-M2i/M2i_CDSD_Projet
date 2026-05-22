@@ -4,7 +4,7 @@ from typing import Any
 from .abstract_pipeline_settings import AbstractPipelineSettings, PipelineType
 
 
-@dataclass()
+@dataclass
 class DatasetBuilderPipelineSettings(AbstractPipelineSettings):
     """
     Configuration settings for the ML pipeline.
