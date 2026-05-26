@@ -130,7 +130,7 @@ Each directory contains `.wav` files.
 
 1. Load WAV file.
 2. Extract recording title. The filename must match `TITLE_REGEX` for which pattern is `\d{2}_[A-Za-z0-9]+-\d+-[A-G](b|#)?_[A-Za-z]+`. If parsing fails then file is rejected.
-3. Retrieve associated recording. If not found, an error is raised (WAV depends on JAMS ingestion).
+3. Retrieve associated recording (PostgreSQL). If not found, an error is raised (WAV depends on JAMS ingestion).
 4. Upload audio to MinIO. Storage path is `{dataset_name}/{title}/{audio_type}.wav`, where `audio_type` is derived from the parent directory name.
 5. Audio file upsert (PostgreSQL). Table affected: `audio_file`.
 
