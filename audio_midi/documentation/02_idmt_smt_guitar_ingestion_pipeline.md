@@ -14,22 +14,22 @@ This documentation talk about the IDMT-SMT-Guitar ingestion pipeline used in the
 - [6. WAV Ingestion Pipeline](#6-wav-ingestion-pipeline)
   - [6.1. Input](#61-input)
   - [6.2. Processing Steps](#62-processing-steps)
-- [Dataset-Specific Logic](#dataset-specific-logic)
-  - [Dataset1](#dataset1)
-  - [Dataset2](#dataset2)
-- [7. Running the Pipeline from CLI](#7-running-the-pipeline-from-cli)
-  - [7.1. Ingest dataset](#71-ingest-dataset)
-  - [7.2. Limits number of files processed](#72-limits-number-of-files-processed)
-  - [7.3. Avoid ingesting subsets of data](#73-avoid-ingesting-subsets-of-data)
-- [8. Relevant CLI Arguments](#8-relevant-cli-arguments)
-- [9. Statistics](#9-statistics)
-  - [9.1. XML Metrics](#91-xml-metrics)
-    - [9.1.1. MinIO](#911-minio)
-    - [9.1.2. PostgreSQL](#912-postgresql)
-    - [9.1.3. MongoDB](#913-mongodb)
-  - [9.2. WAV Metrics](#92-wav-metrics)
-    - [9.2.1. MinIO](#921-minio)
-    - [9.2.2. PostgrSQL](#922-postgrsql)
+- [7. Dataset-Specific Logic](#7-dataset-specific-logic)
+  - [7.1. Dataset1](#71-dataset1)
+  - [7.2. Dataset2](#72-dataset2)
+- [8. Running the Pipeline from CLI](#8-running-the-pipeline-from-cli)
+  - [8.1. Ingest dataset](#81-ingest-dataset)
+  - [8.2. Limits number of files processed](#82-limits-number-of-files-processed)
+  - [8.3. Avoid ingesting subsets of data](#83-avoid-ingesting-subsets-of-data)
+- [9. Relevant CLI Arguments](#9-relevant-cli-arguments)
+- [10. Statistics](#10-statistics)
+  - [10.1. XML Metrics](#101-xml-metrics)
+    - [10.1.1. MinIO](#1011-minio)
+    - [10.1.2. PostgreSQL](#1012-postgresql)
+    - [10.1.3. MongoDB](#1013-mongodb)
+  - [10.2. WAV Metrics](#102-wav-metrics)
+    - [10.2.1. MinIO](#1021-minio)
+    - [10.2.2. PostgrSQL](#1022-postgrsql)
 
 # 2. Pipeline Responsibilities
 
@@ -158,37 +158,37 @@ Each directory contains `.wav` files.
 
 Any failure during processing increments `wav_error`, logs error, continues processing remaining files.
 
-# Dataset-Specific Logic
+# 7. Dataset-Specific Logic
 
-## Dataset1
+## 7.1. Dataset1
 
 Before ingestion, a preprocessing step is necessary. To avoid name conflicts, the SC/HU prefixes are added to the filenames. The `_add_pickup_prefix_to_filenames()` method performs this preprocessing step.
 
-## Dataset2
+## 7.2. Dataset2
 
 Ingestion requires consistency between XML and WAV naming conventions. Nine audio files have different names than their associated XML files. The `_rename_audio_files_to_match_xml` method renames these audio files.
 
-# 7. Running the Pipeline from CLI
+# 8. Running the Pipeline from CLI
 
-## 7.1. Ingest dataset
+## 8.1. Ingest dataset
 
 ```bash
 uv run ./audio_midi/main.py --ingest_idmt_smt_guitar
 ```
 
-## 7.2. Limits number of files processed
+## 8.2. Limits number of files processed
 
 ```bash
 uv run ./audio_midi/main.py --ingest_idmt_smt_guitar --limit 10
 ```
 
-## 7.3. Avoid ingesting subsets of data
+## 8.3. Avoid ingesting subsets of data
 
 ```bash
 uv run ./audio_midi/main.py --ingest_idmt_smt_guitar --no_dataset2 --no_dataset4
 ```
 
-# 8. Relevant CLI Arguments
+# 9. Relevant CLI Arguments
 
 | Argument | Description |
 |---|---|
@@ -199,25 +199,25 @@ uv run ./audio_midi/main.py --ingest_idmt_smt_guitar --no_dataset2 --no_dataset4
 | `--no_dataset3` | Disables subset 3 ingestion |
 | `--no_dataset4` | Disables subset 4 ingestion |
 
-# 9. Statistics
+# 10. Statistics
 
 The pipeline maintains a detailed metrics object: `IDMTSMTGuitarIngestionPipelineStatistics`.
 Statistics are reported at the end of the execution.
 
-## 9.1. XML Metrics
+## 10.1. XML Metrics
 
 | Metric | Description |
 | :- | :- |
 | `xml_loaded` | Number of XML files successfully parsed |
 | `xml_error` | Number of failed XML processing operations |
 
-### 9.1.1. MinIO
+### 10.1.1. MinIO
 
 | Metric | Description |
 | :- | :- |
 | `xml_uploaded` | Number of XML files uploaded to MinIO |
 
-### 9.1.2. PostgreSQL
+### 10.1.2. PostgreSQL
 
 | Metric | Description |
 | :- | :- |
@@ -228,27 +228,27 @@ Statistics are reported at the end of the execution.
 | `annotation_file_inserted` | New annotation file records |
 | `annotation_file_updated` | Updated annotation file records |
 
-### 9.1.3. MongoDB
+### 10.1.3. MongoDB
 
 | Metric | Description |
 | :- | :- |
 | `xml_annotation_inserted` | New MIDI annotations inserted |
 | `xml_annotation_updated` | Existing MIDI annotations updated |
 
-## 9.2. WAV Metrics
+## 10.2. WAV Metrics
 
 | Metric | Description |
 | :- | :- |
 | `wav_loaded` | Number of WAV files loaded |
 | `wav_error` | Number of failed WAV processing operations |
 
-### 9.2.1. MinIO
+### 10.2.1. MinIO
 
 | Metric | Description |
 | :- | :- |
 | `wav_uploaded` | Number of WAV files uploaded to MinIO |
 
-### 9.2.2. PostgrSQL
+### 10.2.2. PostgrSQL
 
 | Metric | Description |
 | :- | :- |
