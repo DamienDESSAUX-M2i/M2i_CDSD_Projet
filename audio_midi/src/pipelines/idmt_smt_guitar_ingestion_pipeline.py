@@ -432,48 +432,55 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
             )
             nb_ingestion += 1
 
-    def _modify_file_names(self, dir_path: Path) -> None:
-        """Modify file names to avoid doubloon.
+    def _add_pickup_prefix_to_filenames(self, directory_path: Path) -> None:
+        """Add SC/HU prefix to filenames to avoid naming collisions.
 
         Args:
-            dir_path (Path): Path of directories. Directories' names must be
+            directory_path (Path): Path of directories. Names of directories must be
             "Fender Strat Clean Neck SC Chords" or "Ibanez Power Strat Clean Bridge HU Chords".
         """
 
         try:
-            allowed_dirs = {
+            supported_directory_names = [
                 "Fender Strat Clean Neck SC Chords",
                 "Ibanez Power Strat Clean Bridge HU Chords",
-            }
+            ]
 
-            if dir_path.name not in allowed_dirs:
+            if directory_path.name not in supported_directory_names:
                 raise ValueError(
-                    f"Unsupported directory: directory_name={dir_path.name}"
+                    f"Unsupported directory: directory_name={directory_path.name}"
                 )
 
-            self.logger.info("Modify file names to avoid doubloons...")
+            self.logger.info("Add SC/HU prefix to filenames...")
 
-            file_names_modifies = 0
-            for subfolder, extension in {
+            modified_files_count = 0
+            for subfolder, glob_pattern in {
                 "annotation": "*.xml",
                 "audio": "*.wav",
             }.items():
-                directory = dir_path / subfolder
+                subdirectory_path = directory_path / subfolder
 
-                for file_path in directory.glob(extension):
+                for file_path in subdirectory_path.glob(glob_pattern):
                     if not file_path.name.startswith(("SC", "HU")):
-                        prefix = "SC" if " SC " in dir_path.name else "HU"
-                        new_path = file_path.parent / f"{prefix}_{file_path.name}"
-                        if not new_path.exists():
-                            file_path.rename(new_path)
-                            self.logger.debug(f"File renamed: {new_path}")
-                            file_names_modifies += 1
+                        prefix = "SC" if " SC " in directory_path.name else "HU"
+                        target_path = file_path.parent / f"{prefix}_{file_path.name}"
+                        if not target_path.exists():
+                            file_path.rename(target_path)
+                            self.logger.debug(f"File renamed: {target_path}")
+                            modified_files_count += 1
+                        else:
+                            self.logger.debug(
+                                f"Target file already exists: {target_path}"
+                            )
 
             self.logger.info(
-                f"Modifying file names completed, file_names_modifies={file_names_modifies}"
+                f"Adding SC/HU prefix to filenames completed, "
+                f"modified_files_count={modified_files_count}"
             )
         except Exception as exception:
-            self.logger.error(f"Modifying file names has failed: {exception}")
+            self.logger.error(
+                f"Adding SC/HU prefix to filenames has failed: {exception}"
+            )
             raise
 
     def _dataset1_ingestion(self) -> None:
@@ -489,7 +496,7 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
 
         for dir_path in dir_paths:
             if "Chords" in dir_path.as_posix():
-                self._modify_file_names(dir_path=dir_path)
+                self._add_pickup_prefix_to_filenames(directory_path=dir_path)
 
             self.logger.info(f"\tdirectory_name={dir_path.name}")
             self._xml_ingestion(
@@ -501,6 +508,58 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
                 dataset_number=1,
             )
 
+    def _rename_audio_files_to_match_xml(self, dataset_path: Path) -> None:
+        """Rename audio files to match annotation files.
+
+        Args:
+            dataset_path (Path): Path of dataset. Directory name must be "dataset2".
+        """
+
+        try:
+            if dataset_path.name != "dataset2":
+                raise ValueError(
+                    f"Unsupported directory: directory_name={dataset_path.name}"
+                )
+
+            audio_dir = dataset_path / "audio"
+            filename_mapping = {
+                "AR_Lick11_FN.wav": "AR_Lick11_FNVSBHD.wav",
+                "AR_Lick11_KN.wav": "AR_Lick11_KNVSBHD.wav",
+                "AR_Lick11_MN.wav": "AR_Lick11_MNVSBHD.wav",
+                "FS_Lick11_FN.wav": "FS_Lick11_FNVSBHD.wav",
+                "FS_Lick11_KN.wav": "FS_Lick11_KNVSBHD.wav",
+                "FS_Lick11_MN.wav": "FS_Lick11_MNVSBHD.wav",
+                "LP_Lick11_FN.wav": "LP_Lick11_FNVSBHD.wav",
+                "LP_Lick11_KN.wav": "LP_Lick11_KNVSBHD.wav",
+                "LP_Lick11_MN.wav": "LP_Lick11_MNVSBHD.wav",
+            }
+
+            self.logger.info("Rename audio files to match annotation files...")
+
+            modified_files_count = 0
+            for old_file_name, new_file_name in filename_mapping.items():
+                old_path = audio_dir / old_file_name
+                new_path = old_path.parent / new_file_name
+
+                if new_path.exists():
+                    self.logger.debug(f"Already renamed: {new_path}")
+                    continue
+
+                if not old_path.exists():
+                    raise FileNotFoundError(f"Missing file: {old_path}")
+
+                old_path.rename(new_path)
+
+                self.logger.debug(f"File renamed: {new_path}")
+                modified_files_count += 1
+
+            self.logger.info(
+                f"Renaming audio files completed, modified_files_count={modified_files_count}"
+            )
+        except Exception as exception:
+            self.logger.error(f"Renaming audio files has failed: {exception}")
+            raise
+
     def _dataset_ingestion(self, dataset_path: Path, dataset_number: int) -> None:
         """Ingestion of a dataset.
 
@@ -511,6 +570,9 @@ class IDMTSMTGuitarIngestionPipeline(AbstractPipeline):
 
         if not dataset_path.exists():
             raise FileNotFoundError(f"Directory does not exist: path={dataset_path}")
+
+        if dataset_path.name == "dataset2":
+            self._rename_audio_files_to_match_xml(dataset_path=dataset_path)
 
         self._xml_ingestion(
             directory_xml_path=dataset_path / "annotation",
