@@ -31,7 +31,7 @@ CREATE TABLE guitarset_metadata (
         ON DELETE CASCADE,
 
     duration DOUBLE PRECISION,
-    guitarist_id INTEGER NOT NULL,
+    guitarist_id INTEGER,
     style TEXT,
     tempo INTEGER,
     scale TEXT,
