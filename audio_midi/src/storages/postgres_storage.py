@@ -418,7 +418,7 @@ class PostgresStorage(AbstractStorage):
             params=(id_recording,),
         )
 
-    def select_all_idmt_smt_guitar_metadata(self) -> list[Row]:
+    def select_all_idmt_smt_guitar_metadata(self, dataset_number: int) -> list[Row]:
         """Fetch all IDMT-SMT-Guitar metadata.
 
         Returns:
@@ -447,7 +447,7 @@ class PostgresStorage(AbstractStorage):
                 ON r.id_recording = i.id_recording
             WHERE r.dataset_name = %s;
             """,
-            params=(IDMT_SMT_GUITAR_SETTINGS.name,),
+            params=(f"{IDMT_SMT_GUITAR_SETTINGS.name}_{dataset_number}",),
         )
 
     def update_idmt_smt_guitar_metadata(
