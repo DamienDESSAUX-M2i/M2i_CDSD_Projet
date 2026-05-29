@@ -1,12 +1,16 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
-import numpy as np
 import pandas as pd
-from settings import MINIO_SETTINGS, preprocessing_pipeline_config
+from settings import (
+    GUITAR_SET_SETTINGS,
+    IDMT_SMT_GUITAR_SETTINGS,
+    MINIO_SETTINGS,
+    PREPROCESSING_PIPELINE_SETTINGS,
+)
 from tqdm import tqdm
 
+from src.models import AudioType
 from src.pipelines import AbstractPipeline
 from src.transformers import (
     AudioCleaner,
@@ -14,11 +18,11 @@ from src.transformers import (
     AudioNormalizer,
 )
 from src.transformers.piano_roll_builder import (
+    MIDIPitchMapper,
     PianoRollBuilder,
-    PitchMapper,
     TimeMapper,
 )
-from src.utils import Statistics
+from src.utils import FloatAudioArray, Statistics
 
 
 @dataclass
@@ -27,30 +31,43 @@ class PreprocessingPipelineStatistics(Statistics):
     Statistics tracker for the preprocessing pipeline.
 
     Attributes:
-        pipeline_metadata_upload: Pipeline metadata uploading status.
+        pipeline_metadata_inserted: Pipeline metadata insertion status into MongoDB.
+        pipeline_metadata_inserted: Pipeline metadata updating status in MongoDB.
         audio_loaded: Number of successfully loaded raw audio files.
         audio_normalized: Number of successfully normalized audio files.
         audio_cleaned: Number of successfully cleaned audio files.
         audio_uploaded: Number of cleaned audio files uploaded to MinIO.
+        annotation_file_inserted: Number of new annotation file rows inserted into PostgreSQL.
+        annotation_file_updated: Number of existing annotation file rows updated in PostgreSQL.
         audio_error: Number of audio processing or upload failures.
         feature_extracted: Number of successful feature extraction operations.
         piano_roll_builded: Number of successfully generated piano-roll targets.
         sample_uploaded: Number of final samples successfully uploaded.
         sample_error: Number of sample saving failures.
-        sample_metadata_upload: Number of sample metadata upload in MongoDB.
+        sample_metadata_inserted: Number of sample metadata inserted into MongoDB.
+        sample_metadata_updated: Number of sample metadata updated in MongoDB.
     """
 
-    pipeline_metadata_upload: bool = False
+    # Pipeline metric
+    pipeline_metadata_inserted: bool = False
+    pipeline_metadata_updated: bool = False
+
+    # Audio metrics
+    audio_error: int = 0
     audio_loaded: int = 0
     audio_normalized: int = 0
     audio_cleaned: int = 0
     audio_uploaded: int = 0
-    audio_error: int = 0
     feature_extracted: int = 0
     piano_roll_builded: int = 0
-    sample_uploaded: int = 0
+    audio_file_inserted: int = 0
+    audio_file_updated: int = 0
+
+    # Sample metrics
     sample_error: int = 0
-    sample_metadata_upload: int = 0
+    sample_uploaded: int = 0
+    sample_metadata_inserted: int = 0
+    sample_metadata_updated: int = 0
 
 
 class PreprocessingPipeline(AbstractPipeline):
@@ -87,12 +104,17 @@ class PreprocessingPipeline(AbstractPipeline):
         logger: logging.Logger,
         guitarset: bool = True,
         idmt_smt_guitar: bool = True,
+        dataset1: bool = True,
+        dataset2: bool = True,
+        dataset3: bool = True,
+        dataset4: bool = True,
         preprocessing_limit: int | None = None,
     ) -> None:
         """
         Initialize the preprocessing pipeline.
 
         Args:
+            logger (logging.Logger): Logger instance.
             guitarset: Whether to process GuitarSet dataset.
             idmt_smt_guitar: Whether to process IDMT-SMT-Guitar dataset.
             preprocessing_limit: Optional limit on the number of files to process.
@@ -100,28 +122,51 @@ class PreprocessingPipeline(AbstractPipeline):
         """
 
         super().__init__(logger)
+        self.settings = PREPROCESSING_PIPELINE_SETTINGS
+        self.pipeline_metadata = self.settings.to_mongo_dict()
+
         self.guitarset = guitarset
         self.idmt_smt_guitar = idmt_smt_guitar
+        self.dataset1 = dataset1
+        self.dataset2 = dataset2
+        self.dataset3 = dataset3
+        self.dataset4 = dataset4
         self.preprocessing_limit = (
-            preprocessing_limit or preprocessing_pipeline_config.preprocessing_limit
+            preprocessing_limit or self.settings.preprocessing_limit
         )
-        self.normalizer = AudioNormalizer()
-        self.cleaner = AudioCleaner()
-        self.extractor = AudioFeatureExtractor()
-        self.piano_roll_builder = PianoRollBuilder(
-            PitchMapper(
-                midi_min=preprocessing_pipeline_config.midi_min,
-                midi_max=preprocessing_pipeline_config.midi_max,
-            ),
-            TimeMapper(
-                sample_rate=preprocessing_pipeline_config.target_sample_rate,
-                hop_length=preprocessing_pipeline_config.hop_length,
-            ),
-        )
-        self.statistics = PreprocessingPipelineStatistics()
-        self.pipeline_metadata = preprocessing_pipeline_config.to_mongo_dict()
 
-    def _load_audio(self, file_name: str) -> Optional[tuple[np.ndarray, int]]:
+        self.normalizer = AudioNormalizer(logger=logger)
+        self.cleaner = AudioCleaner(
+            logger=logger,
+            n_fft=self.settings.n_fft,
+            hop_length=self.settings.hop_length,
+        )
+        self.extractor = AudioFeatureExtractor(
+            logger=logger,
+            n_fft=self.settings.n_fft,
+            hop_length=self.settings.hop_length,
+            n_mels=self.settings.n_mels,
+            n_mfcc=self.settings.n_mfcc,
+            n_cqt_bins=self.settings.n_cqt_bins,
+            bins_per_octave=self.settings.bins_per_octave,
+            cqt_fmin=self.settings.cqt_fmin,
+            chroma_cqt_norm=self.settings.chroma_cqt_norm,
+        )
+        self.piano_roll_builder = PianoRollBuilder(
+            logger=logger,
+            pitch_mapper=MIDIPitchMapper(
+                midi_pitch_min=self.settings.midi_pitch_min,
+                midi_pitch_max=self.settings.midi_pitch_max,
+            ),
+            time_mapper=TimeMapper(
+                sample_rate=self.settings.target_sample_rate,
+                hop_length=self.settings.hop_length,
+            ),
+        )
+
+        self.statistics = PreprocessingPipelineStatistics()
+
+    def _load_audio(self, file_name: str) -> tuple[FloatAudioArray, int] | None:
         """
         Load an audio file from the MinIO raw bucket.
 
@@ -130,7 +175,7 @@ class PreprocessingPipeline(AbstractPipeline):
 
         Returns:
             A tuple containing:
-                - audio_data: Audio waveform as a NumPy array
+                - audio_data: Audio waveform as a NumPy array of shape (n_samples,) or (n_channels, n_samples)
                 - sample_rate: Sampling rate in Hz
 
             Returns None if loading fails.
@@ -151,11 +196,17 @@ class PreprocessingPipeline(AbstractPipeline):
             return None
 
         self.statistics.audio_loaded += 1
-        return result
+
+        # Adapt soundfile shape to librosa shape
+        audio_data, sample_rate = result
+        if audio_data.ndim == 2:
+            audio_data = audio_data.T
+
+        return audio_data, sample_rate
 
     def _save_clean_audio(
         self,
-        audio_data: np.ndarray,
+        audio_data: FloatAudioArray,
         sample_rate: int,
         file_name: str,
     ) -> None:
@@ -166,32 +217,107 @@ class PreprocessingPipeline(AbstractPipeline):
         and the current pipeline execution metadata identifier.
 
         Args:
-            audio_data: Cleaned audio waveform.
+            audio_data: Cleaned audio waveform, a NumPy array of shape (n_samples,) or (n_channels, n_samples).
             sample_rate: Sampling rate in Hz.
             file_name: Original raw audio file path used to derive output path.
         """
 
         self.logger.debug(f"Saving cleaned audio: file_name={file_name}")
 
-        file_name_audio_cleaned = f"{'/'.join(file_name.split('/')[:-1])}/audio_cleaned_{self.pipeline_metadata['_id']}.wav"
+        try:
+            # Extract dataset_name and title
+            file_name_split = file_name.split("/")
+            dataset_name = file_name_split[0]
+            title = file_name_split[1]
 
-        result = self.minio_storage.put_audio(
-            bucket_name=MINIO_SETTINGS.bucket_processed,
-            file_name=file_name_audio_cleaned,
-            audio_data=audio_data,
-            sample_rate=sample_rate,
-        )
+            # Fetch recording (PostgreSQL)
+            recording = self.postgres_storage.select_recording(
+                dataset_name=dataset_name, title=title
+            )
 
-        if result is None:
-            self.statistics.audio_error += 1
-        else:
+            if recording is None:
+                self.logger.error(
+                    f"Recording not found for WAV file: "
+                    f"dataset_name={dataset_name}, title={title}"
+                )
+                raise
+
+            id_recording = recording["id_recording"]
+
+            # Store audio (MinIO)
+            file_name_cleaned_audio = f"{'/'.join(file_name.split('/')[:-1])}/{self.pipeline_metadata['_id']}/audio_cleaned.wav"
+
+            # Adapt librosa shape to soundfile shape
+            if audio_data.ndim == 2:
+                audio_data = audio_data.T
+
+            audio_uri = self.minio_storage.put_audio(
+                bucket_name=MINIO_SETTINGS.bucket_processed,
+                file_name=file_name_cleaned_audio,
+                audio_data=audio_data,
+                sample_rate=sample_rate,
+            )
+
+            if audio_uri is None:
+                self.logger.error(
+                    "Failed to upload WAV file to MinIO: "
+                    f"dataset_name={dataset_name}, title={title}"
+                )
+                raise
+
             self.statistics.audio_uploaded += 1
+
+            # Upsert audio_file (PostgreSQL)
+            audio_type = AudioType.PROCESSED_AUDIO
+
+            audio_file = self.postgres_storage.select_audio_file(
+                id_recording=id_recording,
+                audio_type=audio_type,
+            )
+
+            if audio_file is None:
+                result = self.postgres_storage.insert_audio_file(
+                    id_recording=id_recording,
+                    audio_type=audio_type,
+                    uri=audio_uri,
+                    sample_rate=sample_rate,
+                    channels=audio_data.shape[1] if audio_data.ndim > 1 else 1,
+                )
+
+                if result is None:
+                    self.logger.error(
+                        "Failed to insert audio_file to PostgreSQL: "
+                        f"dataset_name={dataset_name}, title={title}"
+                    )
+                    raise
+                self.statistics.audio_file_inserted += 1
+
+            else:
+                result = self.postgres_storage.update_audio_file(
+                    id_audio=audio_file["id_audio"],
+                    audio_type=audio_type,
+                    uri=audio_uri,
+                    sample_rate=sample_rate,
+                    channels=audio_data.shape[1] if audio_data.ndim > 1 else 1,
+                )
+
+                if result is None:
+                    self.logger.error(
+                        "Failed to insert audio_file to PostgreSQL: "
+                        f"dataset_name={dataset_name}, title={title}"
+                    )
+                    raise
+                self.statistics.audio_file_updated += 1
+
+        except Exception as exception:
+            self.statistics.audio_error += 1
+            self.logger.error(f"WAV processing has failed: {exception}")
 
     def _save_sample(
         self,
         sample: pd.DataFrame,
         file_name: str,
-    ) -> list[str | None]:
+    ) -> None:
         """
         Save a processed training sample as a Parquet file.
 
@@ -205,9 +331,6 @@ class PreprocessingPipeline(AbstractPipeline):
         Args:
             sample: Final sample DataFrame containing features and piano-roll labels.
             file_name: Original raw audio file path used to derive output path.
-
-        Returns:
-            A list containing upload result URIs or None values if saving fails.
         """
 
         self.logger.debug(
@@ -215,105 +338,78 @@ class PreprocessingPipeline(AbstractPipeline):
         )
 
         try:
-            sample_file_name = f"{'/'.join(file_name.split('/')[:-1])}/sample_{self.pipeline_metadata['_id']}.parquet"
+            bucket_name = MINIO_SETTINGS.bucket_processed
+            sample_file_name = f"{'/'.join(file_name.split('/')[:-1])}/{self.pipeline_metadata['_id']}/sample.parquet"
 
-            uri = f"{MINIO_SETTINGS.bucket_processed}/{sample_file_name}"
+            uri = f"{bucket_name}/{sample_file_name}"
             self.logger.debug(f"Saving samples: uri={uri}")
 
             result = self.minio_storage.put_parquet(
-                bucket_name=MINIO_SETTINGS.bucket_processed,
+                bucket_name=bucket_name,
                 file_name=sample_file_name,
                 dataframe=sample,
             )
 
             if result is None:
-                self.statistics.sample_error += 1
+                self.logger.error(f"Failed to upload WAV file to MinIO: uri={uri}")
+                raise
+
+            self.statistics.sample_uploaded += 1
+
+            file_name_split = file_name.split("/")
+            dataset_name = file_name_split[0]
+            title = file_name_split[1]
+
+            sample_metadata = {
+                "preprocessing_pipeline_id": self.pipeline_metadata["_id"],
+                "dataset_name": dataset_name,
+                "title": title,
+                "bucket_name": bucket_name,
+                "object_name": sample_file_name,
+                "n_frames": sample.shape[0],
+            }
+            result = self.mongo_storage.insert_sample_metadata(
+                sample_metadata=sample_metadata
+            )
+
+            if result == "inserted":
+                self.statistics.sample_metadata_inserted += 1
+            elif result == "updated":
+                self.statistics.sample_metadata_updated += 1
             else:
-                self.statistics.sample_uploaded += 1
-
-                file_name_split = file_name.split("/")
-                self._upload_sample_metadata(
-                    dataset_name=file_name_split[0],
-                    title=file_name_split[1],
-                    bucket_name=MINIO_SETTINGS.bucket_processed,
-                    object_name=sample_file_name,
-                    n_frames=sample.shape[0],
+                self.logger.error(
+                    "Failed to insert sample metadata to MongoDB: "
+                    f"bucket_name={bucket_name}, object_name={sample_file_name}"
                 )
+                raise
 
-        except Exception as e:
+        except Exception as exception:
+            self.statistics.sample_error += 1
             self.logger.error(
-                f"Failed to save samples: uri={MINIO_SETTINGS.bucket_processed}/{sample_file_name}: {e}",
-                exc_info=True,
+                f"Failed to save samples: "
+                f"uri={MINIO_SETTINGS.bucket_processed}/{sample_file_name}, "
+                f"error={exception}"
             )
 
         self.logger.debug("Sample saving completed.")
 
-    def _upload_sample_metadata(
-        self,
-        dataset_name: str,
-        title: str,
-        bucket_name: str,
-        object_name: str,
-        n_frames: int,
-    ) -> None:
-        """
-        Save sample metadata in MongoDB.
-
-        This metadata is used later by the ML pipeline to:
-            - retrieve all samples associated with a preprocessing pipeline
-            - perform train / validation / test split at title level
-            - load samples from MinIO for model training
-
-        The metadata acts as a registry layer between MongoDB and MinIO.
-
-        Stored fields:
-            - preprocessing_pipeline_id: Unique preprocessing pipeline identifier
-            - dataset_name: Source dataset name (e.g. GuitarSet)
-            - title: Audio title identifier
-            - bucket_name: MinIO bucket containing the sample
-            - object_name: Object path of the sample Parquet file
-            - n_frames: Number of temporal frames in the sample
-
-        Args:
-            dataset_name: Name of the source dataset.
-            title: Unique title identifier of the audio sample.
-            bucket_name: MinIO bucket where the sample is stored.
-            object_name: Full object path of the sample file in MinIO.
-            n_frames: Number of time frames contained in the sample.
-
-        Returns:
-            None
-        """
-
-        sample_metadata = {
-            "preprocessing_pipeline_id": self.pipeline_metadata["_id"],
-            "dataset_name": dataset_name,
-            "title": title,
-            "bucket_name": bucket_name,
-            "object_name": object_name,
-            "n_frames": n_frames,
-        }
-        result = self.mongo_storage.insert_sample_metadata(
-            sample_metadata=sample_metadata
-        )
-
-        if result is not None:
-            self.statistics.sample_metadata_upload += 1
-
-    def _process_audio(self, file_name: str, df_annotations: pd.DataFrame) -> None:
+    def _process_sample(self, file_name: str, df_annotations: pd.DataFrame) -> None:
         """
         Process a single audio file end-to-end.
 
         Steps:
             1. Load raw audio
-            2. Normalize waveform
-            3. Clean signal
-            4. Optionally save cleaned audio
-            5. Extract selected features
-            6. Load note annotations
-            7. Build piano-roll labels
-            8. Merge features and labels
-            9. Optionally save final sample
+            2. Convert to mono
+            3. Remove DC offset
+            4. Resample
+            5. Clean signal
+            6. Normalize signal
+            7. Cast to float32
+            8. Optionally save cleaned audio
+            9. Extract features
+            10. Build piano-roll labels
+            11. Merge features and labels
+            12. Optionally save final sample
 
         Args:
             file_name: Object path of the audio file inside the raw bucket.
@@ -325,52 +421,80 @@ class PreprocessingPipeline(AbstractPipeline):
 
             audio_data, sample_rate = result
 
-            audio_data, sample_rate = self.normalizer.normalize(
-                audio_data,
-                sample_rate,
-                norm_type=preprocessing_pipeline_config.norm_type,
-            )
-            self.statistics.audio_normalized += 1
+            # Convert to mono
+            audio_data = self.normalizer.to_mono(audio_data=audio_data)
 
+            # Remove DC offset
+            if self.settings.use_remove_dc_offset:
+                audio_data = self.normalizer.remove_dc_offset(audio_data=audio_data)
+
+            # Resample
+            audio_data, sample_rate = self.normalizer.resample(
+                audio_data=audio_data,
+                sample_rate=sample_rate,
+                target_sample_rate=self.settings.target_sample_rate,
+            )
+
+            # Clean Audio
             audio_data = self.cleaner.clean(
                 audio_data,
                 sample_rate,
-                use_highpass=preprocessing_pipeline_config.use_highpass,
-                highpass_cutoff=preprocessing_pipeline_config.highpass_cutoff,
-                use_lowpass=preprocessing_pipeline_config.use_lowpass,
-                lowpass_cutoff=preprocessing_pipeline_config.lowpass_cutoff,
-                use_spectral_denoise=preprocessing_pipeline_config.use_spectral_denoise,
-                use_wiener=preprocessing_pipeline_config.use_wiener,
-                wiener_strength=preprocessing_pipeline_config.wiener_strength,
-                use_trim=preprocessing_pipeline_config.use_trim,
-                trim_db=preprocessing_pipeline_config.trim_db,
+                use_highpass=self.settings.use_highpass,
+                highpass_cutoff=self.settings.highpass_cutoff,
+                use_lowpass=self.settings.use_lowpass,
+                lowpass_cutoff=self.settings.lowpass_cutoff,
+                denoise_method=self.settings.denoise_method,
+                wiener_strength=self.settings.wiener_strength,
+                use_trim=self.settings.use_trim,
+                trim_db=self.settings.trim_db,
             )
             self.statistics.audio_cleaned += 1
 
-            if preprocessing_pipeline_config.save_clean_audio:
+            # Normalize
+            audio_data = self.normalizer.normalize(
+                audio_data=audio_data,
+                normalization_type=self.settings.normalization_type,
+                target_peak=self.settings.target_peak,
+                target_rms=self.settings.target_rms,
+            )
+
+            # Cast to float32
+            if self.settings.use_to_float32:
+                audio_data = self.normalizer.to_float32(audio_data=audio_data)
+
+            self.statistics.audio_normalized += 1
+
+            # Save cleaned audio
+            if self.settings.save_clean_audio:
                 self._save_clean_audio(audio_data, sample_rate, file_name)
 
-            features = self.extractor.extract_features(
+            # Extract Features
+            features = self.extractor.extract(
                 audio_data,
                 sample_rate,
-                use_stft=preprocessing_pipeline_config.use_stft,
-                use_mel=preprocessing_pipeline_config.use_mel,
-                use_cqt=preprocessing_pipeline_config.use_cqt,
-                use_chroma=preprocessing_pipeline_config.use_chroma,
-                use_mfcc=preprocessing_pipeline_config.use_mfcc,
+                use_stft=self.settings.use_stft,
+                use_mel=self.settings.use_mel,
+                use_cqt=self.settings.use_cqt,
+                use_chroma=self.settings.use_chroma,
+                use_mfcc=self.settings.use_mfcc,
             )
+
             self.statistics.feature_extracted += 1
 
+            # Build Piano Roll
             n_frames = features.shape[0]
             piano_roll = self.piano_roll_builder.transform(
                 df_annotations=df_annotations,
                 n_frames=n_frames,
             )
+
             self.statistics.piano_roll_builded += 1
 
+            # Build sample frame-wise
             sample = pd.concat([features, piano_roll], axis=1)
 
-            if preprocessing_pipeline_config.save_sample:
+            # Save sample
+            if self.settings.save_sample:
                 self._save_sample(sample, file_name)
 
             self.logger.debug(f"Processing completed: {file_name}")
@@ -378,7 +502,7 @@ class PreprocessingPipeline(AbstractPipeline):
         except Exception as e:
             self.logger.error(f"Error processing {file_name}: {e}", exc_info=True)
 
-    def _load_annotations(self, dataset_name: str) -> pd.DataFrame:
+    def _load_guitar_set_annotations(self) -> pd.DataFrame:
         """
         Load note-level annotations from MongoDB and convert them into a flat DataFrame.
 
@@ -392,30 +516,93 @@ class PreprocessingPipeline(AbstractPipeline):
         The nested note_midi structure is exploded and normalized into a tabular format
         suitable for piano-roll construction.
 
-        Args:
-            dataset_name: Name of the source dataset (e.g. GuitarSet).
-
         Returns:
-            A pandas DataFrame containing flattened note annotations with columns such as:
-                - time
+            A pandas DataFrame containing flattened note annotations with columns :
+                - title
+                - onset
                 - duration
-                - value
+                - midi_pitch
         """
 
-        pipeline = [{"$match": {"dataset_name": dataset_name}}]
+        pipeline = [{"$match": {"dataset_name": GUITAR_SET_SETTINGS.name}}]
 
         annotations = self.mongo_storage.aggregate_documents(
             collection_name="note_midi", pipeline=pipeline
         )
+
+        if len(annotations) == 0:
+            return pd.DataFrame()
+
         df_annotations = pd.DataFrame(annotations)[["title", "note_midi"]]
 
         df_annotations = df_annotations.explode("note_midi").reset_index(drop=True)
         df_annotations = df_annotations.join(
             pd.json_normalize(df_annotations["note_midi"])
         )
-        df_annotations = df_annotations.drop(columns=["data_source", "note_midi"])
+        df_annotations = df_annotations.rename(
+            columns={"time": "onset", "value": "midi_pitch"}
+        )
 
-        return df_annotations
+        df_annotations["onset"] = df_annotations["onset"].astype(float)
+        df_annotations["duration"] = df_annotations["duration"].astype(float)
+        df_annotations["midi_pitch"] = df_annotations["midi_pitch"].round().astype(int)
+
+        return df_annotations[["title", "onset", "duration", "midi_pitch"]]
+
+    def _load_idmt_smt_guitar_annotations(self, dataset_number: str) -> pd.DataFrame:
+        """
+        Load note-level annotations from MongoDB and convert them into a flat DataFrame.
+
+        Expected annotation format:
+            {
+                "onset": float,
+                "offset": float,
+                "pitch": int
+            }
+
+        The nested note_midi structure is exploded and normalized into a tabular format
+        suitable for piano-roll construction.
+
+        Args:
+            dataset_number: Number of the dataset. Must be between 1 and 4.
+
+        Returns:
+            A pandas DataFrame containing flattened note annotations with columns :
+                - title
+                - onset
+                - duration
+                - midi_pitch
+        """
+
+        pipeline = [
+            {
+                "$match": {
+                    "dataset_name": f"{IDMT_SMT_GUITAR_SETTINGS.name}_{dataset_number}"
+                }
+            }
+        ]
+
+        annotations = self.mongo_storage.aggregate_documents(
+            collection_name="note_midi", pipeline=pipeline
+        )
+
+        if len(annotations) == 0:
+            return pd.DataFrame()
+
+        df_annotations = pd.DataFrame(annotations)[["title", "transcription"]]
+
+        df_annotations = df_annotations.explode("transcription").reset_index(drop=True)
+        df_annotations = df_annotations.join(
+            pd.json_normalize(df_annotations["transcription"])
+        )
+        df_annotations["duration"] = df_annotations["offset"] - df_annotations["onset"]
+        df_annotations = df_annotations.rename(columns={"pitch": "midi_pitch"})
+
+        df_annotations["onset"] = df_annotations["onset"].astype(float)
+        df_annotations["duration"] = df_annotations["duration"].astype(float)
+        df_annotations["midi_pitch"] = df_annotations["midi_pitch"].round().astype(int)
+
+        return df_annotations[["title", "onset", "duration", "midi_pitch"]]
 
     def _process_guitar_set(self):
         """
@@ -427,30 +614,34 @@ class PreprocessingPipeline(AbstractPipeline):
             - optionally limits the number of processed files
             - processes each audio file individually
 
-        Only the selected audio source
-        (`audio_hex-pickup_debleeded`) is currently used.
+        Only the selected audio source `audio_hex-pickup_mix` is currently used.
         """
 
         self.logger.info("GuitarSet preprocessing...")
 
         files_names = [
             obj.object_name
-            for obj in self.minio_storage.list_raw(prefix="GuitarSet/")
-            if "audio_hex-pickup_debleeded" in obj.object_name
+            for obj in self.minio_storage.list_raw(
+                prefix=f"{GUITAR_SET_SETTINGS.name}/"
+            )
+            if AudioType.AUDIO_MONO_PICKUP_MIX.value in obj.object_name
         ]
 
         if self.preprocessing_limit is not None:
             files_names = files_names[: self.preprocessing_limit]
 
-        df_annotations = self._load_annotations(dataset_name="GuitarSet")
+        df_annotations = self._load_guitar_set_annotations()
+        if df_annotations.empty:
+            self.logger.warning("No annotations loaded, skip preprocessing")
+            return
 
         nb_ingestion = 0
         for file_name in tqdm(
             files_names,
-            desc="GuitarSet audio preprocessing",
+            desc="GuitarSet preprocessing",
             colour="green",
         ):
-            self._process_audio(
+            self._process_sample(
                 file_name=file_name,
                 df_annotations=df_annotations[
                     df_annotations["title"] == file_name.split("/")[1]
@@ -462,17 +653,61 @@ class PreprocessingPipeline(AbstractPipeline):
             f"GuitarSet preprocessing completed: nb_ingestion={nb_ingestion}"
         )
 
-    # TODO
-    def _process_idmt_smt_guitar(self):
+    def _process_idmt_smt_guitar(self, dataset_number: int):
         """
         Run preprocessing for the IDMT-SMT-Guitar dataset.
 
-        This method is planned but not yet implemented.
+        This method:
+            - lists IDMT-SMT-Guitar audio files from MinIO raw bucket
+            - filters the selected audio source
+            - optionally limits the number of processed files
+            - processes each audio file individually
+
+        Args:
+            dataset_number (int): Number of the sub-dataset. Must be between 1 and 4.
+
+        Only the selected audio source `audio_hex-pickup_mix` is currently used.
         """
 
-        pass
+        self.logger.info(f"IDMT-SMT-Guitar dataset{dataset_number} preprocessing...")
 
-    def _upload_pipeline_metadata(self) -> None:
+        files_names = [
+            obj.object_name
+            for obj in self.minio_storage.list_raw(
+                prefix=f"{IDMT_SMT_GUITAR_SETTINGS.name}_{dataset_number}/"
+            )
+            if "audio.wav" in obj.object_name
+        ]
+
+        if self.preprocessing_limit is not None:
+            files_names = files_names[: self.preprocessing_limit]
+
+        df_annotations = self._load_idmt_smt_guitar_annotations(
+            dataset_number=dataset_number
+        )
+        if df_annotations.empty:
+            self.logger.warning("No annotations loaded, skip preprocessing")
+            return
+
+        nb_ingestion = 0
+        for file_name in tqdm(
+            files_names,
+            desc=f"IDMT-SMT-Guitar dataset{dataset_number} preprocessing",
+            colour="green",
+        ):
+            self._process_sample(
+                file_name=file_name,
+                df_annotations=df_annotations[
+                    df_annotations["title"] == file_name.split("/")[1]
+                ],
+            )
+            nb_ingestion += 1
+
+        self.logger.debug(
+            f"GuitarSet preprocessing completed: nb_ingestion={nb_ingestion}"
+        )
+
+    def _insert_pipeline_metadata(self) -> None:
         """
         Save pipeline execution metadata into MongoDB.
 
@@ -488,8 +723,15 @@ class PreprocessingPipeline(AbstractPipeline):
             pipeline_metadata=self.pipeline_metadata
         )
 
-        if result is not None:
-            self.statistics.pipeline_metadata_upload = True
+        if result == "inserted":
+            self.statistics.pipeline_metadata_inserted = True
+        elif result == "updated":
+            self.statistics.pipeline_metadata_updated = True
+        else:
+            self.logger.error(
+                "Failed to insert pipeline metadata to MongoDB: "
+                f"_id={self.pipeline_metadata['_id']}"
+            )
 
     def run(self):
         """
@@ -509,13 +751,20 @@ class PreprocessingPipeline(AbstractPipeline):
         try:
             self.logger.info("Preprocessing pipeline stars")
 
-            self._upload_pipeline_metadata()
+            self._insert_pipeline_metadata()
 
             if self.guitarset:
                 self._process_guitar_set()
 
             if self.idmt_smt_guitar:
-                self._process_idmt_smt_guitar()
+                if self.dataset1:
+                    self._process_idmt_smt_guitar(dataset_number=1)
+                if self.dataset2:
+                    self._process_idmt_smt_guitar(dataset_number=2)
+                if self.dataset3:
+                    self._process_idmt_smt_guitar(dataset_number=3)
+                if self.dataset4:
+                    self._process_idmt_smt_guitar(dataset_number=4)
 
             self.logger.info(
                 f"Preprocessing pipeline ends successfully: {self.statistics.to_string()}"

@@ -146,6 +146,10 @@ def main() -> None:
             preprocessing_limit=args.limit,
             guitarset=args.guitar_set,
             idmt_smt_guitar=args.idmt_smt_guitar,
+            dataset1=args.dataset1,
+            dataset2=args.dataset2,
+            dataset3=args.dataset3,
+            dataset4=args.dataset4,
         )
         preprocessing_pipeline.run()
         preprocessing_pipeline.close()

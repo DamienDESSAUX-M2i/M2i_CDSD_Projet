@@ -11,7 +11,7 @@ from .minio_settings import MINIO_SETTINGS
 from .ml_pipeline_settings import ml_pipeline_config
 from .mongo_settings import MONGO_SETTINGS
 from .postgres_settings import POSTGRES_SETTINGS
-from .preprocessing_pipeline_settings import preprocessing_pipeline_config
+from .preprocessing_pipeline_settings import PREPROCESSING_PIPELINE_SETTINGS
 
 DATA_DIRECTORY = Path("./audio_midi/data").resolve()
 
@@ -27,5 +27,5 @@ __all__ = [
     "MINIO_SETTINGS",
     "MONGO_SETTINGS",
     "POSTGRES_SETTINGS",
-    "preprocessing_pipeline_config",
+    "PREPROCESSING_PIPELINE_SETTINGS",
 ]

@@ -1,23 +1,38 @@
 import logging
+from enum import StrEnum
 
 import librosa
 import numpy as np
 import scipy.signal as signal
 
 from src.transformers import AbstractTransformer
+from src.utils import FloatAudioArray, validate_audio
+
+
+class DenoiseMethod(StrEnum):
+    """Supported denoising strategies."""
+
+    NONE = "none"
+    SPECTRAL = "spectral"
+    WIENER = "wiener"
 
 
 class AudioCleaner(AbstractTransformer):
-    """
-    Audio cleaning pipeline for guitar signals.
+    """Deterministic audio cleaning pipeline for transcription tasks.
 
-    Responsibilities:
-        - Noise reduction (spectral gating baseline)
-        - High-pass filtering (remove rumble)
-        - Low-pass filtering (optional anti-high-frequency noise)
+    This class focuses on:
+        - Removing low-frequency rumble (HPF)
+        - Optional high-frequency smoothing (LPF)
+        - Single denoising strategy (spectral OR Wiener)
+        - Optional silence trimming
 
-    This class does NOT perform normalization or feature extraction.
+    Design constraints:
+        - Preserves transients (important for MIDI onset detection)
+        - Avoids stacked denoising methods by default
+        - Uses zero-phase filtering to avoid time shifts
     """
+
+    _EPSILON: float = 1e-9
 
     def __init__(
         self,
@@ -25,238 +40,259 @@ class AudioCleaner(AbstractTransformer):
         n_fft: int = 2048,
         hop_length: int = 512,
     ) -> None:
-        """
+        """Initialize cleaner.
+
         Args:
-            n_fft: FFT window size for spectral operations
-            hop_length: Hop length for STFT
+            logger: Logger instance.
+            n_fft: FFT size for spectral methods.
+            hop_length: Hop length for STFT.
         """
+
         super().__init__(logger)
         self.n_fft = n_fft
         self.hop_length = hop_length
 
     def highpass_filter(
-        self, audio_data: np.ndarray, sample_rate: int, cutoff: float = 80.0
-    ) -> np.ndarray:
-        """
-        Apply a high-pass filter to remove low-frequency rumble.
+        self,
+        audio: FloatAudioArray,
+        sample_rate: int,
+        cutoff: float = 80.0,
+        filter_order: int = 6,
+    ) -> FloatAudioArray:
+        """Apply a zero-phase high-pass filter to remove low-frequency rumble.
 
         Args:
-            audio_data: Input audio signal
-            sample_rate: Sampling rate
-            cutoff: Cutoff frequency in Hz
+            audio: Input mono audio signal (1D float array).
+            sample_rate: Sampling rate of the audio signal in Hz.
+            cutoff: Cutoff frequency in Hz below which frequencies are attenuated.
+            filter_order: Order of the Butterworth filter.
+                Higher values produce a steeper frequency cutoff but may increase
+                ringing sensitivity and numerical instability in extreme cases.
 
         Returns:
-            Filtered audio signal
+            High-pass filtered audio signal (same shape as input).
         """
+
+        validate_audio(audio)
+
         self.logger.debug(f"Applying high-pass filter at {cutoff} Hz.")
 
         sos = signal.butter(
-            N=10, Wn=cutoff, btype="highpass", fs=sample_rate, output="sos"
+            N=filter_order,
+            Wn=cutoff,
+            btype="highpass",
+            fs=sample_rate,
+            output="sos",
         )
-        return signal.sosfilt(sos, audio_data)
+
+        return signal.sosfiltfilt(sos, audio)
 
     def lowpass_filter(
-        self, audio_data: np.ndarray, sample_rate: int, cutoff: float = 8000.0
-    ) -> np.ndarray:
-        """
-        Apply a low-pass filter to remove high-frequency noise.
+        self,
+        audio: FloatAudioArray,
+        sample_rate: int,
+        cutoff: float = 8000.0,
+        filter_order: int = 6,
+    ) -> FloatAudioArray:
+        """Apply a zero-phase low-pass filter to reduce high-frequency noise.
 
         Args:
-            audio_data: Input audio signal
-            sample_rate: Sampling rate
-            cutoff: Cutoff frequency in Hz
+            audio: Input mono audio signal (1D float array).
+            sample_rate: Sampling rate of the audio signal in Hz.
+            cutoff: Cutoff frequency in Hz above which frequencies are attenuated.
+            filter_order: Order of the Butterworth filter.
+                Higher values produce a steeper frequency cutoff but may increase
+                ringing sensitivity and numerical instability in extreme cases.
 
         Returns:
-            Filtered audio signal
+            Low-pass filtered audio signal (same shape as input).
         """
-        self.logger.debug(f"Applying low-pass filter at {cutoff} Hz.")
+
+        validate_audio(audio)
+
+        self.logger.debug(f"Applying low-pass filter at {cutoff} Hz")
 
         sos = signal.butter(
-            N=10, Wn=cutoff, btype="lowpass", fs=sample_rate, output="sos"
+            N=filter_order,
+            Wn=cutoff,
+            btype="lowpass",
+            fs=sample_rate,
+            output="sos",
         )
-        return signal.sosfilt(sos, audio_data)
 
-    def spectral_denoise(self, audio_data: np.ndarray) -> np.ndarray:
-        """
-        Simple spectral gating noise reduction.
+        return signal.sosfiltfilt(sos, audio)
 
-        Approach:
-            - Estimate noise floor via median magnitude spectrum
-            - Apply soft mask
+    def spectral_denoise(self, audio: FloatAudioArray) -> FloatAudioArray:
+        """Apply soft spectral gating denoising.
+
+        The method estimates a noise floor using a robust median magnitude
+        spectrum and applies a soft mask in the frequency domain to preserve
+        transients and reduce musical noise artifacts.
 
         Args:
-            audio_data: Input audio signal
+            audio: Input mono audio signal (1D float array).
 
         Returns:
-            Denoised audio signal
+            Denoised audio signal reconstructed via inverse STFT.
         """
-        self.logger.debug("Applying spectral denoising (baseline gating).")
 
-        stft_matrix = librosa.stft(
-            audio_data, n_fft=self.n_fft, hop_length=self.hop_length
+        validate_audio(audio)
+
+        self.logger.debug("Applying spectral denoising (soft mask)")
+
+        stft = librosa.stft(
+            audio,
+            n_fft=self.n_fft,
+            hop_length=self.hop_length,
         )
 
-        magnitude = np.abs(stft_matrix)
-        phase = np.angle(stft_matrix)
+        mag = np.abs(stft)
+        phase = np.exp(1j * np.angle(stft))
 
-        noise_profile = np.median(magnitude, axis=1, keepdims=True)
-        mask = magnitude > noise_profile
+        noise_profile = np.median(mag, axis=1, keepdims=True)
 
-        stft_matrix_clean = magnitude * mask * np.exp(1j * phase)
+        mask = mag / (mag + noise_profile + self._EPSILON)
 
-        return librosa.istft(stft_matrix_clean, hop_length=self.hop_length)
+        cleaned_stft = mask * mag * phase
 
-    def wiener_filter(
+        return librosa.istft(cleaned_stft, hop_length=self.hop_length)
+
+    def wiener_denoise(
         self,
-        audio_data: np.ndarray,
-        noise_reduction_factor: float = 1.0,
-    ) -> np.ndarray:
-        """
-        Apply a simple STFT-based Wiener filter.
+        audio: FloatAudioArray,
+        strength: float = 1.0,
+    ) -> FloatAudioArray:
+        """Remove leading and trailing silence based on energy thresholding.
 
-        Assumptions:
-            - Noise is approximately stationary
-            - Noise profile estimated via median spectrum
+        Uses librosa energy-based trimming relative to peak amplitude.
 
         Args:
-            audio_data: Input audio signal
-            noise_reduction_factor: Strength of noise suppression
+            audio: Input mono audio signal (1D float array).
+            top_db: Threshold (in decibels) below reference level to consider silence.
 
         Returns:
-            Denoised audio signal
+            Trimmed audio signal (potentially shorter than input).
         """
 
-        self.logger.debug("Applying Wiener filtering.")
+        validate_audio(audio)
 
-        stft_matrix = librosa.stft(
-            audio_data, n_fft=self.n_fft, hop_length=self.hop_length
+        self.logger.debug(f"Applying Wiener denoising: strength={strength}")
+
+        stft = librosa.stft(
+            audio,
+            n_fft=self.n_fft,
+            hop_length=self.hop_length,
         )
 
-        magnitude = np.abs(stft_matrix)
+        mag = np.abs(stft)
 
-        noise_profile = np.median(magnitude, axis=1, keepdims=True)
+        noise_profile = np.percentile(mag, 25, axis=1, keepdims=True)
 
-        signal_power = magnitude**2
-        noise_power = (noise_profile**2) * noise_reduction_factor
+        signal_power = mag**2
+        noise_power = (noise_profile**2) * strength
 
-        wiener_gain = signal_power / (signal_power + noise_power + 1e-8)
+        gain = signal_power / (signal_power + noise_power + self._EPSILON)
 
-        self.logger.debug(f"Wiener gain applied (factor={noise_reduction_factor}).")
+        cleaned = gain * stft
 
-        stft_matrix_filtered = wiener_gain * stft_matrix
-
-        return librosa.istft(stft_matrix_filtered, hop_length=self.hop_length)
+        return librosa.istft(cleaned, hop_length=self.hop_length)
 
     def trim_silence(
         self,
-        audio_data: np.ndarray,
+        audio: FloatAudioArray,
         top_db: float = 40.0,
-    ) -> np.ndarray:
-        """
-        Remove leading and trailing silence from audio signal.
+    ) -> FloatAudioArray:
+        """Remove leading and trailing silence based on energy thresholding.
 
-        Uses librosa energy-based trimming.
+        Uses librosa energy-based trimming relative to peak amplitude.
 
         Args:
-            audio_data: Input audio signal
-            top_db: Threshold (in dB) below reference to consider as silence
+            audio: Input mono audio signal (1D float array).
+            top_db: Threshold (in decibels) below reference level to consider silence.
 
         Returns:
-            Trimmed audio signal
+            Trimmed audio signal (potentially shorter than input).
         """
-        self.logger.debug(f"Trimming silence (top_db={top_db}).")
 
-        trimmed_audio, index = librosa.effects.trim(
-            audio_data,
-            top_db=top_db,
-        )
+        validate_audio(audio)
 
-        self.logger.debug(
-            f"Trimmed audio: original_len={len(audio_data)}, "
-            f"new_len={len(trimmed_audio)}, "
-            f"start={index[0]}, end={index[1]}"
-        )
+        self.logger.debug(f"Trimming silence: top_db={top_db}")
 
-        return trimmed_audio
+        trimmed, _ = librosa.effects.trim(audio, top_db=top_db)
+
+        return trimmed
 
     def clean(
         self,
-        audio_data: np.ndarray,
+        audio: FloatAudioArray,
         sample_rate: int,
+        *,
         use_highpass: bool = True,
         highpass_cutoff: float = 80.0,
         use_lowpass: bool = False,
         lowpass_cutoff: float = 8000.0,
-        use_spectral_denoise: bool = True,
-        use_wiener: bool = False,
+        denoise_method: DenoiseMethod = DenoiseMethod.SPECTRAL,
         wiener_strength: float = 1.0,
         use_trim: bool = False,
         trim_db: float = 40.0,
-    ) -> np.ndarray:
-        """
-        Full audio cleaning pipeline.
+    ) -> FloatAudioArray:
+        """Execute full deterministic audio cleaning pipeline.
 
-        Order:
-            1. High-pass filter (remove low-frequency rumble)
-            2. Low-pass filter (optional high-frequency smoothing)
-            3. Wiener filtering (optional noise suppression)
-            4. Spectral denoise (optional spectral gating)
-            5. Silence trimming (optional removal of leading/trailing silence)
+        Processing order:
+            1. High-pass filtering (rumble removal)
+            2. Optional low-pass filtering
+            3. Single denoising method (spectral or Wiener)
+            4. Optional silence trimming
 
         Args:
-            audio_data: Input audio signal
-            sample_rate: Sampling rate in Hz
+            audio: Input mono audio signal (1D float array).
+            sample_rate: Sampling rate of the audio signal in Hz.
 
-            use_highpass: Enable high-pass filtering
-            highpass_cutoff: Cutoff frequency for high-pass filter (Hz)
+            use_highpass: Whether to apply high-pass filtering.
+            highpass_cutoff: High-pass cutoff frequency in Hz.
 
-            use_lowpass: Enable low-pass filtering
-            lowpass_cutoff: Cutoff frequency for low-pass filter (Hz)
+            use_lowpass: Whether to apply low-pass filtering.
+            lowpass_cutoff: Low-pass cutoff frequency in Hz.
 
-            use_spectral_denoise: Enable spectral gating noise reduction
+            denoise_method: Denoising strategy to apply.
+                Options:
+                    - SPECTRAL: soft spectral gating
+                    - WIENER: Wiener filtering
+                    - NONE: no denoising
 
-            use_wiener: Enable Wiener filtering
-            wiener_strength: Controls strength of noise suppression in Wiener filter
-
-            use_trim: Enable trimming of leading and trailing silence
-            trim_db: Threshold (in dB) below reference for silence detection
+            wiener_strength: Strength factor for Wiener filtering.
+            use_trim: Whether to remove leading and trailing silence.
+            trim_db: Silence threshold in dB for trimming.
 
         Returns:
-            Cleaned audio signal as a 1D numpy array (mono)
+            Cleaned mono audio signal as a 1D float array.
 
         Notes:
-            - Trimming may alter signal length and temporal alignment
-            - Filtering preserves signal length but modifies frequency content
+            - Filtering preserves signal length
+            - Trimming may change signal length
+            - Designed for downstream transcription tasks (e.g., MIDI inference)
         """
+
+        validate_audio(audio)
 
         self.logger.debug("Starting audio cleaning pipeline.")
 
         if use_highpass:
-            self.logger.debug("High-pass filtering enabled.")
-            audio_data = self.highpass_filter(
-                audio_data, sample_rate, cutoff=highpass_cutoff
-            )
+            audio = self.highpass_filter(audio, sample_rate, highpass_cutoff)
 
         if use_lowpass:
-            self.logger.debug("Low-pass filtering enabled.")
-            audio_data = self.lowpass_filter(
-                audio_data, sample_rate, cutoff=lowpass_cutoff
-            )
+            audio = self.lowpass_filter(audio, sample_rate, lowpass_cutoff)
 
-        if use_wiener:
-            self.logger.debug(f"Wiener filtering enabled (strength={wiener_strength}).")
-            audio_data = self.wiener_filter(
-                audio_data, noise_reduction_factor=wiener_strength
-            )
+        if denoise_method is not DenoiseMethod.NONE:
+            if denoise_method is DenoiseMethod.SPECTRAL:
+                audio = self.spectral_denoise(audio)
 
-        if use_spectral_denoise:
-            self.logger.debug("Spectral denoising enabled.")
-            audio_data = self.spectral_denoise(audio_data)
+            elif denoise_method is DenoiseMethod.WIENER:
+                audio = self.wiener_denoise(audio, strength=wiener_strength)
 
         if use_trim:
-            self.logger.debug("Silence trimming enabled.")
-            audio_data = self.trim_silence(audio_data, top_db=trim_db)
+            audio = self.trim_silence(audio, top_db=trim_db)
 
-        self.logger.debug("Audio cleaning pipeline completed.")
+        self.logger.debug("Audio cleaning completed.")
 
-        return audio_data
+        return audio

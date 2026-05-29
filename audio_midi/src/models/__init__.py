@@ -47,6 +47,7 @@ class AudioType(StrEnum):
     AUDIO_HEX_PICKUP_ORIGINAL = "audio_hex-pickup_original"
     AUDIO_MONO_MIC = "audio_mono-mic"
     WAV = "wav"
+    PROCESSED_AUDIO = "processed_audio"
     UNKNOWN = "unknown"
 
 

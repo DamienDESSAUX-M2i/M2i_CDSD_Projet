@@ -234,8 +234,8 @@ class MinIOStorage(AbstractStorage):
     ) -> str | None:
         """Upload audio data as a WAV object to a MinIO bucket.
 
-        Convention soundfile: (n_samples, n_channels)
-        Convention librosa: (n_channels, n_samples)
+        Convention soundfile used: (n_samples, n_channels)
+        Convention librosa not used: (n_channels, n_samples)
 
         Args:
             bucket_name (str): Target MinIO bucket name.
@@ -360,6 +360,9 @@ class MinIOStorage(AbstractStorage):
     ) -> tuple[np.ndarray, int] | None:
         """Gets an audio from a bucket using its file name.
 
+        Convention soundfile used: (n_samples, n_channels)
+        Convention librosa not used: (n_channels, n_samples)
+
         Args:
             bucket_name (str): Bucket name.
             file_name (str): File name.
@@ -374,10 +377,7 @@ class MinIOStorage(AbstractStorage):
         )
         if len(audio_bytes) > 0:
             audio_data, sample_rate = sf.read(io.BytesIO(audio_bytes))
-            return (
-                audio_data.T,  # Matrix translation because librosa: (n_channels, n_samples) and soundfile: (n_samples, n_channels)
-                sample_rate,
-            )
+            return audio_data, sample_rate
         return None
 
     def get_parquet(self, bucket_name: str, file_name: str) -> pd.DataFrame | None:
