@@ -39,4 +39,4 @@ Un code source contenant la création de l'environnement standardisé, le déplo
 
 Le code source correspond au projet data développé et une soutenance orale de 10 minutes suivie de 5 minutes de questions et éventuellement de 5 minutes d'entretien.
 
-[Livrable 6](./livrable6_soutenance.md)
+[Livrable 6](./soutenance/main.pdf)
