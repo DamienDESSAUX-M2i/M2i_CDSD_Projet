@@ -73,6 +73,7 @@ class MongoStorage(AbstractStorage):
             "annotation",
             "pipeline_metadata",
             "processed_audio_metadata",
+            "dataset_metadata",
         ],
     ) -> str | None:
         """Insert or update a document. The update is based on 'dataset_name' and 'title'.
@@ -118,9 +119,25 @@ class MongoStorage(AbstractStorage):
                         "object_name": document["object_name"],
                     }
 
+                case "dataset_metadata":
+                    if document.get("dataset_builder_pipeline_id", None) is None:
+                        raise RuntimeError(
+                            "'dataset_builder_pipeline_id' key does not exist"
+                        )
+
+                    filter = {
+                        "dataset_builder_pipeline_id": document[
+                            "dataset_builder_pipeline_id"
+                        ],
+                    }
+
                 case _:
                     raise ValueError(
-                        "filter must be 'annotation', 'pipeline_metadata'or 'processed_audio_metadata'"
+                        "filter must be "
+                        "'annotation', "
+                        "'pipeline_metadata', "
+                        "'processed_audio_metadata', "
+                        "'dataset_metadata'"
                     )
 
             document["inserted_at"] = datetime.now(timezone.utc)
@@ -253,7 +270,7 @@ class MongoStorage(AbstractStorage):
     def insert_pipeline_metadata(
         self, pipeline_metadata: dict[str, dict[str, Any]]
     ) -> str | None:
-        """Insert or update a pipeline metadata. The update is based on '_id.
+        """Insert or update a pipeline metadata. The update is based on '_id'.
 
         Args:
             preprocessing_metadata (dict): Dictionary representing pipeline metadata.
@@ -298,6 +315,22 @@ class MongoStorage(AbstractStorage):
             collection_name=MONGO_SETTINGS.collection_audio_metadata,
             document=audio_metadata,
             filter="processed_audio_metadata",
+        )
+
+    def insert_dataset_metadata(self, dataset_metadata: dict[str, Any]) -> str | None:
+        """Insert or update a dataset metadata. The update is based on 'dataset_builder_pipeline_id'.
+
+        Args:
+            dataset_metadata (dict): Dictionary representing dataset metadata.
+
+        Returns:
+            str | None: "inserted", "updated" or None.
+        """
+
+        return self._insert_document(
+            collection_name=MONGO_SETTINGS.collection_dataset_metadata,
+            document=dataset_metadata,
+            filter="dataset_metadata",
         )
 
     def find_document(

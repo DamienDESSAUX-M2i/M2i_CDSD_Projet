@@ -1,91 +1,113 @@
-from dataclasses import dataclass, field
+import math
+from dataclasses import dataclass
 from typing import Any
 
 from .abstract_pipeline_settings import AbstractPipelineSettings, PipelineType
+from .datasets_settings import GUITAR_SET_SETTINGS
 
 
 @dataclass
 class DatasetBuilderPipelineSettings(AbstractPipelineSettings):
     """
-    Configuration settings for the ML pipeline.
+    Configuration for dataset construction.
 
-    This configuration centralizes all parameters required for:
-        - loading preprocessed samples
-        - selecting a preprocessing pipeline version
-        - train / validation / test split strategy
-        - dataset loading strategy
-        - future model training and evaluation settings
+    This configuration controls:
 
-    The configuration can also be serialized and stored in MongoDB
-    to ensure experiment reproducibility and traceability.
+    - Source datasets selection.
+    - Preprocessing pipeline version selection.
+    - Train / validation / test split strategy.
+    - Context window generation.
+    - Dataset reproducibility metadata.
     """
 
-    pipeline_name: str = "dataset_builder"
+    pipeline_name: str = "dataset_builder_standard"
     pipeline_type: PipelineType = PipelineType.DATASET_BUILDER
     pipeline_version: str = "1.0.0"
 
-    dataset_name: str = "context_window_small"
+    output_dataset_name: str = "guitar_set_standard"
 
-    use_guitarset: bool = True
-    use_idmt_smt_guitar: bool = False
-    max_samples_per_datasets: int | None = 100
+    datasets_used: tuple[str, ...] = (GUITAR_SET_SETTINGS.name,)
+    max_samples_per_dataset: int | None = 10
 
-    preprocessing_pipeline_id: str | None = (
-        "587d316097f01069c08c4a855cfa3d3ac043c3f975bd689ac60e0d4affefbe65"
-    )
+    preprocessing_pipeline_id: str | None = None
 
     train_size: float = 0.7
     validation_size: float = 0.1
     test_size: float = 0.2
-    random_state: int = 42
+    random_state: int = 73
     shuffle: bool = True
 
-    prefix_features: tuple[str] = ("cqt_",)
-    prefix_target: tuple[str] = ("pitch_",)
-
-    use_context_window: bool = True
+    use_context_window: bool = False
     context_size: int = 11
 
-    train_objects_names: list[str] = field(default_factory=list)
-    train_samples: int = 0
-    validation_objects_names: list[str] = field(default_factory=list)
-    validation_samples: int = 0
-    test_objects_names: list[str] = field(default_factory=list)
-    test_samples: int = 0
+    def __post_init__(self) -> None:
+        """Validate dataset builder configuration after initialization."""
+
+        if not self.datasets_used:
+            raise ValueError("datasets_used is empty")
+
+        if not self.max_samples_per_dataset < 10:
+            raise ValueError(
+                "max_samples_per_dataset must be greater than or equals to 10"
+            )
+
+        for name, value in (
+            ("train_size", self.train_size),
+            ("validation_size", self.validation_size),
+            ("test_size", self.test_size),
+        ):
+            if value < 0.0:
+                raise ValueError(
+                    f"{name} must be greater than or equals to 0.0 (got {value})"
+                )
+
+        total = self.train_size + self.validation_size + self.test_size
+        if not math.isclose(total, 1.0, rel_tol=1e-9, abs_tol=1e-9):
+            raise ValueError("train_size + validation_size + test_size must equal 1.0")
+
+        if self.random_state < 0:
+            raise ValueError("random_state must be greater than or equals to 0")
+
+        if self.use_context_window:
+            if self.context_size < 1:
+                raise ValueError("conxtext_size must be greater than or equals to 1")
+
+            if self.context_size % 2 == 0:
+                raise ValueError("context_size must be an odd number.")
 
     def _to_metadata_dict(self) -> dict[str, Any]:
+        """
+        Convert settings into a serializable metadata dictionary.
+
+        The returned dictionary is used to:
+
+        - Generate the functional pipeline identifier.
+        - Persist pipeline settings in MongoDB.
+        - Ensure dataset reproducibility and traceability.
+
+        Returns:
+            dict[str, Any]:
+                Nested dictionary containing all dataset builder
+                configuration parameters.
+        """
+
         return {
-            "dataset_name": self.dataset_name,
-            "datasets_used": {
-                "use_guitarset": self.use_guitarset,
-                "use_idmt_smt_guitar": self.use_idmt_smt_guitar,
-            },
-            "max_samples_per_datasets": self.max_samples_per_datasets,
+            "dataset_name": self.output_dataset_name,
+            "datasets_used": self.datasets_used,
+            "max_samples_per_dataset": self.max_samples_per_dataset,
             "preprocessing_pipeline_id": self.preprocessing_pipeline_id,
-            "split_train_test_validation": {
+            "dataset_split": {
                 "train_size": self.train_size,
                 "val_size": self.validation_size,
                 "test_size": self.test_size,
                 "random_state": self.random_state,
                 "shuffle": self.shuffle,
             },
-            "split_features_target": {
-                "prefix_features": self.prefix_features,
-                "prefix_target": self.prefix_target,
-            },
             "context_window": {
                 "use_context_window": self.use_context_window,
                 "context_size": self.context_size,
             },
-            "datasets_objects_names": {
-                "train_objects_names": self.train_objects_names,
-                "train_samples": self.train_samples,
-                "validation_objects_names": self.validation_objects_names,
-                "validation_samples": self.validation_samples,
-                "test_objects_names": self.test_objects_names,
-                "test_samples": self.test_samples,
-            },
         }
 
 
-dataset_builder_pipeline_config = DatasetBuilderPipelineSettings()
+DATASET_BUILDER_PIPELINE_SETTINGS = DatasetBuilderPipelineSettings()

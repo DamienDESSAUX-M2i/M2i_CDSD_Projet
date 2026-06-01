@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .dataset_builder_pipeline_settings import dataset_builder_pipeline_config
+from .dataset_builder_pipeline_settings import DATASET_BUILDER_PIPELINE_SETTINGS
 from .dataset_downloader_settings import DATASETS_DOWNLOADER_SETTINGS
 from .datasets_settings import GUITAR_SET_SETTINGS, IDMT_SMT_GUITAR_SETTINGS
 from .ingestion_pipelines_settings import (
@@ -17,7 +17,7 @@ DATA_DIRECTORY = Path("./audio_midi/data").resolve()
 
 __all__ = [
     "DATA_DIRECTORY",
-    "dataset_builder_pipeline_config",
+    "DATASET_BUILDER_PIPELINE_SETTINGS",
     "DATASETS_DOWNLOADER_SETTINGS",
     "GUITAR_SET_SETTINGS",
     "IDMT_SMT_GUITAR_SETTINGS",

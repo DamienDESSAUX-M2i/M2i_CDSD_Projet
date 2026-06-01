@@ -48,9 +48,9 @@ class PreprocessingPipelineStatistics(Statistics):
         sample_metadata_updated: Number of sample metadata updated in MongoDB.
     """
 
-    # Pipeline metric
+    # Pipeline metrics
     pipeline_metadata_inserted: bool = False
-    pipeline_metadata_inserted: bool = False
+    pipeline_metadata_updated: bool = False
 
     # Audio metrics
     audio_error: int = 0
@@ -275,7 +275,7 @@ class PreprocessingPipeline(AbstractPipeline):
             else:
                 self.logger.error(
                     "Failed to insert audio metadata to MongoDB: "
-                    f"bucket_name={bucket_name}, object_name={cleaned_audio_file_name}"
+                    f"object_name={cleaned_audio_file_name}"
                 )
                 raise
 
@@ -349,7 +349,7 @@ class PreprocessingPipeline(AbstractPipeline):
             else:
                 self.logger.error(
                     "Failed to insert sample metadata to MongoDB: "
-                    f"bucket_name={bucket_name}, object_name={sample_file_name}"
+                    f"object_name={sample_file_name}"
                 )
                 raise
 

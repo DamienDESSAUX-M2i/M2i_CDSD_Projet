@@ -8,6 +8,8 @@ import pandas as pd
 from src.transformers import AbstractTransformer
 from src.utils import PianoRoll
 
+from . import PrefixFeaturesTarget
+
 
 @dataclass(slots=True)
 class MIDIPitchMapper:
@@ -242,7 +244,7 @@ class PianoRollBuilder(AbstractTransformer):
         return pd.DataFrame(
             piano_roll,
             columns=[
-                f"midi_pitch_{midi}"
+                f"{PrefixFeaturesTarget.TARGET.value}_{midi}"
                 for midi in range(
                     self.pitch_mapper.midi_pitch_min,
                     self.pitch_mapper.midi_pitch_max + 1,

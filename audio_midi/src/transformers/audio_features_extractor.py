@@ -8,6 +8,8 @@ import pandas as pd
 from src.transformers import AbstractTransformer
 from src.utils import FeatureMatrix, FloatAudioArray, validate_audio
 
+from . import PrefixFeaturesTarget
+
 
 @dataclass(slots=True)
 class ExtractedFeatures:
@@ -270,11 +272,11 @@ class AudioFeatureExtractor(AbstractTransformer):
         dfs = [
             df
             for df in [
-                to_df(features.stft_db, "stft"),
-                to_df(features.mel_db, "mel"),
-                to_df(features.cqt_db, "cqt"),
-                to_df(features.chroma, "chroma"),
-                to_df(features.mfcc, "mfcc"),
+                to_df(features.stft_db, PrefixFeaturesTarget.STFT.value),
+                to_df(features.mel_db, PrefixFeaturesTarget.MEL_SPECTROGRAM.value),
+                to_df(features.cqt_db, PrefixFeaturesTarget.CQT.value),
+                to_df(features.chroma, PrefixFeaturesTarget.CQT_CHROMAGRAM.value),
+                to_df(features.mfcc, PrefixFeaturesTarget.MFCC.value),
             ]
             if df is not None
         ]
