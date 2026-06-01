@@ -39,6 +39,8 @@ class MongoStorage(AbstractStorage):
         self.chord = self.db[MONGO_SETTINGS.collection_chord]
         self.pipeline_metadata = self.db[MONGO_SETTINGS.collection_pipeline_metadata]
         self.sample_metadata = self.db[MONGO_SETTINGS.collection_sample_metadata]
+        self.audio_metadata = self.db[MONGO_SETTINGS.collection_audio_metadata]
+        self.dataset_metadata = self.db[MONGO_SETTINGS.collection_dataset_metadata]
 
         self.collections = {
             "pitch_contour": self.pitch_contour,
@@ -47,6 +49,8 @@ class MongoStorage(AbstractStorage):
             "chord": self.chord,
             "pipeline_metadata": self.pipeline_metadata,
             "sample_metadata": self.sample_metadata,
+            "audio_metadata": self.audio_metadata,
+            "dataset_metadata": self.dataset_metadata,
         }
 
     def _get_client(self) -> MongoClient:
@@ -65,7 +69,11 @@ class MongoStorage(AbstractStorage):
         self,
         collection_name: str,
         document: dict,
-        filter: Literal["annotation", "pipeline_metadata", "sample_metadata"],
+        filter: Literal[
+            "annotation",
+            "pipeline_metadata",
+            "processed_audio_metadata",
+        ],
     ) -> str | None:
         """Insert or update a document. The update is based on 'dataset_name' and 'title'.
 
@@ -98,7 +106,7 @@ class MongoStorage(AbstractStorage):
 
                     filter = {"_id": document["_id"]}
 
-                case "sample_metadata":
+                case "processed_audio_metadata":
                     if document.get("bucket_name", None) is None:
                         raise RuntimeError("'bucket_name' key does not exist")
 
@@ -112,7 +120,7 @@ class MongoStorage(AbstractStorage):
 
                 case _:
                     raise ValueError(
-                        "filter must be 'annotation', 'pipeline_metadata'or 'sample_metadata'"
+                        "filter must be 'annotation', 'pipeline_metadata'or 'processed_audio_metadata'"
                     )
 
             document["inserted_at"] = datetime.now(timezone.utc)
@@ -264,7 +272,7 @@ class MongoStorage(AbstractStorage):
         """Insert or update a sample metadata. The update is based on 'bucket_name' and 'object_name'.
 
         Args:
-            preprocessing_metadata (dict): Dictionary representing sample metadata.
+            sample_metadata (dict): Dictionary representing sample metadata.
 
         Returns:
             str | None: "inserted", "updated" or None.
@@ -273,7 +281,23 @@ class MongoStorage(AbstractStorage):
         return self._insert_document(
             collection_name=MONGO_SETTINGS.collection_sample_metadata,
             document=sample_metadata,
-            filter="sample_metadata",
+            filter="processed_audio_metadata",
+        )
+
+    def insert_audio_metadata(self, audio_metadata: dict[str, Any]) -> str | None:
+        """Insert or update a audio metadata. The update is based on 'bucket_name' and 'object_name'.
+
+        Args:
+            audio_metadata (dict): Dictionary representing audio metadata.
+
+        Returns:
+            str | None: "inserted", "updated" or None.
+        """
+
+        return self._insert_document(
+            collection_name=MONGO_SETTINGS.collection_audio_metadata,
+            document=audio_metadata,
+            filter="processed_audio_metadata",
         )
 
     def find_document(

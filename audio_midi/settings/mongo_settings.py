@@ -16,6 +16,8 @@ class MongoSettings:
     collection_chord: str = "chord"
     collection_pipeline_metadata: str = "pipeline_metadata"
     collection_sample_metadata: str = "sample_metadata"
+    collection_audio_metadata: str = "audio_metadata"
+    collection_dataset_metadata: str = "dataset_metadata"
 
     @property
     def connection_string(self) -> str:

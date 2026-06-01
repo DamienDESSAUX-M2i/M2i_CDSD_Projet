@@ -20,7 +20,7 @@ class PreprocessingPipelineSettings(AbstractPipelineSettings):
     The goal is to ensure reproducibility and centralize all DSP-related settings.
     """
 
-    pipeline_name: str = "preprocessor"
+    pipeline_name: str = "preprocessor_standard"
     pipeline_type: PipelineType = PipelineType.PREPROCESSOR
     pipeline_version: str = "1.0.0"
 

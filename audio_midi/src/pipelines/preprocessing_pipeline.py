@@ -32,25 +32,25 @@ class PreprocessingPipelineStatistics(Statistics):
 
     Attributes:
         pipeline_metadata_inserted: Pipeline metadata insertion status into MongoDB.
-        pipeline_metadata_inserted: Pipeline metadata updating status in MongoDB.
+        pipeline_metadata_updated: Pipeline metadata updating status in MongoDB.
+        audio_error: Number of audio processing or upload failures.
         audio_loaded: Number of successfully loaded raw audio files.
         audio_normalized: Number of successfully normalized audio files.
         audio_cleaned: Number of successfully cleaned audio files.
         audio_uploaded: Number of cleaned audio files uploaded to MinIO.
-        annotation_file_inserted: Number of new annotation file rows inserted into PostgreSQL.
-        annotation_file_updated: Number of existing annotation file rows updated in PostgreSQL.
-        audio_error: Number of audio processing or upload failures.
         feature_extracted: Number of successful feature extraction operations.
         piano_roll_builded: Number of successfully generated piano-roll targets.
-        sample_uploaded: Number of final samples successfully uploaded.
+        audio_metadata_inserted: Number of audio metadata inserted into MongoDB.
+        audio_metadata_updated: Number of audio metadata updated into MongoDB.
         sample_error: Number of sample saving failures.
+        sample_uploaded: Number of final samples successfully uploaded.
         sample_metadata_inserted: Number of sample metadata inserted into MongoDB.
         sample_metadata_updated: Number of sample metadata updated in MongoDB.
     """
 
     # Pipeline metric
     pipeline_metadata_inserted: bool = False
-    pipeline_metadata_updated: bool = False
+    pipeline_metadata_inserted: bool = False
 
     # Audio metrics
     audio_error: int = 0
@@ -60,8 +60,8 @@ class PreprocessingPipelineStatistics(Statistics):
     audio_uploaded: int = 0
     feature_extracted: int = 0
     piano_roll_builded: int = 0
-    audio_file_inserted: int = 0
-    audio_file_updated: int = 0
+    audio_metadata_inserted: int = 0
+    audio_metadata_updated: int = 0
 
     # Sample metrics
     sample_error: int = 0
@@ -102,7 +102,7 @@ class PreprocessingPipeline(AbstractPipeline):
     def __init__(
         self,
         logger: logging.Logger,
-        guitarset: bool = True,
+        guitar_set: bool = True,
         idmt_smt_guitar: bool = True,
         dataset1: bool = True,
         dataset2: bool = True,
@@ -125,7 +125,7 @@ class PreprocessingPipeline(AbstractPipeline):
         self.settings = PREPROCESSING_PIPELINE_SETTINGS
         self.pipeline_metadata = self.settings.to_mongo_dict()
 
-        self.guitarset = guitarset
+        self.guitarset = guitar_set
         self.idmt_smt_guitar = idmt_smt_guitar
         self.dataset1 = dataset1
         self.dataset2 = dataset2
@@ -229,31 +229,18 @@ class PreprocessingPipeline(AbstractPipeline):
             file_name_split = file_name.split("/")
             dataset_name = file_name_split[0]
             title = file_name_split[1]
-
-            # Fetch recording (PostgreSQL)
-            recording = self.postgres_storage.select_recording(
-                dataset_name=dataset_name, title=title
-            )
-
-            if recording is None:
-                self.logger.error(
-                    f"Recording not found for WAV file: "
-                    f"dataset_name={dataset_name}, title={title}"
-                )
-                raise
-
-            id_recording = recording["id_recording"]
+            bucket_name = MINIO_SETTINGS.bucket_processed
 
             # Store audio (MinIO)
-            file_name_cleaned_audio = f"{'/'.join(file_name.split('/')[:-1])}/{self.pipeline_metadata['_id']}/audio_cleaned.wav"
+            cleaned_audio_file_name = f"{'/'.join(file_name.split('/')[:-1])}/{self.pipeline_metadata['_id']}/audio_cleaned.wav"
 
             # Adapt librosa shape to soundfile shape
             if audio_data.ndim == 2:
                 audio_data = audio_data.T
 
             audio_uri = self.minio_storage.put_audio(
-                bucket_name=MINIO_SETTINGS.bucket_processed,
-                file_name=file_name_cleaned_audio,
+                bucket_name=bucket_name,
+                file_name=cleaned_audio_file_name,
                 audio_data=audio_data,
                 sample_rate=sample_rate,
             )
@@ -267,47 +254,30 @@ class PreprocessingPipeline(AbstractPipeline):
 
             self.statistics.audio_uploaded += 1
 
-            # Upsert audio_file (PostgreSQL)
-            audio_type = AudioType.PROCESSED_AUDIO
-
-            audio_file = self.postgres_storage.select_audio_file(
-                id_recording=id_recording,
-                audio_type=audio_type,
+            # Insert or update audio metadata to MongoDB
+            audio_metadata = {
+                "preprocessing_pipeline_id": self.pipeline_metadata["_id"],
+                "dataset_name": dataset_name,
+                "title": title,
+                "bucket_name": bucket_name,
+                "object_name": cleaned_audio_file_name,
+                "channel": audio_data.shape[1] if audio_data.ndim > 1 else 1,
+                "sample_rate": sample_rate,
+            }
+            result = self.mongo_storage.insert_audio_metadata(
+                audio_metadata=audio_metadata
             )
 
-            if audio_file is None:
-                result = self.postgres_storage.insert_audio_file(
-                    id_recording=id_recording,
-                    audio_type=audio_type,
-                    uri=audio_uri,
-                    sample_rate=sample_rate,
-                    channels=audio_data.shape[1] if audio_data.ndim > 1 else 1,
-                )
-
-                if result is None:
-                    self.logger.error(
-                        "Failed to insert audio_file to PostgreSQL: "
-                        f"dataset_name={dataset_name}, title={title}"
-                    )
-                    raise
-                self.statistics.audio_file_inserted += 1
-
+            if result == "inserted":
+                self.statistics.audio_metadata_inserted += 1
+            elif result == "updated":
+                self.statistics.audio_metadata_updated += 1
             else:
-                result = self.postgres_storage.update_audio_file(
-                    id_audio=audio_file["id_audio"],
-                    audio_type=audio_type,
-                    uri=audio_uri,
-                    sample_rate=sample_rate,
-                    channels=audio_data.shape[1] if audio_data.ndim > 1 else 1,
+                self.logger.error(
+                    "Failed to insert audio metadata to MongoDB: "
+                    f"bucket_name={bucket_name}, object_name={cleaned_audio_file_name}"
                 )
-
-                if result is None:
-                    self.logger.error(
-                        "Failed to insert audio_file to PostgreSQL: "
-                        f"dataset_name={dataset_name}, title={title}"
-                    )
-                    raise
-                self.statistics.audio_file_updated += 1
+                raise
 
         except Exception as exception:
             self.statistics.audio_error += 1
@@ -549,7 +519,7 @@ class PreprocessingPipeline(AbstractPipeline):
 
         return df_annotations[["title", "onset", "duration", "midi_pitch"]]
 
-    def _load_idmt_smt_guitar_annotations(self, dataset_number: str) -> pd.DataFrame:
+    def _load_idmt_smt_guitar_annotations(self, dataset_number: int) -> pd.DataFrame:
         """
         Load note-level annotations from MongoDB and convert them into a flat DataFrame.
 

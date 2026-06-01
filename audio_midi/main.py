@@ -105,21 +105,6 @@ def main() -> None:
         )
         download_datasets_pipeline.run()
 
-    if args.ingest_datasets:
-        for ingestion_pipeline in [
-            GuitarSetIngestionPipeline(logger=logger, ingestion_limit=args.limit),
-            IDMTSMTGuitarIngestionPipeline(
-                logger=logger,
-                ingestion_limit=args.limit,
-                dataset1=args.dataset1,
-                dataset2=args.dataset2,
-                dataset3=args.dataset3,
-                dataset4=args.dataset4,
-            ),
-        ]:
-            ingestion_pipeline.run()
-            ingestion_pipeline.close()
-
     if args.ingest_guitar_set:
         ingestion_pipeline = GuitarSetIngestionPipeline(
             logger=logger,
@@ -144,7 +129,7 @@ def main() -> None:
         preprocessing_pipeline = PreprocessingPipeline(
             logger=logger,
             preprocessing_limit=args.limit,
-            guitarset=args.guitar_set,
+            guitar_set=args.guitar_set,
             idmt_smt_guitar=args.idmt_smt_guitar,
             dataset1=args.dataset1,
             dataset2=args.dataset2,

@@ -182,7 +182,7 @@ L'architecture du projet est décrite par le schéma ci-dessous.
 │ Bucket: processing            │ │ Collections:                  │
 │ • audios cleaned and          │ │ • pipeline_metadata           │
 │   normalized (.wav)           │ │ • sample_metadata             │
-│ • samples: features and       │ │                               │
+│ • samples: features and       │ │ • audio_metadata              │
 │   annotation (.parquet)       │ │                               │
 └───────────────────────────────┘ └───────────────┬───────────────┘
                                                   │
