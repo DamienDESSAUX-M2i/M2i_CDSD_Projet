@@ -1,44 +1,48 @@
 \section{BC02 - Analyse exploratoire, descriptive et inférentielle de données}
 
+\begin{frame}
+    \centering
+    \huge
+    BC02 - Analyse exploratoire, descriptive et inférentielle de données
+\end{frame}
+
 % ===
 % Présentation
 % ===
 
 \begin{frame}{Présentation des datasets}
-
-\textbf{Objectif de l'analyse}
-\begin{itemize}
-    \item Étudier la structure et la qualité des données audio de guitare
-    \item Évaluer leur pertinence pour une tâche de transcription automatique vers MIDI
-\end{itemize}
-
-\vspace{0.4cm}
-
-\textbf{Datasets utilisés}
-
-\begin{itemize}
-    \item \textbf{GuitarSet}
+    \textbf{Objectif de l'analyse}
     \begin{itemize}
-        \item Enregistrements de guitare solo (audio + annotations)
-        \item Données alignées temporellement (value, time, duration)
-        \item Large couverture de styles de jeu
+        \item Étudier la structure et la qualité des données audio de guitare
+        \item Évaluer leur pertinence pour une tâche de transcription automatique vers MIDI
     \end{itemize}
 
-    \item \textbf{IDMT-SMT-Guitar}
+    \vspace{0.4cm}
+
+    \textbf{Datasets utilisés}
+
     \begin{itemize}
-        \item Dataset orienté reconnaissance musicale
-        \item Contient audio et annotations MIDI associées
-        \item Variété de conditions d'enregistrement
+        \item \textbf{GuitarSet \cite{xi2018guitarset}}
+        \begin{itemize}
+            \item Enregistrements de guitare solo (audio + annotations)
+            \item Données alignées temporellement (value, time, duration)
+            \item Large couverture de styles de jeu
+        \end{itemize}
+
+        \item \textbf{IDMT-SMT-Guitar \cite{kehling2023idmt}}
+        \begin{itemize}
+            \item Dataset orienté reconnaissance musicale
+            \item Contient audio et annotations MIDI associées
+            \item Variété de conditions d'enregistrement
+        \end{itemize}
     \end{itemize}
-\end{itemize}
 
-\vspace{0.3cm}
+    \vspace{0.3cm}
 
-\textbf{Enjeu métier}
-\begin{itemize}
-    \item Vérifier la compatibilité des données avec un pipeline de transcription audio $\rightarrow$ MIDI
-\end{itemize}
-
+    \textbf{Enjeu métier}
+    \begin{itemize}
+        \item Vérifier la compatibilité des données avec un pipeline de transcription audio $\rightarrow$ MIDI
+    \end{itemize}
 \end{frame}
 
 % ===
@@ -46,33 +50,31 @@
 % ===
 
 \begin{frame}{Analyse du dataset GuitarSet}
+    \textbf{Objectif de l'analyse}
+    \begin{itemize}
+        \item Comprendre la structure et la richesse du dataset
+        \item Évaluer sa pertinence pour la transcription audio $\rightarrow$ MIDI
+    \end{itemize}
 
-\textbf{Objectif de l'analyse}
-\begin{itemize}
-    \item Comprendre la structure et la richesse du dataset
-    \item Évaluer sa pertinence pour la transcription audio $\rightarrow$ MIDI
-\end{itemize}
+    \vspace{0.3cm}
 
-\vspace{0.3cm}
+    \textbf{Axes d'analyse}
 
-\textbf{Axes d'analyse}
+    \begin{itemize}
+        \item Structure des données (audio / annotations / alignement)
+        \item Analyse musicale descriptive (pitch, densité, accords)
+        \item Analyse du signal audio (spectrogrammes, dynamique)
+        \item Qualité des annotations temporelles
+    \end{itemize}
 
-\begin{itemize}
-    \item Structure des données (audio / annotations / alignement)
-    \item Analyse musicale descriptive (pitch, densité, accords)
-    \item Analyse du signal audio (spectrogrammes, dynamique)
-    \item Qualité des annotations temporelles
-\end{itemize}
+    \vspace{0.3cm}
 
-\vspace{0.3cm}
-
-\textbf{Conclusion intermédiaire}
-\begin{itemize}
-    \item Dataset riche mais partiellement contraint
-    \item Bonne base pour apprentissage supervisé
-    \item Complément nécessaire avec IDMT-SMT-Guitar
-\end{itemize}
-
+    \textbf{Conclusion intermédiaire}
+    \begin{itemize}
+        \item Dataset riche mais partiellement contraint
+        \item Bonne base pour apprentissage supervisé
+        \item Complément nécessaire avec IDMT-SMT-Guitar
+    \end{itemize}
 \end{frame}
 
 % ===

@@ -6,7 +6,7 @@ Une étude de 1 page décrivant schématiquement l'infrastructure conceptualisé
 
 | Lien |
 | :- |
-| [Livrable 1](./livrable1_infrastructure_conceptualisee.md) |
+| [Livrable 1](./livrable1_infrastructure_conceptualisee.pdf) |
 
 ## BC02 - Analyse exploratoire, descriptive et inférentielle de données
 
@@ -21,22 +21,30 @@ Deux codes sources décrivant l'analyse de chacune des bases de données, inclua
 
 Trois code sources incluant la conception et l'optimisation de trois algorithmes adaptés à la problématiques ainsi que des recommandations sur les prédictions obtenues.
 
-[Livrable 3](./livrable3_modeles_predictifs_donnees_structurees.md)
+| Lien |
+| :- |
+| [Livrable 3.1](../audio_midi/notebooks/06_cqt_baseline_trainer.ipynb) |
 
 ## BC04 - Analyse prédictive de données non-structurées par l'intelligence artificielle
 
 Un code source incluant la conception de l'algorithme et les métriques de performances sur des données de validation.
 
-[Livrable 4](./livrable4_modele_predictif_donnees_non_structurees.md)
+| Lien |
+| :- |
+| [Livrable 4](../audio_midi/notebooks/06_mlp_frame_wise_trainer.ipynb) |
 
 ## BC05 - Industrialisation d'un algorithme d'apprentissage automatique et automatisation des processus de décision
 
 Un code source contenant la création de l'environnement standardisé, le déploiement de l'algorithme et l'application web ainsi qu'un URL vers l'application déployée.
 
-[Livrable 5](./livrable5_industrialisation.md)
+| Lien |
+| :- |
+| [Livrable 5](./livrable5_industrialisation.md) |
 
 ## BC06 - Direction de projets de gestion de données
 
 Le code source correspond au projet data développé et une soutenance orale de 10 minutes suivie de 5 minutes de questions et éventuellement de 5 minutes d'entretien.
 
-[Livrable 6](./soutenance/main.pdf)
+| Lien |
+| :- |
+| [Livrable 6](./soutenance/main.pdf) |

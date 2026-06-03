@@ -1,16 +1,195 @@
 \section{BC06 - Direction de projets de gestion de données}
 
-\begin{frame}{Architecture complète}
+\begin{frame}
+    \centering
+    \huge
+    BC06 - Direction de projets de gestion de données
 \end{frame}
 
-\begin{frame}{Pipeline audio vers MIDI}
+\begin{frame}{Contexte et besoin métier}
+	\textbf{Présentation du projet}\\
+	\textit{GuitarFlow} est une entreprise développant un prototype de service d’intelligence artificielle destiné à la transcription automatique d’enregistrements audio de guitare en fichiers MIDI exploitables en MAO (Musique Assistée par Ordinateur).
+	
+	\vspace{0.3cm}
+	
+	\textbf{Constat métier}\\
+	La retranscription manuelle d’une performance de guitare vers un format éditable constitue une tâche \textbf{chronophage}, nécessitant une \textbf{expertise musicale avancée} et difficilement \textbf{industrialisation-compatible} pour des usages pédagogiques ou créatifs.
+	
+	\vspace{0.3cm}
+	
+	\textbf{Opportunité}\\
+	Le projet vise à :
+	\begin{itemize}
+		\item réduire le temps de transcription audio $\rightarrow$ MIDI,
+		\item faciliter la production de contenus pédagogiques,
+		\item accélérer les workflows de composition musicale,
+		\item proposer un démonstrateur d’IA appliquée au signal audio.
+	\end{itemize}
 \end{frame}
 
-\begin{frame}{Résultats expérimentaux}
+\begin{frame}{Cadrage du projet}
+    \textbf{Objectif principal}\\
+    Développer un prototype de service capable de :
+    \begin{itemize}
+    	\item recevoir un fichier audio guitare (.wav),
+    	\item générer automatiquement un fichier MIDI exploitable,
+    	\item produire une visualisation de type piano-roll,
+    	\item exposer le modèle via une API web déployée sur Hugging Face.
+    \end{itemize}
+    
+    \vspace{0.3cm}
+    
+    \begin{minipage}{0.48\textwidth}
+    	\textbf{Fonctionnalités incluses}
+    	\begin{itemize}
+    		\item Audio guitare mono instrument
+    		\item Guitare acoustique et électrique
+    		\item Accordage standard (EADGBE)
+    		\item Génération MIDI
+    		\item Visualisation piano-roll
+    		\item API REST d’inférence
+    		\item Conteneurisation Docker
+    	\end{itemize}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+    	\textbf{Fonctionnalités hors périmètre}
+    	\begin{itemize}
+    		\item Multi-instruments
+    		\item Accordages alternatifs
+    		\item Temps réel
+    		\item Techniques de jeu avancées
+    		\item Application mobile native
+    		\item Architecture cloud managée
+    	\end{itemize}
+    \end{minipage}
 \end{frame}
 
-\begin{frame}{Démonstration}
+\begin{frame}{Analyse des besoins et exigences}
+    Fonctionnelles :
+    - Upload WAV
+    - Génération MIDI
+    - Visualisation piano-roll
+
+
+    Non fonctionnelles :
+    - Temps d'inférence
+    - Reproductibilité
+    - Traçabilité
+    
+
+    Message clé :
+    Traduction du besoin métier en exigences techniques.
 \end{frame}
 
-\begin{frame}{Perspectives}
+\begin{frame}{Organisation et planification}
+    Contenu :
+    - Découpage en lots
+    - Jalons
+    - Planning
+
+
+    Par exemple :
+    Cadrage
+        ↓
+    Collecte données
+        ↓
+    EDA
+        ↓
+    Prétraitement
+        ↓
+    Modélisation
+        ↓
+    Déploiement
+
+
+    Message clé :
+    Comment le projet a été piloté.
+\end{frame}
+
+\begin{frame}{Analyse des risques}
+    Exemple:
+    Risque | Impact | Action
+    Qualité insuffisante des datasets | Élevé | Validation exploratoire
+    Temps d'entraînement | Moyen | Utilisation GPU
+    Surapprentissage | Élevé | Validation croisée
+
+    Message clé
+    Anticipation des difficultés.
+\end{frame}
+
+\begin{frame}{Architecture cible}
+    Tu peux réutiliser ton schéma principal.
+
+    Contenu :
+    - MinIO
+    - MongoDB
+    - PostgreSQL
+    - Spark
+    - MLflow
+    - Application
+
+    Message clé :
+    Architecture conçue pour supporter le cycle de vie de la donnée.
+\end{frame}
+
+\begin{frame}{Réalisation du POC}
+    Pipeline complet :
+    Audio WAV
+        ↓
+    Prétraitement
+        ↓
+    Extraction caractéristiques
+        ↓
+    Modèle IA
+        ↓
+    MIDI
+
+    Message clé :
+    Mise en œuvre concrète.
+\end{frame}
+
+\begin{frame}{Résultats obtenus}
+    Contenu :
+    - Métriques
+    - Démonstration
+    - Exemples de transcription
+
+    Exemple :
+    Indicateur | Résultat
+    F1-score | xx %
+    Temps d'inférence | xx s
+    Génération MIDI | Oui
+
+    Message clé :
+    Valeur créée.
+\end{frame}
+
+\begin{frame}{Gouvernance et qualité}
+    Cette slide fait souvent la différence.
+
+    Contenu :
+    - Git
+    - Docker
+    - MLflow
+    - Versionning datasets
+    - Reproductibilité
+
+    Message clé :
+    Maîtrise du cycle de vie du projet.
+\end{frame}
+
+\begin{frame}{Bilan et perspectives}
+    Bilan :
+    - Faisabilité validée
+    - Prototype opérationnel
+    
+    Perspectives :
+    - Industrialisation
+    - API dédiée
+    - Temps réel
+    - Généralisation multi-instruments
+
+    Message clé :
+    Projection vers une phase produit.
 \end{frame}
