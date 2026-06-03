@@ -8,6 +8,7 @@ from settings import (
     MONGO_SETTINGS,
 )
 from settings.abstract_pipeline_settings import PipelineType
+from settings.dataset_builder_pipeline_settings import DatasetBuilderPipelineSettings
 from sklearn.model_selection import train_test_split
 
 from src.pipelines import AbstractPipeline
@@ -97,13 +98,20 @@ class DatasetBuilderPipeline(AbstractPipeline):
         - It is deterministic given a fixed preprocessing_pipeline_id.
     """
 
-    def __init__(self, logger: logging.Logger) -> None:
+    def __init__(
+        self,
+        logger: logging.Logger,
+        settings: DatasetBuilderPipelineSettings = DATASET_BUILDER_PIPELINE_SETTINGS,
+    ) -> None:
         """
         Initialize the dataset builder pipeline.
 
         Args:
             logger:
                 Logger instance used for structured logging.
+            settings:
+                Settings of the pipeline.
+
 
         Side Effects:
             - Loads dataset builder configuration from settings.
@@ -118,7 +126,7 @@ class DatasetBuilderPipeline(AbstractPipeline):
         """
 
         super().__init__(logger)
-        self.settings = DATASET_BUILDER_PIPELINE_SETTINGS
+        self.settings = settings
 
         if self.settings.preprocessing_pipeline_id is None:
             self._get_latest_preprocessing_pipeline_id()
@@ -205,33 +213,60 @@ class DatasetBuilderPipeline(AbstractPipeline):
         """
 
         self.logger.info(
-            f"Loading sample metadata for preprocessing_pipeline_id={self.settings.preprocessing_pipeline_id}"
+            f"Loading sample metadata: preprocessing_pipeline_id={self.settings.preprocessing_pipeline_id}"
         )
 
-        pipeline = [
-            {
-                "$match": {
-                    "preprocessing_pipeline_id": self.settings.preprocessing_pipeline_id,
-                    "dataset_name": {"$in": list(self.settings.datasets_used)},
+        try:
+            pipeline = [
+                {
+                    "$match": {
+                        "preprocessing_pipeline_id": self.settings.preprocessing_pipeline_id,
+                        "dataset_name": {"$in": list(self.settings.datasets_used)},
+                    }
                 }
-            }
-        ]
+            ]
 
-        documents = self.mongo_storage.aggregate_documents(
-            collection_name=MONGO_SETTINGS.collection_sample_metadata,
-            pipeline=pipeline,
-        )
+            if self.settings.max_samples_per_dataset is not None:
+                pipeline.extend(
+                    [
+                        {
+                            "$setWindowFields": {
+                                "partitionBy": "$dataset_name",
+                                "sortBy": {"object_name": 1},
+                                "output": {"row_number": {"$documentNumber": {}}},
+                            }
+                        },
+                        {
+                            "$match": {
+                                "row_number": {
+                                    "$lte": self.settings.max_samples_per_dataset
+                                }
+                            }
+                        },
+                        {"$unset": "row_number"},
+                    ]
+                )
 
-        self.df_metadata = pd.DataFrame(documents)
-
-        if self.df_metadata.empty:
-            raise ValueError(
-                "No sample metadata found: "
-                f"preprocessing_pipeline_id={self.settings.preprocessing_pipeline_id}"
+            documents = self.mongo_storage.aggregate_documents(
+                collection_name=MONGO_SETTINGS.collection_sample_metadata,
+                pipeline=pipeline,
             )
 
-        self.statistics.sample_metadata_loaded += len(self.df_metadata)
-        self.logger.info(f"Loaded {len(self.df_metadata)} sample metadata entries.")
+            self.df_metadata = pd.DataFrame(documents)
+
+            if self.df_metadata.empty:
+                raise ValueError(
+                    "No sample metadata found: "
+                    f"preprocessing_pipeline_id={self.settings.preprocessing_pipeline_id}"
+                )
+
+            self.statistics.sample_metadata_loaded += len(self.df_metadata)
+            self.logger.info(f"Loaded {len(self.df_metadata)} sample metadata entries.")
+
+        except Exception as exception:
+            self.logger.error(f"Loading sample metadata failed, error={exception}")
+            self.statistics.dataset_builder_error += 1
+            raise
 
     def _split_train_validation_test(self) -> None:
         """
@@ -257,32 +292,42 @@ class DatasetBuilderPipeline(AbstractPipeline):
                 If metadata has not been loaded before splitting.
         """
 
-        if self.df_metadata is None:
-            raise ValueError("Metadata must be loaded before splitting.")
+        self.logger.info("Splitting train validation test...")
 
-        self.logger.info("Starting train / validation / test split.")
+        try:
+            if self.df_metadata is None:
+                raise ValueError("Metadata must be loaded before splitting.")
 
-        df_train_metadata, self.df_test_metadata = train_test_split(
-            self.df_metadata,
-            test_size=self.settings.test_size,
-            random_state=self.settings.random_state,
-            shuffle=self.settings.shuffle,
-        )
+            self.logger.info("Starting train / validation / test split.")
 
-        self.df_train_metadata, self.df_validation_metadata = train_test_split(
-            df_train_metadata,
-            test_size=self.settings.validation_size,
-            random_state=self.settings.random_state,
-            shuffle=self.settings.shuffle,
-        )
+            df_train_metadata, self.df_test_metadata = train_test_split(
+                self.df_metadata,
+                test_size=self.settings.test_size,
+                random_state=self.settings.random_state,
+                shuffle=self.settings.shuffle,
+            )
 
-        self.logger.info(
-            "Dataset metadata split completed: "
-            f"dataset={len(self.df_metadata)}, "
-            f"train={len(self.df_train_metadata)}, "
-            f"val={len(self.df_validation_metadata)}, "
-            f"test={len(self.df_test_metadata)}"
-        )
+            self.df_train_metadata, self.df_validation_metadata = train_test_split(
+                df_train_metadata,
+                test_size=self.settings.validation_size,
+                random_state=self.settings.random_state,
+                shuffle=self.settings.shuffle,
+            )
+
+            self.logger.info(
+                "Dataset metadata split completed: "
+                f"dataset={len(self.df_metadata)}, "
+                f"train={len(self.df_train_metadata)}, "
+                f"val={len(self.df_validation_metadata)}, "
+                f"test={len(self.df_test_metadata)}"
+            )
+
+        except Exception as exception:
+            self.logger.error(
+                f"Splitting train validation test failed, error={exception}"
+            )
+            self.statistics.dataset_builder_error += 1
+            raise
 
     def _save_pipeline_metadata(self):
         """
@@ -303,21 +348,26 @@ class DatasetBuilderPipeline(AbstractPipeline):
                 If MongoDB insertion or update fails.
         """
 
-        result = self.mongo_storage.insert_pipeline_metadata(
-            pipeline_metadata=self.pipeline_metadata
-        )
+        self.logger.info("Inserting or updating pipeline metadata...")
 
-        if result == "inserted":
-            self.logger.info("Pipeline metadata successfully inserted to MongoDB")
-            self.statistics.pipeline_metadata_inserted += 1
-        elif result == "updated":
-            self.logger.info("Pipeline metadata successfully updated to MongoDB")
-            self.statistics.pipeline_metadata_updated += 1
-        else:
-            raise RuntimeError(
-                "Failed to insert pipeline metadata to MongoDB: "
-                f"pipeline_type={self.pipeline_metadata['pipeline_type']}, _id={self.pipeline_metadata['_id']}"
+        try:
+            result = self.mongo_storage.insert_pipeline_metadata(
+                pipeline_metadata=self.pipeline_metadata
             )
+
+            if result == "inserted":
+                self.logger.info("Pipeline metadata successfully inserted to MongoDB")
+                self.statistics.pipeline_metadata_inserted += 1
+            elif result == "updated":
+                self.logger.info("Pipeline metadata successfully updated to MongoDB")
+                self.statistics.pipeline_metadata_updated += 1
+            else:
+                raise RuntimeError("Failed to insert pipeline metadata to MongoDB")
+
+        except Exception as exception:
+            self.logger.error(f"Inserting pipeline metadata failed, error={exception}")
+            self.statistics.dataset_builder_error += 1
+            raise
 
     def _save_dataset_metadata(self):
         """
@@ -340,33 +390,39 @@ class DatasetBuilderPipeline(AbstractPipeline):
                 If MongoDB operation fails.
         """
 
-        dataset_metadata = {
-            "dataset_builder_pipeline_id": self.pipeline_metadata["_id"],
-            "train_objects_names": self.df_train_metadata["object_name"].to_list(),
-            "train_samples": len(self.df_train_metadata),
-            "validation_objects_names": self.df_validation_metadata[
-                "object_name"
-            ].to_list(),
-            "validation_samples": len(self.df_validation_metadata),
-            "test_objects_names": self.df_test_metadata["object_name"].to_list(),
-            "test_samples": len(self.df_test_metadata),
-        }
+        self.logger.info("Inserting or updating dataset metadata...")
 
-        result = self.mongo_storage.insert_dataset_metadata(
-            pipeline_metadata=dataset_metadata
-        )
+        try:
+            dataset_metadata = {
+                "dataset_name": self.settings.output_dataset_name,
+                "dataset_builder_pipeline_id": self.pipeline_metadata["_id"],
+                "train_objects_names": self.df_train_metadata["object_name"].to_list(),
+                "train_samples": len(self.df_train_metadata),
+                "validation_objects_names": self.df_validation_metadata[
+                    "object_name"
+                ].to_list(),
+                "validation_samples": len(self.df_validation_metadata),
+                "test_objects_names": self.df_test_metadata["object_name"].to_list(),
+                "test_samples": len(self.df_test_metadata),
+            }
 
-        if result == "inserted":
-            self.logger.info("Dataset metadata successfully inserted to MongoDB")
-            self.statistics.dataset_metadata_inserted += 1
-        elif result == "updated":
-            self.logger.info("Dataset metadata successfully updated to MongoDB")
-            self.statistics.dataset_metadata_updated += 1
-        else:
-            raise RuntimeError(
-                "Failed to insert dataset metadata to MongoDB: "
-                f"pipeline_type={self.pipeline_metadata['pipeline_type']}, _id={self.pipeline_metadata['_id']}"
+            result = self.mongo_storage.insert_dataset_metadata(
+                dataset_metadata=dataset_metadata
             )
+
+            if result == "inserted":
+                self.logger.info("Dataset metadata successfully inserted to MongoDB")
+                self.statistics.dataset_metadata_inserted += 1
+            elif result == "updated":
+                self.logger.info("Dataset metadata successfully updated to MongoDB")
+                self.statistics.dataset_metadata_updated += 1
+            else:
+                raise RuntimeError("Failed to insert dataset metadata to MongoDB")
+
+        except Exception as exception:
+            self.logger.error(f"Inserting dataset metadata failed, error={exception}")
+            self.statistics.dataset_builder_error += 1
+            raise
 
     def _split_features_target(
         self,
@@ -390,24 +446,34 @@ class DatasetBuilderPipeline(AbstractPipeline):
                 If no feature or target columns are found.
         """
 
-        feature_columns = [
-            column for column in dataset.columns if column.startswith(PREFIX_FEATURES)
-        ]
+        self.logger.debug("Splitting features target...")
 
-        target_columns = [
-            column for column in dataset.columns if column.startswith(PREFIX_TARGET)
-        ]
+        try:
+            feature_columns = [
+                column
+                for column in dataset.columns
+                if column.startswith(PREFIX_FEATURES)
+            ]
 
-        if not feature_columns:
-            raise ValueError("No feature columns found.")
+            target_columns = [
+                column for column in dataset.columns if column.startswith(PREFIX_TARGET)
+            ]
 
-        if not target_columns:
-            raise ValueError("No target columns found.")
+            if not feature_columns:
+                raise ValueError("No feature columns found.")
 
-        features = dataset[feature_columns]
-        target = dataset[target_columns]
+            if not target_columns:
+                raise ValueError("No target columns found.")
 
-        return features, target
+            features = dataset[feature_columns]
+            target = dataset[target_columns]
+
+            return features, target
+
+        except Exception as exception:
+            self.logger.error(f"Splitting features target failed, error={exception}")
+            self.statistics.dataset_builder_error += 1
+            raise
 
     def _load_dataset(
         self,
@@ -440,54 +506,60 @@ class DatasetBuilderPipeline(AbstractPipeline):
                 If no valid samples could be loaded.
         """
 
-        self.logger.info(f"Loading dataset from {len(df_metadata)} metadata entries.")
+        self.logger.info(f"Loading dataset: metadata_entries={len(df_metadata)}")
 
-        samples: list[tuple[pd.DataFrame, pd.DataFrame]] = []
+        try:
+            samples: list[tuple[pd.DataFrame, pd.DataFrame]] = []
 
-        for row in df_metadata.itertuples():
-            sample = self.minio_storage.get_parquet(
-                bucket_name=row.bucket_name,
-                file_name=row.object_name,
+            for row in df_metadata.itertuples():
+                sample = self.minio_storage.get_parquet(
+                    bucket_name=row.bucket_name,
+                    file_name=row.object_name,
+                )
+
+                if sample is None:
+                    self.statistics.dataset_builder_error += 1
+                    self.logger.error(
+                        f"Failed loading sample: uri={row.bucket_name}/{row.object_name} "
+                    )
+                    continue
+
+                self.statistics.sample_loaded += 1
+
+                features, target = self._split_features_target(dataset=sample)
+                if self.settings.use_context_window:
+                    features = self._build_context_windows(features=features)
+
+                samples.append((features, target))
+
+            if not samples:
+                raise ValueError("No samples could be loaded.")
+
+            features_concat = pd.concat(
+                [features for features, _ in samples],
+                axis=0,
+                ignore_index=True,
             )
 
-            if sample is None:
-                self.statistics.dataset_builder_error += 1
-                self.logger.error(
-                    f"Failed loading sample: uri={row.bucket_name}/{row.object_name} "
-                )
-                continue
+            targets_concat = pd.concat(
+                [targets for _, targets in samples],
+                axis=0,
+                ignore_index=True,
+            )
 
-            self.statistics.sample_loaded += 1
+            self.statistics.dataset_load += 1
+            self.logger.info(
+                f"Dataset loaded: "
+                f"features_shape={features_concat.shape}, "
+                f"target_shape={targets_concat.shape}"
+            )
 
-            features, target = self._split_features_target(dataset=sample)
-            if self.settings.use_context_window:
-                features = self._build_context_windows(features=features)
+            return features_concat, targets_concat
 
-            samples.append((features, target))
-
-        if not samples:
-            raise ValueError("No samples could be loaded.")
-
-        features_concat = pd.concat(
-            [features for features, _ in samples],
-            axis=0,
-            ignore_index=True,
-        )
-
-        targets_concat = pd.concat(
-            [targets for _, targets in samples],
-            axis=0,
-            ignore_index=True,
-        )
-
-        self.statistics.dataset_load += 1
-        self.logger.info(
-            f"Dataset loaded: "
-            f"features_shape={features_concat.shape}, "
-            f"target_shape={targets_concat.shape}"
-        )
-
-        return features_concat, targets_concat
+        except Exception as exception:
+            self.logger.error(f"Loading dataset failed, error={exception}")
+            self.statistics.dataset_builder_error += 1
+            raise
 
     def _build_context_windows(
         self,
@@ -532,51 +604,57 @@ class DatasetBuilderPipeline(AbstractPipeline):
             f"Building context windows: context_size={self.settings.context_size}"
         )
 
-        if features.empty:
-            raise ValueError("Input DataFrame is empty.")
+        try:
+            if features.empty:
+                raise ValueError("Input DataFrame is empty.")
 
-        padding = self.settings.context_size
-        window_size = 2 * padding + 1
+            padding = self.settings.context_size
+            window_size = 2 * padding + 1
 
-        feature_columns = list(features.columns)
+            feature_columns = list(features.columns)
 
-        features_array = features.to_numpy(dtype=np.float32)
+            features_array = features.to_numpy(dtype=np.float32)
 
-        features_padded = np.pad(
-            features_array,
-            pad_width=((padding, padding), (0, 0)),
-            mode="edge",
-        )
+            features_padded = np.pad(
+                features_array,
+                pad_width=((padding, padding), (0, 0)),
+                mode="edge",
+            )
 
-        windows: list[np.ndarray] = []
+            windows: list[np.ndarray] = []
 
-        for i in range(len(features)):
-            window = features_padded[i : i + window_size]
-            windows.append(window.reshape(-1))
+            for i in range(len(features)):
+                window = features_padded[i : i + window_size]
+                windows.append(window.reshape(-1))
 
-        features_context_array = np.stack(windows)
+            features_context_array = np.stack(windows)
 
-        context_columns = []
+            context_columns = []
 
-        for offset in range(-padding, padding + 1):
-            for column in feature_columns:
-                context_columns.append(f"{column}_t{offset:+d}")
+            for offset in range(-padding, padding + 1):
+                for column in feature_columns:
+                    context_columns.append(f"{column}_t{offset:+d}")
 
-        features_context = pd.DataFrame(
-            data=features_context_array,
-            columns=context_columns,
-            index=features.index,
-        )
+            features_context = pd.DataFrame(
+                data=features_context_array,
+                columns=context_columns,
+                index=features.index,
+            )
 
-        self.logger.info(
-            f"Context windows built: "
-            f"input={features.shape}, "
-            f"output={features_context.shape}"
-        )
+            self.logger.info(
+                f"Context windows built: "
+                f"input={features.shape}, "
+                f"output={features_context.shape}"
+            )
 
-        return features_context
+            return features_context
 
-    def _compute_stats(self, train, validation, test):
+        except Exception as exception:
+            self.logger.error(f"Building context window failed, error={exception}")
+            self.statistics.dataset_builder_error += 1
+            raise
+
+    def _compute_stats(self, train, validation, test) -> None:
         """
         Compute and store dataset split statistics for the pipeline run.
 
@@ -650,18 +728,26 @@ class DatasetBuilderPipeline(AbstractPipeline):
             self.logger.info("Starting dataset builder pipeline.")
 
             self._load_sample_metadata()
+
             self._split_train_validation_test()
-            train_dataset = self._load_dataset(df_metadata=self.df_train_metadata)
-            validation_dataset = self._load_dataset(
-                df_metadata=self.df_validation_metadata
+
+            train_dataset = self._load_dataset(
+                df_metadata=self.df_train_metadata,
             )
-            test_dataset = self._load_dataset(df_metadata=self.df_test_metadata)
+            validation_dataset = self._load_dataset(
+                df_metadata=self.df_validation_metadata,
+            )
+            test_dataset = self._load_dataset(
+                df_metadata=self.df_test_metadata,
+            )
+
             self._save_pipeline_metadata()
+
             self._save_dataset_metadata()
+
             self._compute_stats(
                 train=train_dataset, validation=validation_dataset, test=test_dataset
             )
-
             self.logger.info(
                 "Dataset builder pipeline completed successfully: "
                 f"train={len(train_dataset)}, "
@@ -673,4 +759,4 @@ class DatasetBuilderPipeline(AbstractPipeline):
 
         except Exception as exception:
             self.logger.error(f"ML pipeline failed: {exception}")
-            raise RuntimeError("ML pipeline failed.") from exception
+            raise

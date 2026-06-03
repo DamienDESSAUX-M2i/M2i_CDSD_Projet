@@ -27,7 +27,7 @@ class DatasetBuilderPipelineSettings(AbstractPipelineSettings):
     output_dataset_name: str = "guitar_set_standard"
 
     datasets_used: tuple[str, ...] = (GUITAR_SET_SETTINGS.name,)
-    max_samples_per_dataset: int | None = 10
+    max_samples_per_dataset: int | None = None
 
     preprocessing_pipeline_id: str | None = None
 
@@ -46,7 +46,9 @@ class DatasetBuilderPipelineSettings(AbstractPipelineSettings):
         if not self.datasets_used:
             raise ValueError("datasets_used is empty")
 
-        if not self.max_samples_per_dataset < 10:
+        if (self.max_samples_per_dataset is not None) and (
+            self.max_samples_per_dataset < 10
+        ):
             raise ValueError(
                 "max_samples_per_dataset must be greater than or equals to 10"
             )

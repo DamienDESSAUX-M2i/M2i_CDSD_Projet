@@ -1,0 +1,320 @@
+{
+  "midi_pitch_40": {
+    "precision": 0.9054276315789473,
+    "recall": 0.6118366212836899,
+    "f1-score": 0.7302271596750124,
+    "support": 3599.0
+  },
+  "midi_pitch_41": {
+    "precision": 0.8888319672131147,
+    "recall": 0.7546759460635059,
+    "f1-score": 0.816278522700541,
+    "support": 2299.0
+  },
+  "midi_pitch_42": {
+    "precision": 0.8509575353871773,
+    "recall": 0.55573681348559,
+    "f1-score": 0.6723684210526316,
+    "support": 1839.0
+  },
+  "midi_pitch_43": {
+    "precision": 0.9522342064714946,
+    "recall": 0.7579721995094031,
+    "f1-score": 0.8440701115410881,
+    "support": 2446.0
+  },
+  "midi_pitch_44": {
+    "precision": 0.9356164383561644,
+    "recall": 0.587948350071736,
+    "f1-score": 0.7221145374449339,
+    "support": 3485.0
+  },
+  "midi_pitch_45": {
+    "precision": 0.8546617915904936,
+    "recall": 0.5333713633770679,
+    "f1-score": 0.6568317527221637,
+    "support": 3506.0
+  },
+  "midi_pitch_46": {
+    "precision": 0.9325174825174826,
+    "recall": 0.6580310880829016,
+    "f1-score": 0.7715897584261536,
+    "support": 4053.0
+  },
+  "midi_pitch_47": {
+    "precision": 0.9151857835218093,
+    "recall": 0.6349710442742388,
+    "f1-score": 0.749751847358553,
+    "support": 5353.0
+  },
+  "midi_pitch_48": {
+    "precision": 0.8988710064857074,
+    "recall": 0.7707518022657055,
+    "f1-score": 0.8298957640275005,
+    "support": 4855.0
+  },
+  "midi_pitch_49": {
+    "precision": 0.8794602012808783,
+    "recall": 0.6703277545327755,
+    "f1-score": 0.760783537791848,
+    "support": 5736.0
+  },
+  "midi_pitch_50": {
+    "precision": 0.9202081526452732,
+    "recall": 0.51806640625,
+    "f1-score": 0.6629178381755702,
+    "support": 6144.0
+  },
+  "midi_pitch_51": {
+    "precision": 0.9149623250807319,
+    "recall": 0.6549545384496841,
+    "f1-score": 0.7634273396802587,
+    "support": 6489.0
+  },
+  "midi_pitch_52": {
+    "precision": 0.8300682368478979,
+    "recall": 0.557345551285841,
+    "f1-score": 0.6669024670616324,
+    "support": 6766.0
+  },
+  "midi_pitch_53": {
+    "precision": 0.8718367346938776,
+    "recall": 0.6427539720751083,
+    "f1-score": 0.7399709000207857,
+    "support": 8308.0
+  },
+  "midi_pitch_54": {
+    "precision": 0.8732435597189696,
+    "recall": 0.44356877323420074,
+    "f1-score": 0.5883049008973474,
+    "support": 6725.0
+  },
+  "midi_pitch_55": {
+    "precision": 0.8077279752704791,
+    "recall": 0.44943240454076366,
+    "f1-score": 0.577522378163333,
+    "support": 5814.0
+  },
+  "midi_pitch_56": {
+    "precision": 0.7867862687597033,
+    "recall": 0.5072286476868327,
+    "f1-score": 0.6168097910609237,
+    "support": 8992.0
+  },
+  "midi_pitch_57": {
+    "precision": 0.709670377646802,
+    "recall": 0.5180876494023905,
+    "f1-score": 0.5989314664701547,
+    "support": 6275.0
+  },
+  "midi_pitch_58": {
+    "precision": 0.8578272509511061,
+    "recall": 0.6178201745484068,
+    "f1-score": 0.7183057046781901,
+    "support": 9854.0
+  },
+  "midi_pitch_59": {
+    "precision": 0.819704433497537,
+    "recall": 0.4524197933659598,
+    "f1-score": 0.5830413454800281,
+    "support": 9195.0
+  },
+  "midi_pitch_60": {
+    "precision": 0.8407616656204226,
+    "recall": 0.5349487418452936,
+    "f1-score": 0.6538649308380797,
+    "support": 7511.0
+  },
+  "midi_pitch_61": {
+    "precision": 0.8436619718309859,
+    "recall": 0.5765158806544755,
+    "f1-score": 0.6849628359062321,
+    "support": 10390.0
+  },
+  "midi_pitch_62": {
+    "precision": 0.8453028314269642,
+    "recall": 0.5278070483549936,
+    "f1-score": 0.649848637739657,
+    "support": 8541.0
+  },
+  "midi_pitch_63": {
+    "precision": 0.8126163007071083,
+    "recall": 0.5811044577511644,
+    "f1-score": 0.6776320893785398,
+    "support": 7515.0
+  },
+  "midi_pitch_64": {
+    "precision": 0.8158633598502574,
+    "recall": 0.45911784068466094,
+    "f1-score": 0.58758109360519,
+    "support": 7595.0
+  },
+  "midi_pitch_65": {
+    "precision": 0.7653119633657699,
+    "recall": 0.5886410331670091,
+    "f1-score": 0.6654500207382829,
+    "support": 6814.0
+  },
+  "midi_pitch_66": {
+    "precision": 0.8653907496012759,
+    "recall": 0.41648756524408964,
+    "f1-score": 0.5623380661208416,
+    "support": 6514.0
+  },
+  "midi_pitch_67": {
+    "precision": 0.8502249272294258,
+    "recall": 0.5290630660299687,
+    "f1-score": 0.6522533495736906,
+    "support": 6073.0
+  },
+  "midi_pitch_68": {
+    "precision": 0.8148674242424242,
+    "recall": 0.40724088973024136,
+    "f1-score": 0.5430735247712212,
+    "support": 4226.0
+  },
+  "midi_pitch_69": {
+    "precision": 0.8228287841191066,
+    "recall": 0.4912592592592593,
+    "f1-score": 0.6152133580705009,
+    "support": 3375.0
+  },
+  "midi_pitch_70": {
+    "precision": 0.8083870967741935,
+    "recall": 0.3874458874458874,
+    "f1-score": 0.5238294314381271,
+    "support": 3234.0
+  },
+  "midi_pitch_71": {
+    "precision": 0.8784165881244109,
+    "recall": 0.5505020673360898,
+    "f1-score": 0.6768336964415396,
+    "support": 1693.0
+  },
+  "midi_pitch_72": {
+    "precision": 0.882091212458287,
+    "recall": 0.3914116485686081,
+    "f1-score": 0.5422222222222223,
+    "support": 2026.0
+  },
+  "midi_pitch_73": {
+    "precision": 0.8070175438596491,
+    "recall": 0.2462526766595289,
+    "f1-score": 0.37735849056603776,
+    "support": 934.0
+  },
+  "midi_pitch_74": {
+    "precision": 0.8677494199535963,
+    "recall": 0.4021505376344086,
+    "f1-score": 0.5495958853783982,
+    "support": 930.0
+  },
+  "midi_pitch_75": {
+    "precision": 0.8990825688073395,
+    "recall": 0.25257731958762886,
+    "f1-score": 0.39436619718309857,
+    "support": 388.0
+  },
+  "midi_pitch_76": {
+    "precision": 0.9583333333333334,
+    "recall": 0.7076923076923077,
+    "f1-score": 0.8141592920353983,
+    "support": 195.0
+  },
+  "midi_pitch_77": {
+    "precision": 0.9344262295081968,
+    "recall": 0.57,
+    "f1-score": 0.7080745341614907,
+    "support": 300.0
+  },
+  "midi_pitch_78": {
+    "precision": 0.9285714285714286,
+    "recall": 0.5,
+    "f1-score": 0.65,
+    "support": 26.0
+  },
+  "midi_pitch_79": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "midi_pitch_80": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "midi_pitch_81": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "midi_pitch_82": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "midi_pitch_83": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "midi_pitch_84": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "midi_pitch_85": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "midi_pitch_86": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "midi_pitch_87": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "midi_pitch_88": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "micro avg": {
+    "precision": 0.8490387825393078,
+    "recall": 0.5487677158931231,
+    "f1-score": 0.6666517488955521,
+    "support": 190013.0
+  },
+  "macro avg": {
+    "precision": 0.68666744405918,
+    "recall": 0.4289289616618657,
+    "f1-score": 0.522422514297902,
+    "support": 190013.0
+  },
+  "weighted avg": {
+    "precision": 0.8483989839023075,
+    "recall": 0.5487677158931231,
+    "f1-score": 0.6626396003650602,
+    "support": 190013.0
+  },
+  "samples avg": {
+    "precision": 0.5876022528433946,
+    "recall": 0.5026648361663125,
+    "f1-score": 0.5233354408666088,
+    "support": 190013.0
+  }
+}

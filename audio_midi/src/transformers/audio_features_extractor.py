@@ -8,7 +8,7 @@ import pandas as pd
 from src.transformers import AbstractTransformer
 from src.utils import FeatureMatrix, FloatAudioArray, validate_audio
 
-from . import PrefixFeaturesTarget
+from .prefix_features_target import PrefixFeaturesTarget
 
 
 @dataclass(slots=True)

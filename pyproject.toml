@@ -1,15 +1,17 @@
 [project]
 name = "m2i-projet-cdsd"
 version = "0.1.0"
-description = "Add your description here"
+description = "Automatic transcription of a guitar audio file into a MIDI file."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "boto3>=1.43.19",
     "jams>=0.3.5",
     "jupyterlab>=4.5.3",
     "librosa>=0.11.0",
     "matplotlib>=3.10.8",
     "minio>=7.2.20",
+    "mlflow>=3.13.0",
     "openpyxl>=3.1.5",
     "pandas>=2.3.3",
     "pingouin>=0.5.5",

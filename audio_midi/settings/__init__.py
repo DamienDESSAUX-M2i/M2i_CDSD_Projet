@@ -9,6 +9,7 @@ from .ingestion_pipelines_settings import (
 )
 from .minio_settings import MINIO_SETTINGS
 from .ml_pipeline_settings import ml_pipeline_config
+from .mlflow_settings import MLFLOW_SETTINGS
 from .mongo_settings import MONGO_SETTINGS
 from .postgres_settings import POSTGRES_SETTINGS
 from .preprocessing_pipeline_settings import PREPROCESSING_PIPELINE_SETTINGS
@@ -24,6 +25,7 @@ __all__ = [
     "GUITAR_SET_INGESTION_PIPELINE_SETTINGS",
     "IDMT_SMT_GUITAR_INGESTION_PIPELINE_SETTINGS",
     "ml_pipeline_config",
+    "MLFLOW_SETTINGS",
     "MINIO_SETTINGS",
     "MONGO_SETTINGS",
     "POSTGRES_SETTINGS",
