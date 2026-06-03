@@ -600,7 +600,7 @@ class DatasetBuilderPipeline(AbstractPipeline):
                 If input dataframe is empty.
         """
 
-        self.logger.info(
+        self.logger.debug(
             f"Building context windows: context_size={self.settings.context_size}"
         )
 
