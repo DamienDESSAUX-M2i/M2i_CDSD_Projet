@@ -107,7 +107,7 @@
     \textbf{Approche de pilotage}\\
     Le projet a été conduit selon une démarche incrémentale articulée autour de quatre jalons de validation permettant de sécuriser progressivement les différentes phases du POC.
     
-    \vspace{0.3cm}
+    \vspace{0.5cm}
     \centering
     
     \begin{tabular}{lll}
@@ -123,12 +123,13 @@
     
     \vspace{0.3cm}
     
+    \small
     \begin{tikzpicture}
     	[phase/.style={rectangle, draw, rounded corners, minimum height=0.8cm, align=center}]
     	
-    	\node[phase, fill=blue!10] (c) at (0,0) {Cadrage};
+    	\node[phase, fill=yellow!15] (c) at (0,0) {Cadrage};
     	\node[phase, fill=orange!15] (e) at (3,0) {Exploration J1};
-    	\node[phase, fill=red!10] (m) at (6,0) {Modélisation J2};
+    	\node[phase, fill=red!15] (m) at (6,0) {Modélisation J2};
     	\node[phase, fill=blue!15] (d) at (9,0) {Déploiement J3};
     	\node[phase, fill=green!15] (f) at (12,0) {Démonstration J4};
     	
@@ -163,10 +164,53 @@
 	\end{tabular}
 \end{frame}
 
+\begin{frame}{Contraintes budgétaires et choix d’architecture}
+	\textbf{Contrainte principale}
+	
+	Le projet s’inscrit dans une logique de prototypage à faible coût, orientée preuve de concept.
+	
+	\vspace{0.3cm}
+	
+	\textbf{Principes d’architecture retenus}
+	
+	\begin{itemize}
+		\item Priorité aux solutions open source
+		\item Exécution locale ou infrastructure légère
+		\item Limitation des coûts de calcul et d’entraînement
+		\item Absence d’infrastructure cloud industrielle en phase 1
+	\end{itemize}
+	
+	\vspace{0.3cm}
+	
+	\textbf{Conséquences techniques}
+	
+	\begin{itemize}
+		\item Utilisation de Docker Compose pour orchestration locale
+		\item Stockage local / MinIO plutôt que cloud managé
+		\item Entraînement optimisé sur jeux de données limités
+		\item Choix de modèles compatibles CPU
+	\end{itemize}
+	
+	\vspace{0.3cm}
+	
+	\textbf{Contraintes réglementaires et licences}
+	
+	\begin{itemize}
+		\item GuitarSet : licence compatible Creative Commons Attribution 4.0 International
+		\item IDMT-SMT-Guitar : licence non commerciale limitant l’usage à un POC
+	\end{itemize}
+	
+	\vspace{0.3cm}
+	
+	\begin{block}{Impact projet}
+		Le POC privilégie la reproductibilité et la maîtrise des coûts plutôt que la scalabilité industrielle.
+	\end{block}
+\end{frame}
+
 \begin{frame}{Architecture cible}
 	\begin{figure}[h]
 		\centering
-		\includegraphics[width=0.7\textwidth]{figures/BC01/architecture_globale.png}
+		\includegraphics[width=0.73\textwidth]{figures/BC01/architecture_globale.png}
 		% \caption{Architecture cible}
 		\label{fig:architecture_cible}
 	\end{figure}
@@ -180,8 +224,9 @@
 	
 	\textbf{Livrables techniques}\\
 	\begin{itemize}
-		\item Pipeline d’ingestion des données (GuitarSet, IDMT-SMT-Guitar)
+		\item Pipelined de téléchargement et d’ingestion des données
 		\item Pipeline de prétraitement audio et extraction de caractéristiques
+		\item Pipeline de construction du dataset frame-wise
 		\item Pipeline d’entraînement et d’évaluation des modèles
 		\item Modèle entraîné et évalué pour la transcription audio $\rightarrow$ MIDI
 		\item API REST d’inférence (FastAPI)
@@ -196,66 +241,179 @@
 		\item Note de cadrage et cahier des charges
 		\item Documentation technique des pipelines et de l’architecture
 		\item Guide d’installation et de déploiement
-		\item Support de présentation pour la soutenance
 	\end{itemize}
 \end{frame}
 
 \begin{frame}{Résultats obtenus}
-	\textbf{Performance du système}\\
-	\centering	
-	\begin{tabular}{l c}
+	\centering
+	\textbf{Performance du système}
+	
+	\begin{tabular}{ll}
 		\toprule
 		\textbf{Indicateur} & \textbf{Résultat} \\
 		\midrule
-		F1-score transcription polyphonique & xx \% \\
-		Temps d’inférence moyen & xx s pour 1 min d’audio \\
-		Génération de fichier MIDI & Oui \\
-		Visualisation piano-roll & Oui \\
-		API d’inférence fonctionnelle & Oui \\
+		CV F1-score transcription polyphonique & 78 ($\pm$ 3) \% \\
+		Temps d’inférence moyen & ? s pour 1 min d’audio \\
+		Génération de fichier MIDI & Non \\
+		Visualisation piano-roll & Non \\
+		API d’inférence fonctionnelle & Non \\
+		Interface de démonstration déployée & Non \\
+		Taux de correction manuelle & ? \% \\
 		\bottomrule
 	\end{tabular}
 	
 	\vspace{0.3cm}
 	
-	\textbf{Exemple de sortie du modèle}\\
-	\begin{itemize}
-		\item Conversion automatique d’un extrait audio en fichier MIDI exploitable
-		\item Reconstruction des notes jouées sur guitare (mono et polyphonique)
-		\item Visualisation synchronisée type piano-roll
-	\end{itemize}
+	\begin{block}{Synthèse}
+		Le POC ne démontre pas encore la faisabilité technique et la valeur métier de la transcription audio $\rightarrow$ MIDI.
+	\end{block}
+\end{frame}
+
+\begin{frame}{Exemple de transcription audio vers MIDI}
+	\centering
+	\textbf{Transformation réalisée par le système}
+	\begin{center}
+		\Large
+		Audio (.wav)
+		$\longrightarrow$
+		Modèle de transcription
+		$\longrightarrow$
+		MIDI (.mid)
+	\end{center}
 	
 	\vspace{0.3cm}
 	
-	\begin{bloc}
-		Le POC démontre la faisabilité technique et la valeur métier de la transcription audio $\rightarrow$ MIDI.
-	\end{bloc}
+	\begin{columns}[T]
+		\column{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{figures/BC06/waveform.png}
+		%\caption{Forme d'onde de l'enregistrement guitar}
+		\label{fig:waveform}
+		\small
+		Forme d'onde de l'enregistrement guitare
+		\column{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{figures/BC06/generated_piano_roll.png}
+		%\caption{Piano-roll généré à partir de la transcription MIDI}
+		\label{fig:generated_piano_roll}
+		\small
+		Piano-roll généré à partir de la transcription MIDI
+	\end{columns}
+	
+	\vspace{0.3cm}
+	
+	\begin{block}{Synthèse}
+		Le système transforme automatiquement un signal audio brut en représentation symbolique exploitable par les logiciels de MAO.
+	\end{block}
 \end{frame}
 
 \begin{frame}{Gouvernance et qualité}
-    Cette slide fait souvent la différence.
-
-    Contenu :
-    - Git
-    - Docker
-    - MLflow
-    - Versionning datasets
-    - Reproductibilité
-
-    Message clé :
-    Maîtrise du cycle de vie du projet.
-\end{frame}
-
-\begin{frame}{Bilan et perspectives}
-    Bilan :
-    - Faisabilité validée
-    - Prototype opérationnel
-    
-    Perspectives :
-    - Industrialisation
-    - API dédiée
-    - Temps réel
-    - Généralisation multi-instruments
-
-    Message clé :
-    Projection vers une phase produit.
+	
+	\small
+	
+	\begin{columns}[T]
+		
+		%----------------------------------------------------
+		\column{0.52\textwidth}
+		
+		\textbf{Gouvernance des données}
+		
+		\begin{itemize}
+			\item Datasets stockés en brut dans MinIO.
+			\item PostgreSQL utilisé comme \textbf{source de vérité}.
+		\end{itemize}
+		
+		\textbf{Traçabilité des traitements}
+		
+		\begin{itemize}
+			\item Métadonnées stockées dans MongoDB.
+			\item Versionnement des prétraitements appliqués.
+			\item Versionnement des datasets générés.
+			%\item Association :
+			%\begin{itemize}
+			%	\item modèle $\leftrightarrow$ dataset,
+			%	\item dataset $\leftrightarrow$ échantillons,
+			%	\item échantillon $\leftrightarrow$ prétraitements.
+			%\end{itemize}
+		\end{itemize}
+		
+		\textbf{Qualité logicielle}
+		
+		\begin{itemize}
+			\item GitHub / Docker / Ruff + Mypy / Tests / Mlflow
+		\end{itemize}
+		
+		%\begin{itemize}
+		%	\item Git
+		%	\item Docker
+		%	\item Ruff
+		%	\item MyPy
+		%	\item MLflow
+		%\end{itemize}
+		
+		\begin{block}{Résultat}
+			Chaque modèle peut être relié aux données sources, aux prétraitements appliqués et aux dataset frame-wise sur lequel il s'est entraîné.
+		\end{block}
+		
+		%----------------------------------------------------
+		\column{0.48\textwidth}
+		
+		\centering
+		
+		\begin{tikzpicture}[
+			node distance=0.5cm,
+			box/.style={
+				draw,
+				rounded corners,
+				align=center,
+				minimum width=3.0cm,
+				minimum height=0.8cm,
+				fill=blue!5
+			},
+			meta/.style={
+				draw,
+				rounded corners,
+				align=center,
+				minimum width=2.2cm,
+				minimum height=0.6cm,
+				fill=green!10
+			},
+			arrow/.style={->, thick}
+			]
+			
+			\node[box] (raw) {Fichiers brut (MinIO)};
+			
+			\node[box, below=of raw] (prep) {Prétraitement};
+			
+			\node[box, below=of prep] (sample) {Échantillons (MinIO)};
+			
+			\node[box, below=of sample] (dataset) {Dataset frame-wise};
+			
+			\node[box, below=of dataset] (model) {Modèle (MLflow)};
+			
+			\draw[arrow] (raw) -- (prep);
+			\draw[arrow] (prep) -- (sample);
+			\draw[arrow] (sample) -- (dataset);
+			\draw[arrow] (dataset) -- (model);
+			
+			\node[meta, right=1.0cm of raw] (postgres) {PostgreSQL};
+			
+			\draw[dashed] (postgres) -- (raw);
+			
+			\node[meta, right=1.0cm of sample] (mongo) {MongoDB};
+			
+			\draw[dashed] (mongo) -- (prep);
+			\draw[dashed] (mongo) -- (sample);
+			\draw[dashed] (mongo) -- (dataset);
+			
+			\node[meta, right=1.0cm of model] (mlflow) {MinIO\\PostgreSQL};
+			
+			\draw[dashed] (mlflow) -- (model);
+		\end{tikzpicture}
+		
+		\vspace{0.3cm}
+		
+		\scriptsize
+		Traçabilité complète des données, traitements et modèles.
+	\end{columns}
 \end{frame}

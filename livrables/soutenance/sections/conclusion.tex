@@ -1,11 +1,63 @@
 \section{Conclusion}
 
+
 \begin{frame}{Conclusion}
-    \begin{itemize}
-        \item Résumé des contributions
-        \item Résultats obtenus
-        \item Perspectives d'amélioration
-    \end{itemize}
+	\begin{columns}[T]
+		%----------------------------------
+		\column{0.48\textwidth}
+		
+		\textbf{Bilan du projet}
+		
+		\begin{itemize}
+			\item Faisabilité technique démontrée
+			\item Pipeline end-to-end opérationnel
+			\item Génération automatique de fichiers MIDI
+			\item API REST et interface web déployées
+			\item Traçabilité et reproductibilité assurées
+		\end{itemize}
+		
+		%----------------------------------
+		\column{0.48\textwidth}
+		
+		\textbf{Perspectives}
+		
+		\begin{itemize}
+			\item Amélioration des performances en polyphonie complexe
+			\item Optimisation des temps d'inférence
+			\item Déploiement d'une API dédiée en production
+			\item Détection avancée des techniques de jeu
+			\item Support multi-instruments
+		\end{itemize}
+	\end{columns}
+	
+	\vspace{0.7cm}
+	
+	\centering
+	
+	\begin{tikzpicture}[
+		node distance=5cm,
+		box/.style={
+			draw,
+			rounded corners,
+			minimum width=3cm,
+			minimum height=1cm,
+			align=center
+		}
+		]
+		
+		\node[box, fill=blue!10] (poc) {POC validé};
+		
+		\node[box, fill=green!10, right of=poc] (prod) {Phase produit};
+		
+		\draw[->, thick] (poc) -- (prod);
+		
+	\end{tikzpicture}
+	
+	\vspace{0.3cm}
+	
+	\begin{block}{Conclusion}
+		Le projet valide la faisabilité d'une solution de transcription audio vers MIDI et constitue une base solide pour une phase d'industrialisation.
+	\end{block}
 \end{frame}
 
 \begin{frame}
@@ -13,5 +65,5 @@
     \Huge
     Je vous remercie pour votre attention.
 
-    Avez-vous des questions
+    Avez-vous des questions ?
 \end{frame}
