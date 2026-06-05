@@ -14,8 +14,9 @@ Deux codes sources décrivant l'analyse de chacune des bases de données, inclua
 
 | Lien |
 | :- |
-| [Livrable 2.1](../audio_midi/notebooks/03_eda_guitarset.ipynb) |
-| [Livrable 2.2](../audio_midi/notebooks/03_eda_idmt_smt_guitar.ipynb) |
+| [Livrable 2.1](../audio_midi/notebooks/21_eda_guitarset.ipynb) |
+| [Livrable 2.2](../audio_midi/notebooks/22_eda_idmt_smt_guitar.ipynb) |
+| [Livrable 2.2](../audio_midi/notebooks/23_eda_dataset_frame_wise.ipynb) |
 
 ## BC03 - Analyse prédictive de données structurées par l'intéligence artificielle
 
@@ -23,7 +24,8 @@ Trois code sources incluant la conception et l'optimisation de trois algorithmes
 
 | Lien |
 | :- |
-| [Livrable 3.1](../audio_midi/notebooks/06_cqt_baseline_trainer.ipynb) |
+| [Livrable 3.1](../audio_midi/notebooks/31_cqt_baseline_trainer.ipynb) |
+| [Livrable 3.2](../audio_midi/notebooks/32_cqt_context_window_baseline_trainer.ipynb) |
 
 ## BC04 - Analyse prédictive de données non-structurées par l'intelligence artificielle
 
@@ -31,7 +33,7 @@ Un code source incluant la conception de l'algorithme et les métriques de perfo
 
 | Lien |
 | :- |
-| [Livrable 4](../audio_midi/notebooks/06_mlp_frame_wise_trainer.ipynb) |
+| [Livrable 4](../audio_midi/notebooks/41_cqt_mlp_trainer.ipynb) |
 
 ## BC05 - Industrialisation d'un algorithme d'apprentissage automatique et automatisation des processus de décision
 
