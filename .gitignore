@@ -11,6 +11,9 @@ audio_midi/data/*
 # experiments
 audio_midi/experiments
 audio_midi/main_xp.py
+audio_midi/output/cqt_baseline/
+audio_midi/output/cqt_mlp/
+audio_midi/output/cqt_rcnn/
 
 # ===
 # MinIO
