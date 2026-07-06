@@ -1,0 +1,10 @@
+{
+  "name": "cnn_rcnn_guitar_transcriber",
+  "version": "1.0.0",
+  "framework": "tensorflow",
+  "input_shape": [21, 144, 1],
+  "output_shape": [88],
+  "threshold": 0.37,
+  "dataset": "guitarset_v1",
+  "description": "RCNN for frame-wise guitar transcription"
+}
