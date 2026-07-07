@@ -1,12 +1,12 @@
 from dateutil import tz
 
 from .model_manager import ModelManager
-from .settings import SETTINGS
+from .processing_settings import PROCESSING_SETTINGS
 
 TIME_ZONE = tz.gettz("Europe/Paris")
 
 __all__ = [
     "ModelManager",
     "TIME_ZONE",
-    "SETTINGS",
+    "PROCESSING_SETTINGS",
 ]

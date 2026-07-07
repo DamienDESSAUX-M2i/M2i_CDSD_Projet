@@ -64,7 +64,7 @@ class ContextWindowBuilder:
         for i in range(n_frames):
             windows[i] = padded[i : i + window_size]
 
-        return windows
+        return windows[..., np.newaxis]
 
     def window_shape(self, n_features: int) -> tuple[int, int]:
         """

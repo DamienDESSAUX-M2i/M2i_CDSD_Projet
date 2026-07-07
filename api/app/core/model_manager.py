@@ -2,10 +2,13 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+import joblib
+import numpy as np
 import tensorflow as tf
+from numpy.typing import NDArray
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ModelMetadata:
     name: str
     version: str
@@ -36,11 +39,8 @@ class ModelManager:
         self.metadata_path = Path(metadata_path) if metadata_path else None
 
         self.model: tf.keras.Model = self._load_model()
+        self.scaler = self._load_scaler()
         self.metadata = self._load_metadata()
-
-    # -------------------
-    # Singleton access
-    # -------------------
 
     @classmethod
     def get_instance(cls) -> "ModelManager":
@@ -60,12 +60,13 @@ class ModelManager:
         cls._instance = cls(model_path, scaler_path, metadata_path)
         return cls._instance
 
-    # -------------------
-    # Loaders
-    # -------------------
-
     def _load_model(self) -> tf.keras.Model:
         return tf.keras.models.load_model(self.model_path)
+
+    def _load_scaler(self):
+        if self.scaler_path and self.scaler_path.exists():
+            return joblib.load(self.scaler_path)
+        return None
 
     def _load_metadata(self) -> ModelMetadata:
         if self.metadata_path and self.metadata_path.exists():
@@ -79,9 +80,16 @@ class ModelManager:
             version="0.0.0",
         )
 
-    # -------------------
-    # Helpers
-    # -------------------
+    def normalize_features(
+        self,
+        features: NDArray[np.float32],
+    ) -> NDArray[np.float32]:
+        """Normalize features before inference."""
+
+        if self.scaler is not None:
+            return self.scaler.transform(features).astype(np.float32)
+
+        return ((features + 80.0) / 80.0).astype(np.float32)
 
     def get_input_shape(self) -> tuple[int, ...]:
         return tuple(self.model.input_shape[1:])

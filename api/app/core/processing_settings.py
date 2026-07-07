@@ -1,11 +1,12 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import librosa
 from audio import DenoiseMethod, NormalizationType
 
 
 @dataclass(frozen=True, slots=True)
-class Settings:
+class ProcessingSettings:
     """
     Configuration for the full audio preprocessing and postprocessing pipelines.
 
@@ -17,6 +18,8 @@ class Settings:
 
     The goal is to ensure reproducibility and centralize all DSP-related settings.
     """
+
+    output_dir = Path(__file__).parent.parent.resolve() / "output"
 
     # ===
     # CLEANING
@@ -71,7 +74,7 @@ class Settings:
     # ===
     # CONTEXT WINDOW
     # ===
-    use_context_window: bool = False
+    use_context_window: bool = True
     context_size: int = 11
 
     # ===
@@ -79,6 +82,8 @@ class Settings:
     # ===
     midi_pitch_min = 40
     midi_pitch_max = 88
+    min_note_duration: float = 0.02
+    velocity: int = 100
 
 
-SETTINGS = Settings()
+PROCESSING_SETTINGS = ProcessingSettings()

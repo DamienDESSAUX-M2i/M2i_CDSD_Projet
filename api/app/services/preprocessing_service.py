@@ -6,7 +6,7 @@ from audio.audio_feature_extractor import AudioFeatureExtractor
 from audio.audio_normalizer import AudioNormalizer
 from audio.audio_type import FeatureMatrix, FloatAudioArray, ModelInput
 from audio.context_window_builder import ContextWindowBuilder
-from core.settings import Settings
+from core.processing_settings import ProcessingSettings
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class PreprocessingService:
     4. Optional temporal context window construction.
     """
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: ProcessingSettings):
         """Initialize the preprocessing service.
 
         Args:
