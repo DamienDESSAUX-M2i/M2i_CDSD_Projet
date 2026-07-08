@@ -1,9 +1,8 @@
-import io
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from .note_tracker import DetectedNote
+from .note_tracker import NoteEvent
 
 
 class PianoRollRenderer:
@@ -46,7 +45,7 @@ class PianoRollRenderer:
 
     def _create_figure(
         self,
-        notes: list[DetectedNote],
+        notes: list[NoteEvent],
     ):
         """
         Create matplotlib piano roll figure.
@@ -89,9 +88,9 @@ class PianoRollRenderer:
 
     def render_png(
         self,
-        notes: list[DetectedNote],
+        notes: list[NoteEvent],
         filename: str = "piano_roll.png",
-    ) -> bytes:
+    ) -> Path:
         """
         Render piano roll as PNG.
 
@@ -109,19 +108,12 @@ class PianoRollRenderer:
 
         fig, _ = self._create_figure(notes)
 
-        buffer = io.BytesIO()
-
         fig.tight_layout()
 
-        fig.savefig(
-            buffer,
-            format="png",
-            dpi=150,
-            bbox_inches="tight",
-        )
+        output_path = self.output_dir / filename
 
         fig.savefig(
-            self.output_dir / filename,
+            output_path,
             format="png",
             dpi=150,
             bbox_inches="tight",
@@ -129,13 +121,11 @@ class PianoRollRenderer:
 
         plt.close(fig)
 
-        buffer.seek(0)
-
-        return buffer.getvalue()
+        return output_path
 
     def render_svg(
         self,
-        notes: list[DetectedNote],
+        notes: list[NoteEvent],
         filename: str = "piano_roll.svg",
     ) -> Path:
         """
@@ -169,8 +159,8 @@ class PianoRollRenderer:
 
     def render(
         self,
-        notes: list[DetectedNote],
-    ) -> tuple[bytes, Path]:
+        notes: list[NoteEvent],
+    ) -> tuple[Path, Path]:
         """
         Render both PNG and SVG outputs.
 
@@ -184,8 +174,8 @@ class PianoRollRenderer:
                 - SVG file path
         """
 
-        png_bytes = self.render_png(notes)
+        png_path = self.render_png(notes)
 
         svg_path = self.render_svg(notes)
 
-        return png_bytes, svg_path
+        return png_path, svg_path

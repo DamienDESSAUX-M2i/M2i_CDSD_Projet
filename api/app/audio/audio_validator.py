@@ -1,9 +1,10 @@
+from typing import Any
+
 import numpy as np
+from numpy.typing import NDArray
 
-from .audio_type import FloatAudioArray
 
-
-def validate_audio(audio_data: FloatAudioArray) -> None:
+def validate_audio(audio_data: NDArray[np.floating[Any]]) -> None:
     """Validate audio tensor integrity.
 
     Args:

@@ -1,13 +1,28 @@
 from .audio_cleaner import AudioCleaner, DenoiseMethod
 from .audio_feature_extractor import AudioFeatureExtractor
 from .audio_normalizer import AudioNormalizer, NormalizationType
+from .beat_tracker import BeatTracker, BeatTrackingResult
+from .midi_builder import MidiBuilder
+from .note_tracker import NoteEvent, NoteTracker
+from .piano_roll_renderer import PianoRollRenderer
 from .prefix_features_target import PrefixFeaturesTarget
+from .rhythm_quantizer import QuantizedNoteEvent, RhythmQuantizer
+from .score_builder import ScoreBuilder
 
 __all__ = [
     "AudioCleaner",
     "DenoiseMethod",
     "AudioFeatureExtractor",
     "AudioNormalizer",
+    "BeatTracker",
+    "BeatTrackingResult",
     "NormalizationType",
+    "MidiBuilder",
+    "NoteEvent",
+    "NoteTracker",
+    "PianoRollRenderer",
     "PrefixFeaturesTarget",
+    "QuantizedNoteEvent",
+    "RhythmQuantizer",
+    "ScoreBuilder",
 ]

@@ -23,17 +23,12 @@ class InferenceService:
     The service reproduces the exact inference pipeline used during
     model validation:
 
-        Features
-            ↓
-        RobustScaler
-            ↓
-        TensorFlow model
-            ↓
-        Probabilities
-            ↓
-        Threshold
-            ↓
-        Binary piano roll
+    1. Features
+    2. RobustScaler
+    3. TensorFlow model
+    4. Probabilities
+    5. Threshold
+    6. Binary piano roll
     """
 
     def __init__(

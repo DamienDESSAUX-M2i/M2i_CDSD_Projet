@@ -1,69 +1,167 @@
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
-import numpy as np
 import pretty_midi
-from core import PROCESSING_SETTINGS
+from audio import (
+    BeatTracker,
+    MidiBuilder,
+    NoteEvent,
+    NoteTracker,
+    PianoRollRenderer,
+    RhythmQuantizer,
+    ScoreBuilder,
+)
+from core import ProcessingSettings
 from numpy.typing import NDArray
-
-from .midi_builder import MidiBuilder
-from .note_tracker import NoteTracker
-from .piano_roll_renderer import PianoRollRenderer
-from .score_builder import ScoreBuilder
-
-
-@dataclass(slots=True)
-class PostprocessingResult:
-    """Artifacts produced after model inference."""
-
-    piano_roll: NDArray[np.bool_]
-    midi: pretty_midi.PrettyMIDI
-    note_count: int
-    duration_seconds: float
-
 
 logger = logging.getLogger(__name__)
 
 
-class PostprocessingService:
-    """Convert model predictions into musical artifacts."""
+@dataclass(slots=True)
+class PostprocessingResult:
+    """Artifacts generated after model inference."""
 
-    def __init__(
-        self,
-    ) -> None:
-        self._tracker = NoteTracker(PROCESSING_SETTINGS)
-        self._midi_builder = MidiBuilder(velocity=PROCESSING_SETTINGS.velocity)
-        self.piano_roll_randerer = PianoRollRenderer(
-            pitch_min=PROCESSING_SETTINGS.midi_pitch_min,
-            pitch_max=PROCESSING_SETTINGS.midi_pitch_max,
-            output_dir=PROCESSING_SETTINGS.output_dir,
+    notes: list[NoteEvent]
+    midi: pretty_midi.PrettyMIDI
+    tempo: float
+    musicxml_path: Path
+    midi_path: Path
+    piano_roll_png_path: Path
+    piano_roll_svg_path: Path
+    score_pdf_path: Path
+    score_svg_path: Path
+
+
+class PostprocessingService:
+    """Convert frame-wise predictions into musical artifacts."""
+
+    def __init__(self, settings: ProcessingSettings) -> None:
+
+        self.settings = settings
+
+        self._note_tracker = NoteTracker(
+            hop_length=self.settings.hop_length,
+            sample_rate=self.settings.target_sample_rate,
+            midi_pitch_min=self.settings.midi_pitch_min,
+            midi_pitch_max=self.settings.midi_pitch_max,
+            min_note_duration=self.settings.min_piano_roll_note_duration,
+            velocity=self.settings.velocity,
         )
+
+        self._beat_tracker = BeatTracker(
+            hop_length=settings.hop_length,
+        )
+
+        self._quantizer = RhythmQuantizer(
+            subdivision=self.settings.subdivision,
+            min_note_duration=self.settings.min_rhytm_quantizer_note_duration,
+        )
+
+        self._midi_builder = MidiBuilder(velocity=self.settings.velocity)
+
+        self._piano_roll_renderer = PianoRollRenderer(
+            pitch_min=settings.midi_pitch_min,
+            pitch_max=settings.midi_pitch_max,
+            output_dir=settings.output_dir,
+        )
+
         self._score_builder = ScoreBuilder(
-            output_dir=PROCESSING_SETTINGS.output_dir, bpm=120
+            output_dir=settings.output_dir,
         )
 
     def process(
         self,
-        piano_roll,
-    ):
-        """Generate all post-processing artifacts."""
+        piano_roll: NDArray,
+        audio: NDArray,
+        sample_rate: int,
+    ) -> PostprocessingResult:
+        """
+        Execute the complete post-processing pipeline.
+
+        Args:
+            piano_roll:
+                Binary piano-roll predicted by the neural network.
+
+            audio:
+                Preprocessed mono waveform.
+
+            sample_rate:
+                Audio sampling rate.
+
+        Returns:
+            All generated musical artifacts.
+        """
 
         logger.info("Starting post-processing.")
 
-        notes = self._tracker.extract_notes(piano_roll)
+        # ===
+        # Frame -> notes
+        # ===
+
+        notes = self._note_tracker.extract_notes(piano_roll)
+
+        logger.info("%d notes extracted.", len(notes))
+
+        # ===
+        # MIDI
+        # ===
 
         midi = self._midi_builder.build(notes)
 
-        self._midi_builder.save(midi, PROCESSING_SETTINGS.output_dir / "result.mid")
+        midi_path = self.settings.output_dir / "transcription.mid"
 
-        piano_roll_bytes, piano_roll_svg_path = self.piano_roll_randerer.render(notes)
+        self._midi_builder.save(midi, midi_path)
 
-        musicxml_path = self._score_builder.build_musicxml(notes)
+        # ===
+        # Piano roll
+        # ===
+
+        piano_roll_png_path, piano_roll_svg_path = self._piano_roll_renderer.render(
+            notes
+        )
+
+        # ===
+        # Beat tracking
+        # ===
+
+        beat_result = self._beat_tracker.track(audio=audio, sample_rate=sample_rate)
+
+        logger.info(f"Estimated tempo: {beat_result.tempo:.0f} BPM.")
+
+        # ===
+        # Rhythm quantization
+        # ===
+
+        quantized_notes = self._quantizer.quantize(
+            notes=notes,
+            beat_times=beat_result.beat_times,
+        )
+
+        # ===
+        # MusicXML
+        # ===
+
+        musicxml_path = self._score_builder.build_musicxml(quantized_notes)
+
+        # ===
+        # Score rendering
+        # ===
 
         score_pdf_path, score_svg_path = self._score_builder.export_rendered_score(
             musicxml_path
         )
 
-        logger.info(f"Extracted {len(notes)} notes.")
+        logger.info("Post-processing completed.")
 
-        return midi
+        return PostprocessingResult(
+            notes=notes,
+            midi=midi,
+            tempo=beat_result.tempo,
+            musicxml_path=musicxml_path,
+            midi_path=midi_path,
+            piano_roll_png_path=piano_roll_png_path,
+            piano_roll_svg_path=piano_roll_svg_path,
+            score_pdf_path=score_pdf_path,
+            score_svg_path=score_svg_path,
+        )

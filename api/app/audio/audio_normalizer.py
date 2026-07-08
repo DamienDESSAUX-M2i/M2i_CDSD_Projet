@@ -1,11 +1,11 @@
 import logging
 from enum import StrEnum
+from typing import Any
 
 import librosa
 import numpy as np
 from numpy.typing import NDArray
 
-from .audio_type import FloatAudioArray
 from .audio_validator import validate_audio
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,9 @@ class AudioNormalizer:
 
         return audio_data.astype(np.float32, copy=False)
 
-    def to_mono(self, audio_data: FloatAudioArray) -> FloatAudioArray:
+    def to_mono(
+        self, audio_data: NDArray[np.floating[Any]]
+    ) -> NDArray[np.floating[Any]]:
         """Convert multi-channel audio to mono.
 
         Multi-channel audio must follow the shape:
@@ -95,8 +97,8 @@ class AudioNormalizer:
 
     def remove_dc_offset(
         self,
-        audio_data: FloatAudioArray,
-    ) -> FloatAudioArray:
+        audio_data: NDArray[np.floating[Any]],
+    ) -> NDArray[np.floating[Any]]:
         """Remove DC offset from an audio signal.
 
         Args:
@@ -115,10 +117,10 @@ class AudioNormalizer:
 
     def resample(
         self,
-        audio_data: FloatAudioArray,
+        audio_data: NDArray[np.floating[Any]],
         sample_rate: int,
         target_sample_rate: int = 22_050,
-    ) -> tuple[FloatAudioArray, int]:
+    ) -> tuple[NDArray[np.floating[Any]], int]:
         """Resample audio to the target sample rate.
 
         Args:
@@ -161,7 +163,7 @@ class AudioNormalizer:
 
     def is_silent(
         self,
-        audio_data: FloatAudioArray,
+        audio_data: NDArray[np.floating[Any]],
         threshold: float = 1e-8,
     ) -> bool:
         """Check whether an audio signal is effectively silent.
@@ -182,9 +184,9 @@ class AudioNormalizer:
 
     def normalize_peak(
         self,
-        audio_data: FloatAudioArray,
+        audio_data: NDArray[np.floating[Any]],
         target_peak: float = 0.99,
-    ) -> FloatAudioArray:
+    ) -> NDArray[np.floating[Any]]:
         """Apply peak normalization.
 
         Args:
@@ -211,10 +213,10 @@ class AudioNormalizer:
 
     def normalize_rms(
         self,
-        audio_data: FloatAudioArray,
+        audio_data: NDArray[np.floating[Any]],
         target_rms: float = 0.1,
         clip: bool = False,
-    ) -> FloatAudioArray:
+    ) -> NDArray[np.floating[Any]]:
         """Apply RMS normalization.
 
         Args:
@@ -248,11 +250,11 @@ class AudioNormalizer:
 
     def normalize(
         self,
-        audio_data: FloatAudioArray,
+        audio_data: NDArray[np.floating[Any]],
         normalization_type: NormalizationType = NormalizationType.PEAK_RMS,
         target_rms: float = 0.1,
         target_peak: float = 0.99,
-    ) -> FloatAudioArray:
+    ) -> NDArray[np.floating[Any]]:
         """Apply a normalization strategy.
 
         Args:

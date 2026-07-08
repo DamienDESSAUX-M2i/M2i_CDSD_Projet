@@ -1,10 +1,11 @@
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 import librosa
 import numpy as np
+from numpy.typing import NDArray
 
-from .audio_type import FeatureMatrix, FloatAudioArray
 from .audio_validator import validate_audio
 
 logger = logging.getLogger(__name__)
@@ -25,11 +26,11 @@ class ExtractedFeatures:
         mfcc: MFCC coefficients, shape (n_mfcc, time_frames).
     """
 
-    stft_db: FeatureMatrix | None = None
-    mel_db: FeatureMatrix | None = None
-    cqt_db: FeatureMatrix | None = None
-    chroma: FeatureMatrix | None = None
-    mfcc: FeatureMatrix | None = None
+    stft_db: NDArray[np.floating[Any]] | None = None
+    mel_db: NDArray[np.floating[Any]] | None = None
+    cqt_db: NDArray[np.floating[Any]] | None = None
+    chroma: NDArray[np.floating[Any]] | None = None
+    mfcc: NDArray[np.floating[Any]] | None = None
 
 
 class AudioFeatureExtractor:
@@ -71,7 +72,9 @@ class AudioFeatureExtractor:
         self.cqt_fmin = cqt_fmin
         self.chroma_cqt_norm = chroma_cqt_norm
 
-    def compute_stft(self, audio_data: FloatAudioArray) -> FeatureMatrix:
+    def compute_stft(
+        self, audio_data: NDArray[np.floating[Any]]
+    ) -> NDArray[np.floating[Any]]:
         """Compute Short-Time Fourier Transform (STFT) magnitude in dB scale.
 
         The STFT is computed using a Hann window with configurable FFT size and hop length.
@@ -94,8 +97,8 @@ class AudioFeatureExtractor:
         return librosa.amplitude_to_db(np.abs(stft), ref=np.max)
 
     def compute_mel(
-        self, audio_data: FloatAudioArray, sample_rate: int
-    ) -> FeatureMatrix:
+        self, audio_data: NDArray[np.floating[Any]], sample_rate: int
+    ) -> NDArray[np.floating[Any]]:
         """Compute Mel-scaled spectrogram in dB scale.
 
         The Mel spectrogram is computed from a power spectrogram and mapped
@@ -121,8 +124,8 @@ class AudioFeatureExtractor:
         return librosa.power_to_db(mel, ref=np.max)
 
     def compute_cqt(
-        self, audio_data: FloatAudioArray, sample_rate: int
-    ) -> FeatureMatrix:
+        self, audio_data: NDArray[np.floating[Any]], sample_rate: int
+    ) -> NDArray[np.floating[Any]]:
         """Compute Constant-Q Transform (CQT) in dB scale.
 
         The CQT provides a logarithmic frequency resolution aligned with musical pitch.
@@ -147,8 +150,8 @@ class AudioFeatureExtractor:
         return librosa.amplitude_to_db(np.abs(cqt), ref=np.max)
 
     def compute_chroma(
-        self, audio_data: FloatAudioArray, sample_rate: int
-    ) -> FeatureMatrix:
+        self, audio_data: NDArray[np.floating[Any]], sample_rate: int
+    ) -> NDArray[np.floating[Any]]:
         """Compute chromagram using Constant-Q Transform (CQT).
 
         The chromagram represents energy distribution across the 12 pitch classes.
@@ -171,8 +174,8 @@ class AudioFeatureExtractor:
         )
 
     def compute_mfcc(
-        self, audio_data: FloatAudioArray, sample_rate: int
-    ) -> FeatureMatrix:
+        self, audio_data: NDArray[np.floating[Any]], sample_rate: int
+    ) -> NDArray[np.floating[Any]]:
         """Compute Mel-Frequency Cepstral Coefficients (MFCCs).
 
         MFCCs represent a compressed spectral envelope using a DCT over Mel bands.
@@ -198,7 +201,7 @@ class AudioFeatureExtractor:
 
     def extract(
         self,
-        audio_data: FloatAudioArray,
+        audio_data: NDArray[np.floating[Any]],
         sample_rate: int,
         *,
         use_stft: bool = True,
@@ -239,7 +242,7 @@ class AudioFeatureExtractor:
     def stack_features(
         self,
         features: ExtractedFeatures,
-    ) -> FeatureMatrix:
+    ) -> NDArray[np.floating[Any]]:
         """Concatenate extracted feature matrices along the feature axis.
 
         Every feature matrix is transposed so that rows correspond to time frames
@@ -255,7 +258,7 @@ class AudioFeatureExtractor:
             ValueError: If no feature has been extracted.
         """
 
-        matrices: list[FeatureMatrix] = []
+        matrices: list[NDArray[np.floating[Any]]] = []
 
         for feature in (
             features.stft_db,

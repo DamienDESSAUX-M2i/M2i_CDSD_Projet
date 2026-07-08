@@ -2,14 +2,13 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
-from core.processing_settings import ProcessingSettings
 from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
-class DetectedNote:
+class NoteEvent:
     """Represents a detected musical note."""
 
     pitch: int
@@ -54,26 +53,36 @@ class NoteTracker:
         )
 
     Args:
-        settings:
-            Global processing configuration.
+        hop_length:
+        sample_rate:
+        midi_pitch_min:
+        midi_pitch_max:
         min_note_duration:
-            Minimum note duration in seconds.
         velocity:
-            Default MIDI velocity.
     """
 
     def __init__(
         self,
-        settings: ProcessingSettings,
+        hop_length: int = 512,
+        sample_rate: int = 22050,
+        midi_pitch_min: int = 40,
+        midi_pitch_max: int = 88,
+        min_note_duration: float = 0.02,
+        velocity: int = 100,
     ) -> None:
 
-        self.settings = settings
-        self.frame_duration = settings.hop_length / settings.target_sample_rate
+        self.hop_length = hop_length
+        self.sample_rate = sample_rate
+        self.midi_pitch_min = midi_pitch_min
+        self.midi_pitch_max = midi_pitch_max
+        self.min_note_duration = min_note_duration
+        self.velocity = velocity
+        self.frame_duration = self.hop_length / self.sample_rate
 
     def extract_notes(
         self,
         piano_roll: NDArray[np.bool_],
-    ) -> list[DetectedNote]:
+    ) -> list[NoteEvent]:
         """Extract note events from a binary piano roll.
 
         Args:
@@ -88,7 +97,7 @@ class NoteTracker:
 
         self._validate_piano_roll(piano_roll)
 
-        notes: list[DetectedNote] = []
+        notes: list[NoteEvent] = []
 
         n_frames, n_pitches = piano_roll.shape
 
@@ -97,7 +106,7 @@ class NoteTracker:
         )
 
         for pitch_idx in range(n_pitches):
-            pitch = self.settings.midi_pitch_min + pitch_idx
+            pitch = self.midi_pitch_min + pitch_idx
 
             activations = piano_roll[:, pitch_idx]
 
@@ -111,10 +120,10 @@ class NoteTracker:
         self,
         activations: NDArray[np.bool_],
         pitch: int,
-    ) -> list[DetectedNote]:
+    ) -> list[NoteEvent]:
         """Extract consecutive activations for one pitch."""
 
-        notes: list[DetectedNote] = []
+        notes: list[NoteEvent] = []
 
         start_frame: int | None = None
 
@@ -131,23 +140,21 @@ class NoteTracker:
         if start_frame is not None:
             notes.append(self._create_note(pitch, start_frame, len(activations)))
 
-        return [
-            note for note in notes if note.duration >= self.settings.min_note_duration
-        ]
+        return [note for note in notes if note.duration >= self.min_note_duration]
 
     def _create_note(
         self,
         pitch: int,
         start_frame: int,
         end_frame: int,
-    ) -> DetectedNote:
+    ) -> NoteEvent:
         """Create note from frame boundaries."""
 
-        return DetectedNote(
+        return NoteEvent(
             pitch=pitch,
             start_time=(start_frame * self.frame_duration),
             end_time=(end_frame * self.frame_duration),
-            velocity=self.settings.velocity,
+            velocity=self.velocity,
         )
 
     def _validate_piano_roll(
@@ -159,9 +166,7 @@ class NoteTracker:
         if piano_roll.ndim != 2:
             raise ValueError("Piano roll must have shape (frames, pitches).")
 
-        expected_pitches = (
-            self.settings.midi_pitch_max - self.settings.midi_pitch_min + 1
-        )
+        expected_pitches = self.midi_pitch_max - self.midi_pitch_min + 1
 
         if piano_roll.shape[1] != expected_pitches:
             raise ValueError(

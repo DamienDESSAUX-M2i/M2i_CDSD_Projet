@@ -1,11 +1,12 @@
 import logging
 from enum import StrEnum
+from typing import Any
 
 import librosa
 import numpy as np
 import scipy.signal as signal
+from numpy.typing import NDArray
 
-from .audio_type import FloatAudioArray
 from .audio_validator import validate_audio
 
 logger = logging.getLogger(__name__)
@@ -53,11 +54,11 @@ class AudioCleaner:
 
     def highpass_filter(
         self,
-        audio: FloatAudioArray,
+        audio: NDArray[np.floating[Any]],
         sample_rate: int,
         cutoff: float = 80.0,
         filter_order: int = 6,
-    ) -> FloatAudioArray:
+    ) -> NDArray[np.floating[Any]]:
         """Apply a zero-phase high-pass filter to remove low-frequency rumble.
 
         Args:
@@ -88,11 +89,11 @@ class AudioCleaner:
 
     def lowpass_filter(
         self,
-        audio: FloatAudioArray,
+        audio: NDArray[np.floating[Any]],
         sample_rate: int,
         cutoff: float = 8000.0,
         filter_order: int = 6,
-    ) -> FloatAudioArray:
+    ) -> NDArray[np.floating[Any]]:
         """Apply a zero-phase low-pass filter to reduce high-frequency noise.
 
         Args:
@@ -121,7 +122,9 @@ class AudioCleaner:
 
         return signal.sosfiltfilt(sos, audio)
 
-    def spectral_denoise(self, audio: FloatAudioArray) -> FloatAudioArray:
+    def spectral_denoise(
+        self, audio: NDArray[np.floating[Any]]
+    ) -> NDArray[np.floating[Any]]:
         """Apply soft spectral gating denoising.
 
         The method estimates a noise floor using a robust median magnitude
@@ -158,9 +161,9 @@ class AudioCleaner:
 
     def wiener_denoise(
         self,
-        audio: FloatAudioArray,
+        audio: NDArray[np.floating[Any]],
         strength: float = 1.0,
-    ) -> FloatAudioArray:
+    ) -> NDArray[np.floating[Any]]:
         """Remove leading and trailing silence based on energy thresholding.
 
         Uses librosa energy-based trimming relative to peak amplitude.
@@ -198,9 +201,9 @@ class AudioCleaner:
 
     def trim_silence(
         self,
-        audio: FloatAudioArray,
+        audio: NDArray[np.floating[Any]],
         top_db: float = 40.0,
-    ) -> FloatAudioArray:
+    ) -> NDArray[np.floating[Any]]:
         """Remove leading and trailing silence based on energy thresholding.
 
         Uses librosa energy-based trimming relative to peak amplitude.
@@ -223,7 +226,7 @@ class AudioCleaner:
 
     def clean(
         self,
-        audio: FloatAudioArray,
+        audio: NDArray[np.floating[Any]],
         sample_rate: int,
         *,
         use_highpass: bool = True,
@@ -234,7 +237,7 @@ class AudioCleaner:
         wiener_strength: float = 1.0,
         use_trim: bool = False,
         trim_db: float = 40.0,
-    ) -> FloatAudioArray:
+    ) -> NDArray[np.floating[Any]]:
         """Execute full deterministic audio cleaning pipeline.
 
         Processing order:

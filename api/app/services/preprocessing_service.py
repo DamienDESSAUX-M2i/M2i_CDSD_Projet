@@ -1,14 +1,23 @@
 import logging
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from audio.audio_cleaner import AudioCleaner
 from audio.audio_feature_extractor import AudioFeatureExtractor
 from audio.audio_normalizer import AudioNormalizer
-from audio.audio_type import FeatureMatrix, FloatAudioArray, ModelInput
 from audio.context_window_builder import ContextWindowBuilder
-from core.processing_settings import ProcessingSettings
+from core import ProcessingSettings
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class PreprocessingResult:
+    audio: NDArray[np.floating[Any]]
+    sample_rate: int
+    features: NDArray[np.float32]
 
 
 class PreprocessingService:
@@ -59,9 +68,9 @@ class PreprocessingService:
 
     def preprocess(
         self,
-        audio: FloatAudioArray,
+        audio: NDArray[np.floating[Any]],
         sample_rate: int,
-    ) -> ModelInput:
+    ) -> PreprocessingResult:
         """Preprocess an audio signal before inference.
 
         Args:
@@ -94,13 +103,17 @@ class PreprocessingService:
 
         logger.info(f"Preprocessing completed. Output shape={features.shape}")
 
-        return features.astype(np.float32)
+        return PreprocessingResult(
+            audio=audio,
+            sample_rate=sample_rate,
+            features=features.astype(np.float32),
+        )
 
     def _preprocess_audio(
         self,
-        audio: FloatAudioArray,
+        audio: NDArray[np.floating[Any]],
         sample_rate: int,
-    ) -> tuple[FloatAudioArray, int]:
+    ) -> tuple[NDArray[np.floating[Any]], int]:
         """Apply deterministic audio preprocessing.
 
         Args:
@@ -151,9 +164,9 @@ class PreprocessingService:
 
     def _extract_features(
         self,
-        audio: FloatAudioArray,
+        audio: NDArray[np.floating[Any]],
         sample_rate: int,
-    ) -> FeatureMatrix:
+    ) -> NDArray[np.floating[Any]]:
         """Extract frame-wise acoustic features.
 
         Args:
@@ -178,8 +191,8 @@ class PreprocessingService:
 
     def _build_context(
         self,
-        features: FeatureMatrix,
-    ) -> ModelInput:
+        features: NDArray[np.floating[Any]],
+    ) -> NDArray[np.float32]:
         """Construct temporal context windows.
 
         If context windows are disabled, the original feature matrix is returned

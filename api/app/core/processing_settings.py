@@ -80,10 +80,17 @@ class ProcessingSettings:
     # ===
     # PIANO ROLL
     # ===
-    midi_pitch_min = 40
-    midi_pitch_max = 88
-    min_note_duration: float = 0.02
+    midi_pitch_min: int = 40
+    midi_pitch_max: int = 88
+    min_piano_roll_note_duration: float = 0.02
     velocity: int = 100
+
+    # ===
+    # RHYTHM QUANTIZER
+    # ===
+    bpm: int = 120
+    subdivision: float = 0.25
+    min_rhytm_quantizer_note_duration: float = 0.25
 
 
 PROCESSING_SETTINGS = ProcessingSettings()
