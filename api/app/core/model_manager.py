@@ -26,8 +26,6 @@ class ModelManager:
     Loads model once at API startup and exposes read-only access.
     """
 
-    _instance: "ModelManager | None" = None
-
     def __init__(
         self,
         model_path: str | Path,
@@ -41,24 +39,6 @@ class ModelManager:
         self.model: tf.keras.Model = self._load_model()
         self.scaler = self._load_scaler()
         self.metadata = self._load_metadata()
-
-    @classmethod
-    def get_instance(cls) -> "ModelManager":
-        if cls._instance is None:
-            raise RuntimeError(
-                "ModelManager not initialized. Call ModelManager.init() first."
-            )
-        return cls._instance
-
-    @classmethod
-    def init(
-        cls,
-        model_path: str | Path,
-        scaler_path: str | Path | None = None,
-        metadata_path: str | Path | None = None,
-    ) -> "ModelManager":
-        cls._instance = cls(model_path, scaler_path, metadata_path)
-        return cls._instance
 
     def _load_model(self) -> tf.keras.Model:
         return tf.keras.models.load_model(self.model_path)

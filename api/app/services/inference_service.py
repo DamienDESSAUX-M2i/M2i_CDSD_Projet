@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from time import perf_counter
 
 import numpy as np
-from core.model_manager import ModelManager, ModelMetadata
+from core.model_manager import ModelManager
 from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
@@ -31,11 +31,8 @@ class InferenceService:
     6. Binary piano roll
     """
 
-    def __init__(
-        self, model_manager: ModelManager, model_metadata: ModelMetadata
-    ) -> None:
+    def __init__(self, model_manager: ModelManager) -> None:
         self._manager = model_manager
-        self._metadata = model_metadata
 
     @property
     def model(self):
@@ -47,10 +44,11 @@ class InferenceService:
 
     @property
     def threshold(self) -> float:
-        return self._metadata.threshold
+        return self._manager.metadata.threshold
 
     def infer(
         self,
+        processing_id: str,
         features: NDArray[np.float32],
     ) -> InferenceResult:
         """Run complete inference.
@@ -79,13 +77,13 @@ class InferenceService:
             verbose=0,
         ).astype(np.float32)
 
-        elapsed = perf_counter() - t0
+        inference_time = perf_counter() - t0
 
-        logger.info(f"Inference completed in {elapsed:.3f} s.")
+        logger.info(f"Inference completed in {inference_time:.3f} s.")
 
         return InferenceResult(
             probabilities=probabilities,
             piano_roll=probabilities >= self.threshold,
             threshold=self.threshold,
-            inference_time=elapsed,
+            inference_time=inference_time,
         )

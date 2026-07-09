@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Any
 
 import numpy as np
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, slots=True)
 class PreprocessingResult:
+    preprocessing_time: float
     audio: NDArray[np.floating[Any]]
     sample_rate: int
     features: NDArray[np.float32]
@@ -68,6 +70,7 @@ class PreprocessingService:
 
     def preprocess(
         self,
+        processing_id: str,
         audio: NDArray[np.floating[Any]],
         sample_rate: int,
     ) -> PreprocessingResult:
@@ -89,6 +92,8 @@ class PreprocessingService:
 
         logger.info("Starting preprocessing...")
 
+        t0 = perf_counter()
+
         audio, sample_rate = self._preprocess_audio(
             audio,
             sample_rate,
@@ -101,9 +106,14 @@ class PreprocessingService:
 
         features = self._build_context(features)
 
-        logger.info(f"Preprocessing completed. Output shape={features.shape}")
+        preprocessing_time = perf_counter() - t0
+
+        logger.info(
+            f"Preprocessing completed in {preprocessing_time:.3f} s. Output shape={features.shape}"
+        )
 
         return PreprocessingResult(
+            preprocessing_time=preprocessing_time,
             audio=audio,
             sample_rate=sample_rate,
             features=features.astype(np.float32),

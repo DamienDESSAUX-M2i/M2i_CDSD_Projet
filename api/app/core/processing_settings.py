@@ -4,6 +4,8 @@ from pathlib import Path
 import librosa
 from audio import DenoiseMethod, NormalizationType
 
+API_DIR = Path(__file__).parent.parent.resolve()
+
 
 @dataclass(frozen=True, slots=True)
 class ProcessingSettings:
@@ -19,7 +21,10 @@ class ProcessingSettings:
     The goal is to ensure reproducibility and centralize all DSP-related settings.
     """
 
-    output_dir = Path(__file__).parent.parent.resolve() / "output"
+    model_path: Path = API_DIR / "artifacts" / "model.keras"
+    scaler_path: Path | None = None
+    metadata_path: Path | None = API_DIR / "artifacts" / "metadata.json"
+    output_dir: Path = API_DIR / "output"
 
     # ===
     # CLEANING
@@ -82,7 +87,7 @@ class ProcessingSettings:
     # ===
     midi_pitch_min: int = 40
     midi_pitch_max: int = 88
-    min_piano_roll_note_duration: float = 0.02
+    min_piano_roll_note_duration: float = 0.05
     velocity: int = 100
 
     # ===

@@ -1,11 +1,15 @@
 from app.models import ApiResponse, ModelResponse
 from fastapi import APIRouter
+from services import get_loaded_model_information
 
-model_router = APIRouter()
+model_router = APIRouter(
+    prefix="/model",
+    tags=["Model"],
+)
 
 
 @model_router.get(
-    "/model",
+    "",
     response_model=ApiResponse[ModelResponse],
     summary="Get loaded model information",
 )

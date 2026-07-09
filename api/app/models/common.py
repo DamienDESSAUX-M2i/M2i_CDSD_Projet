@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Generic, TypeVar
 
-from app.core import TIME_ZONE
+from core import TIME_ZONE
 from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
@@ -38,10 +38,10 @@ class InferenceMetrics(BaseModel):
         extra="forbid",
     )
 
-    preprocessing_ms: float
-    inference_ms: float
-    postprocessing_ms: float
-    total_ms: float
+    preprocessing_secondes: float
+    inference_secondes: float
+    postprocessing_secondes: float
+    total_secondes: float
 
 
 class ModelInfo(BaseModel):
@@ -54,4 +54,6 @@ class ModelInfo(BaseModel):
     name: str
     framework: str = "tensorflow"
     version: str
+    input_shape: tuple[int, ...]
+    output_shape: tuple[int, ...]
     threshold: float

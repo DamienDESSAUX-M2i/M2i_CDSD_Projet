@@ -1,8 +1,8 @@
 import platform
 
 import tensorflow as tf
-from app.core import ModelManager
-from app.models import ApiResponse, HealthResponse, HealthStatus
+from core import ModelManager
+from models import ApiResponse, HealthResponse, HealthStatus
 
 
 def get_health_status() -> ApiResponse[HealthResponse]:

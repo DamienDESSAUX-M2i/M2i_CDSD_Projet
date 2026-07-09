@@ -17,20 +17,6 @@ class HealthResponse(BaseModel):
     device: Literal["gpu", "cpu"]
 
 
-class PredictionResponse(BaseModel):
-    """Prediction metadata."""
-
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-
-    filename: str
-    duration_seconds: float
-    detected_notes: int
-    metrics: InferenceMetrics
-    model: ModelInfo
-
-
 class ModelResponse(BaseModel):
     """Loaded model information."""
 
@@ -46,3 +32,26 @@ class ModelResponse(BaseModel):
     threshold: float
     train_dataset: str | None = None
     description: str | None = None
+
+
+class PredictionResponse(BaseModel):
+    """Prediction API response."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
+    processing_id: str
+
+    detected_notes: int
+    quantized_notes: int
+
+    midi_path: str | None
+    piano_roll_png_path: str | None
+    piano_roll_svg_path: str | None
+
+    score_pdf_path: str | None
+    score_svg_path: str | None
+
+    metrics: InferenceMetrics
+    model: ModelInfo

@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from time import perf_counter
 
 import pretty_midi
 from audio import (
@@ -9,6 +10,7 @@ from audio import (
     NoteEvent,
     NoteTracker,
     PianoRollRenderer,
+    QuantizedNoteEvent,
     RhythmQuantizer,
     ScoreBuilder,
 )
@@ -22,23 +24,27 @@ logger = logging.getLogger(__name__)
 class PostprocessingResult:
     """Artifacts generated after model inference."""
 
+    postprocessing_time: float
     notes: list[NoteEvent]
+    quantized_notes: list[QuantizedNoteEvent]
     midi: pretty_midi.PrettyMIDI
     tempo: float
     musicxml_path: Path
     midi_path: Path
     piano_roll_png_path: Path
     piano_roll_svg_path: Path
-    score_pdf_path: Path
-    score_svg_path: Path
+    score_pdf_path: Path | None
+    score_svg_path: Path | None
 
 
 class PostprocessingService:
     """Convert frame-wise predictions into musical artifacts."""
 
-    def __init__(self, settings: ProcessingSettings) -> None:
+    def __init__(self, settings: ProcessingSettings, processing_id: str) -> None:
 
         self.settings = settings
+
+        self.output = self.settings.output_dir / processing_id
 
         self._note_tracker = NoteTracker(
             hop_length=self.settings.hop_length,
@@ -61,13 +67,13 @@ class PostprocessingService:
         self._midi_builder = MidiBuilder(velocity=self.settings.velocity)
 
         self._piano_roll_renderer = PianoRollRenderer(
-            pitch_min=settings.midi_pitch_min,
-            pitch_max=settings.midi_pitch_max,
-            output_dir=settings.output_dir,
+            pitch_min=self.settings.midi_pitch_min,
+            pitch_max=self.settings.midi_pitch_max,
+            output_dir=self.output,
         )
 
         self._score_builder = ScoreBuilder(
-            output_dir=settings.output_dir,
+            output_dir=self.output,
         )
 
     def process(
@@ -94,6 +100,8 @@ class PostprocessingService:
         """
 
         logger.info("Starting post-processing.")
+
+        t0 = perf_counter()
 
         # ===
         # Frame -> notes
@@ -142,20 +150,27 @@ class PostprocessingService:
         # MusicXML
         # ===
 
-        musicxml_path = self._score_builder.build_musicxml(quantized_notes)
+        musicxml_path = self._score_builder.build_musicxml(
+            notes=quantized_notes,
+            bpm=beat_result.tempo,
+        )
 
         # ===
         # Score rendering
         # ===
 
         score_pdf_path, score_svg_path = self._score_builder.export_rendered_score(
-            musicxml_path
+            musicxml_path=musicxml_path
         )
 
-        logger.info("Post-processing completed.")
+        postprocessing_time = perf_counter() - t0
+
+        logger.info(f"Post-processing completed in {postprocessing_time:.3f} s.")
 
         return PostprocessingResult(
+            postprocessing_time=postprocessing_time,
             notes=notes,
+            quantized_notes=quantized_notes,
             midi=midi,
             tempo=beat_result.tempo,
             musicxml_path=musicxml_path,

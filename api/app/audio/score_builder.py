@@ -1,4 +1,5 @@
 import logging
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -41,7 +42,6 @@ class ScoreBuilder:
     def __init__(
         self,
         output_dir: str | Path = "output",
-        bpm: int = 120,
         lilypond_binary: str = "lilypond",
     ) -> None:
         """
@@ -51,9 +51,6 @@ class ScoreBuilder:
             output_dir:
                 Directory where generated files are stored.
 
-            bpm:
-                Tempo of the generated score.
-
             lilypond_binary:
                 LilyPond executable name or path.
         """
@@ -62,12 +59,19 @@ class ScoreBuilder:
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        self.bpm = bpm
         self.lilypond_binary = lilypond_binary
+        self._lilypond_available = shutil.which(lilypond_binary) is not None
+
+    @property
+    def has_lilypond(self) -> bool:
+        """Return whether the LilyPond executable is available."""
+
+        return self._lilypond_available
 
     def build_musicxml(
         self,
         notes: list[QuantizedNoteEvent],
+        bpm: int = 120,
         filename: str = "transcription.musicxml",
     ) -> Path:
         """
@@ -76,6 +80,9 @@ class ScoreBuilder:
         Args:
             notes:
                 Quantized musical events.
+
+            bpm:
+                Tempo of the generated score.
 
             filename:
                 Output MusicXML filename.
@@ -92,7 +99,7 @@ class ScoreBuilder:
 
         part.insert(
             0,
-            tempo.MetronomeMark(number=self.bpm),
+            tempo.MetronomeMark(number=bpm),
         )
 
         for event in notes:
@@ -173,6 +180,13 @@ class ScoreBuilder:
                 - PDF output path
                 - SVG output path
         """
+
+        if not self.has_lilypond:
+            logger.warning(
+                f"LilyPond executable '{self.lilypond_binary}' not found. "
+                f"Skipping score rendering."
+            )
+            return None, None
 
         logger.info("Rendering score with LilyPond.")
 

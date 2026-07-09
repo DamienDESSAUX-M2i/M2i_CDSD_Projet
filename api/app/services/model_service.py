@@ -1,5 +1,5 @@
-from app.core import ModelManager
-from app.models import ApiResponse, ModelResponse
+from core import ModelManager
+from models import ApiResponse, ModelResponse
 
 
 def get_loaded_model_information():
