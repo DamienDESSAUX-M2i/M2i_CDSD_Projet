@@ -5,33 +5,36 @@ description = "Automatic transcription of a guitar audio file into a MIDI file."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "boto3>=1.43.19",
-    "fastapi>=0.136.3",
-    "jams>=0.3.5",
-    "jupyterlab>=4.5.3",
     "librosa>=0.11.0",
     "matplotlib>=3.10.8",
-    "minio>=7.2.20",
-    "mlflow>=3.13.0",
     "music21>=10.5.0",
-    "openpyxl>=3.1.5",
-    "pandas>=2.3.3",
     "pretty-midi>=0.2.11",
-    "psycopg[binary]>=3.3.2",
-    "pyarrow>=24.0.0",
-    "pydantic>=2.13.4",
-    "pydantic-settings>=2.14.1",
-    "pymongo>=4.16.0",
-    "python-dotenv>=1.2.1",
-    "pyyaml>=6.0.3",
-    "requests>=2.32.5",
+    "scikit-learn>=1.8.0",
     "seaborn>=0.13.2",
     "soundfile>=0.13.1",
     "tensorflow>=2.21.0",
-    "tqdm>=4.67.3",
 ]
 
 [dependency-groups]
+api = [
+    "fastapi>=0.136.3",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.1",
+]
+audio-midi = [
+    "boto3>=1.43.19",
+    "jams>=0.3.5",
+    "jupyterlab>=4.5.4",
+    "minio>=7.2.20",
+    "mlflow>=3.13.0",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.3",
+    "psycopg[binary]>=3.3.2",
+    "pyarrow>=24.0.0",
+    "pymongo>=4.16.0",
+    "requests>=2.32.5",
+    "tqdm>=4.68.4",
+]
 dev = [
     "pytest>=9.0.2",
     "pytest-cov>=7.1.0",
