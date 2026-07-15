@@ -5,14 +5,9 @@ from uuid import uuid4
 
 import soundfile as sf
 
-from services import (
-    InferenceResult,
-    InferenceService,
-    PostprocessingResult,
-    PostprocessingService,
-    PreprocessingResult,
-    PreprocessingService,
-)
+from .inference_service import InferenceResult, InferenceService
+from .postprocessing_service import PostprocessingResult, PostprocessingService
+from .preprocessing_service import PreprocessingResult, PreprocessingService
 
 logger = logging.getLogger(__name__)
 
@@ -114,13 +109,11 @@ class PredictionService:
             audio = audio.T
 
         preprocessing_result = self._preprocessing.preprocess(
-            processing_id=processing_id,
             audio=audio,
             sample_rate=sample_rate,
         )
 
         inference_result = self._inference.infer(
-            processing_id=processing_id,
             features=preprocessing_result.features,
         )
 

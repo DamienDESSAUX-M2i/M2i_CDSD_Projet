@@ -36,8 +36,9 @@ def main() -> None:
         sample_rate=sample_rate,
     )
 
-    print(f"Output shape: {preprocessing_result.features.shape}")
-    print(f"dtype       : {preprocessing_result.features.dtype}")
+    print(f"Preprocessing time: {preprocessing_result.preprocessing_time}")
+    print(f"Output shape      : {preprocessing_result.features.shape}")
+    print(f"dtype             : {preprocessing_result.features.dtype}")
 
     inference_result = inference.infer(preprocessing_result.features)
 
@@ -48,12 +49,13 @@ def main() -> None:
     print(f"Probabilities dtype: {inference_result.probabilities.dtype}")
 
     postprocessing_result = postprocessing.process(
+        processing_id="test",
         piano_roll=inference_result.piano_roll,
         audio=preprocessing_result.audio,
         sample_rate=preprocessing_result.sample_rate,
     )
 
-    print(f"Inference time     : {postprocessing_result.postprocessing_time}")
+    print(f"Postprocessing time: {postprocessing_result.postprocessing_time}")
     print(f"Piano roll shape   : {postprocessing_result.piano_roll_png_path}")
     print(f"Piano roll dtype   : {postprocessing_result.piano_roll_svg_path}")
     print(f"Probabilities shape: {postprocessing_result.midi_path}")

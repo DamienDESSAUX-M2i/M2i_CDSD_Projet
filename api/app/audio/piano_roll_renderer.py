@@ -22,7 +22,6 @@ class PianoRollRenderer:
         self,
         pitch_min: int = 40,
         pitch_max: int = 88,
-        output_dir: str | Path = "output",
         figsize: tuple[int, int] = (12, 7),
     ) -> None:
         """
@@ -33,61 +32,13 @@ class PianoRollRenderer:
                 Lowest MIDI pitch displayed.
             pitch_max:
                 Highest MIDI pitch displayed.
-            output_dir:
-                Directory where generated files are saved.
             figsize:
                 Matplotlib figure size.
         """
 
         self.pitch_min = pitch_min
         self.pitch_max = pitch_max
-        self.output_dir = Path(output_dir)
         self.figsize = figsize
-
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
-    # def _create_figure(
-    #     self,
-    #     notes: list[NoteEvent],
-    # ):
-    #     """
-    #     Create matplotlib piano roll figure.
-
-    #     Args:
-    #         notes:
-    #             Detected MIDI notes.
-
-    #     Returns:
-    #         Matplotlib figure and axis.
-    #     """
-
-    #     fig, ax = plt.subplots(
-    #         figsize=self.figsize,
-    #     )
-
-    #     for note in notes:
-    #         duration = note.end_time - note.start_time
-
-    #         ax.barh(
-    #             y=note.pitch,
-    #             width=duration,
-    #             left=note.start_time,
-    #             height=0.8,
-    #         )
-
-    #     ax.set_xlabel("Time (seconds)")
-    #     ax.set_ylabel("MIDI pitch")
-
-    #     ax.set_ylim(
-    #         self.pitch_min - 1,
-    #         self.pitch_max + 1,
-    #     )
-
-    #     ax.set_title("Guitar transcription piano roll")
-
-    #     ax.grid(True)
-
-    #     return fig, ax
 
     def _create_figure(
         self,
@@ -106,9 +57,9 @@ class PianoRollRenderer:
 
         fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
 
-        # =====
+        # ====
         # Notes
-        # =====
+        # ====
 
         for note in notes:
             ax.broken_barh(
@@ -116,9 +67,9 @@ class PianoRollRenderer:
                 yrange=(note.pitch - 0.4, 0.8),
             )
 
-        # =====
+        # ====
         # Axes
-        # =====
+        # ====
 
         ax.set_xlabel("Time (s)", fontsize=12)
 
@@ -126,9 +77,9 @@ class PianoRollRenderer:
 
         ax.set_title("Automatic Guitar Transcription", fontsize=14, pad=12)
 
-        # =====
+        # ====
         # Pitch axis
-        # =====
+        # ====
 
         pitches = np.arange(self.pitch_min, self.pitch_max + 1)
 
@@ -143,9 +94,9 @@ class PianoRollRenderer:
             self.pitch_max + 0.5,
         )
 
-        # =====
+        # ====
         # Time axis
-        # =====
+        # ====
 
         if notes:
             xmax = max(note.end_time for note in notes)
@@ -159,9 +110,9 @@ class PianoRollRenderer:
 
         ax.xaxis.set_minor_locator(MultipleLocator(0.25))
 
-        # =====
+        # ====
         # Grid
-        # =====
+        # ====
 
         ax.grid(
             which="major",
@@ -184,9 +135,9 @@ class PianoRollRenderer:
             alpha=0.25,
         )
 
-        # =====
+        # ====
         # Clean style
-        # =====
+        # ====
 
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
@@ -201,8 +152,8 @@ class PianoRollRenderer:
     def render_png(
         self,
         notes: list[NoteEvent],
-        filename: str = "piano_roll.png",
-    ) -> Path:
+        output_path: Path,
+    ) -> None:
         """
         Render piano roll as PNG.
 
@@ -211,18 +162,15 @@ class PianoRollRenderer:
         Args:
             notes:
                 Detected MIDI notes.
-            filename:
-                Output filename.
-
-        Returns:
-            PNG encoded image bytes.
+            output_path:
+                Output path.
         """
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         fig, _ = self._create_figure(notes)
 
         fig.tight_layout()
-
-        output_path = self.output_dir / filename
 
         fig.savefig(
             output_path,
@@ -233,31 +181,26 @@ class PianoRollRenderer:
 
         plt.close(fig)
 
-        return output_path
-
     def render_svg(
         self,
         notes: list[NoteEvent],
-        filename: str = "piano_roll.svg",
-    ) -> Path:
+        output_path: Path,
+    ) -> None:
         """
         Render piano roll as SVG.
 
         Args:
             notes:
                 Detected MIDI notes.
-            filename:
-                Output filename.
-
-        Returns:
-            Path to generated SVG file.
+            output_path:
+                Output path.
         """
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         fig, _ = self._create_figure(notes)
 
         fig.tight_layout()
-
-        output_path = self.output_dir / filename
 
         fig.savefig(
             output_path,
@@ -267,27 +210,24 @@ class PianoRollRenderer:
 
         plt.close(fig)
 
-        return output_path
-
     def render(
         self,
         notes: list[NoteEvent],
-    ) -> tuple[Path, Path]:
+        png_path: Path,
+        svg_path: Path,
+    ) -> None:
         """
         Render both PNG and SVG outputs.
 
         Args:
             notes:
                 Detected MIDI notes.
-
-        Returns:
-            Tuple containing:
-                - PNG image bytes
-                - SVG file path
+            png_path:
+                PNG output path.
+            svg_path:
+                SVG output path.
         """
 
-        png_path = self.render_png(notes)
+        png_path = self.render_png(notes=notes, output_path=png_path)
 
-        svg_path = self.render_svg(notes)
-
-        return png_path, svg_path
+        svg_path = self.render_svg(notes=notes, output_path=svg_path)

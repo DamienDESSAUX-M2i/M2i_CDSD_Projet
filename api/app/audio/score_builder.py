@@ -41,23 +41,15 @@ class ScoreBuilder:
 
     def __init__(
         self,
-        output_dir: str | Path = "output",
         lilypond_binary: str = "lilypond",
     ) -> None:
         """
         Initialize score builder.
 
         Args:
-            output_dir:
-                Directory where generated files are stored.
-
             lilypond_binary:
                 LilyPond executable name or path.
         """
-
-        self.output_dir = Path(output_dir)
-
-        self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.lilypond_binary = lilypond_binary
         self._lilypond_available = shutil.which(lilypond_binary) is not None
@@ -71,9 +63,9 @@ class ScoreBuilder:
     def build_musicxml(
         self,
         notes: list[QuantizedNoteEvent],
+        output_path: Path,
         bpm: int = 120,
-        filename: str = "transcription.musicxml",
-    ) -> Path:
+    ) -> None:
         """
         Build a MusicXML score from quantized notes.
 
@@ -81,15 +73,14 @@ class ScoreBuilder:
             notes:
                 Quantized musical events.
 
+            output_path:
+                MusicXML output path.
+
             bpm:
                 Tempo of the generated score.
-
-            filename:
-                Output MusicXML filename.
-
-        Returns:
-            Path of generated MusicXML file.
         """
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Building MusicXML from {len(notes)} notes.")
 
@@ -111,8 +102,6 @@ class ScoreBuilder:
 
         score.append(part)
 
-        output_path = self.output_dir / filename
-
         score.write("musicxml", fp=output_path)
 
         logger.info(f"MusicXML generated: {output_path}")
@@ -122,8 +111,8 @@ class ScoreBuilder:
     def build_lilypond(
         self,
         musicxml_path: Path,
-        filename: str = "transcription.ly",
-    ) -> Path:
+        output_path: Path,
+    ) -> None:
         """
         Convert MusicXML into a LilyPond source file.
 
@@ -131,14 +120,11 @@ class ScoreBuilder:
             musicxml_path:
                 Input MusicXML file.
 
-            filename:
-                Output LilyPond filename.
-
-        Returns:
-            Path of generated LilyPond file.
+            output_path:
+                Output LilyPond output path.
         """
 
-        output_path = self.output_dir / filename
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         command = [
             self.lilypond_binary,
@@ -181,6 +167,8 @@ class ScoreBuilder:
                 - SVG output path
         """
 
+        musicxml_path.parent.mkdir(parents=True, exist_ok=True)
+
         if not self.has_lilypond:
             logger.warning(
                 f"LilyPond executable '{self.lilypond_binary}' not found. "
@@ -190,20 +178,26 @@ class ScoreBuilder:
 
         logger.info("Rendering score with LilyPond.")
 
-        self._run_lilypond(musicxml_path, output_format="pdf")
+        self._run_lilypond(
+            input_file=musicxml_path,
+            output_format="pdf",
+            output_dir=musicxml_path.parent,
+        )
 
-        self._run_lilypond(musicxml_path, output_format="svg")
+        self._run_lilypond(
+            input_file=musicxml_path,
+            output_format="svg",
+            output_dir=musicxml_path.parent,
+        )
 
-        pdf_path = self.output_dir / f"{musicxml_path.stem}.pdf"
+        pdf_path = musicxml_path.parent / f"{musicxml_path.stem}.pdf"
 
-        svg_path = self.output_dir / f"{musicxml_path.stem}.svg"
+        svg_path = musicxml_path.parent / f"{musicxml_path.stem}.svg"
 
         return pdf_path, svg_path
 
     def _run_lilypond(
-        self,
-        input_file: Path,
-        output_format: str,
+        self, input_file: Path, output_format: str, output_dir: Path
     ) -> None:
         """
         Execute LilyPond rendering.
@@ -225,6 +219,8 @@ class ScoreBuilder:
                 If LilyPond execution fails.
         """
 
+        output_dir.mkdir(parents=True, exist_ok=True)
+
         if output_format not in {"pdf", "svg"}:
             raise ValueError(f"Unsupported LilyPond format: {output_format}")
 
@@ -232,7 +228,7 @@ class ScoreBuilder:
             self.lilypond_binary,
             f"--{output_format}",
             "--output",
-            str(self.output_dir),
+            str(output_dir),
             str(input_file),
         ]
 

@@ -40,11 +40,11 @@ class PostprocessingResult:
 class PostprocessingService:
     """Convert frame-wise predictions into musical artifacts."""
 
-    def __init__(self, settings: ProcessingSettings, processing_id: str) -> None:
+    def __init__(self, settings: ProcessingSettings) -> None:
 
         self.settings = settings
 
-        self.output = self.settings.output_dir / processing_id
+        self.output_dir = self.settings.output_dir
 
         self._note_tracker = NoteTracker(
             hop_length=self.settings.hop_length,
@@ -69,15 +69,13 @@ class PostprocessingService:
         self._piano_roll_renderer = PianoRollRenderer(
             pitch_min=self.settings.midi_pitch_min,
             pitch_max=self.settings.midi_pitch_max,
-            output_dir=self.output,
         )
 
-        self._score_builder = ScoreBuilder(
-            output_dir=self.output,
-        )
+        self._score_builder = ScoreBuilder()
 
     def process(
         self,
+        processing_id: str,
         piano_roll: NDArray,
         audio: NDArray,
         sample_rate: int,
@@ -117,16 +115,29 @@ class PostprocessingService:
 
         midi = self._midi_builder.build(notes)
 
-        midi_path = self.settings.output_dir / "transcription.mid"
+        midi_path = self.settings.output_dir / processing_id / "transcription.mid"
 
-        self._midi_builder.save(midi, midi_path)
+        self._midi_builder.save(
+            midi=midi,
+            output_path=midi_path,
+        )
 
         # ===
         # Piano roll
         # ===
 
-        piano_roll_png_path, piano_roll_svg_path = self._piano_roll_renderer.render(
-            notes
+        piano_roll_png_path = (
+            self.settings.output_dir / processing_id / "piano_roll.png"
+        )
+
+        piano_roll_svg_path = (
+            self.settings.output_dir / processing_id / "piano_roll.svg"
+        )
+
+        self._piano_roll_renderer.render(
+            notes=notes,
+            png_path=piano_roll_png_path,
+            svg_path=piano_roll_svg_path,
         )
 
         # ===
@@ -150,8 +161,13 @@ class PostprocessingService:
         # MusicXML
         # ===
 
-        musicxml_path = self._score_builder.build_musicxml(
+        musicxml_path = (
+            self.settings.output_dir / processing_id / "transcription.musicxlm"
+        )
+
+        self._score_builder.build_musicxml(
             notes=quantized_notes,
+            output_path=musicxml_path,
             bpm=beat_result.tempo,
         )
 

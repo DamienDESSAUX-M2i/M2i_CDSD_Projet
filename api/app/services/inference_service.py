@@ -48,7 +48,6 @@ class InferenceService:
 
     def infer(
         self,
-        processing_id: str,
         features: NDArray[np.float32],
     ) -> InferenceResult:
         """Run complete inference.

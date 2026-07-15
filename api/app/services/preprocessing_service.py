@@ -70,7 +70,6 @@ class PreprocessingService:
 
     def preprocess(
         self,
-        processing_id: str,
         audio: NDArray[np.floating[Any]],
         sample_rate: int,
     ) -> PreprocessingResult:
