@@ -19,11 +19,6 @@ RUN uv sync \
 
 COPY api/app ./app
 
-RUN uv sync \
-    --frozen \
-    --no-dev \
-    --group api
-
 # ===
 # Runtime
 # ===
@@ -34,9 +29,7 @@ WORKDIR /app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ffmpeg \
         libsndfile1 \
-        lilypond \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1 \
