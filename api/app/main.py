@@ -1,15 +1,15 @@
 import logging
 from contextlib import asynccontextmanager
 
-from core import PROCESSING_SETTINGS, ModelManager
-from fastapi import FastAPI
-from routes import router
-from services import (
+from app.core import PROCESSING_SETTINGS, ModelManager
+from app.routes import router
+from app.services import (
     InferenceService,
     PostprocessingService,
     PredictionService,
     PreprocessingService,
 )
+from fastapi import FastAPI
 
 logger = logging.getLogger(__name__)
 

@@ -3,11 +3,12 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from core import ModelManager
-from dependencies import get_model_manager, get_prediction_service
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from models import ApiResponse, InferenceMetrics, ModelInfo, PredictionResponse
-from services.prediction_service import PredictionService
+
+from app.core import ModelManager
+from app.dependencies import get_model_manager, get_prediction_service
+from app.models import ApiResponse, InferenceMetrics, ModelInfo, PredictionResponse
+from app.services.prediction_service import PredictionService
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ predict_router = APIRouter(
 
 @predict_router.post(
     "",
-    response_model=PredictionResponse,
+    response_model=ApiResponse[PredictionResponse],
 )
 async def predict(
     file: UploadFile = File(...),

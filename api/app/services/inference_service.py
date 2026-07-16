@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from time import perf_counter
 
 import numpy as np
-from core.model_manager import ModelManager
+from app.core.model_manager import ModelManager
 from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)

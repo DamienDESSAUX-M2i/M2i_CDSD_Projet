@@ -1,6 +1,6 @@
 import logging
 
-from core import PROCESSING_SETTINGS
+from app.core import PROCESSING_SETTINGS
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 

@@ -4,11 +4,13 @@ from time import perf_counter
 from typing import Any
 
 import numpy as np
-from audio.audio_cleaner import AudioCleaner
-from audio.audio_feature_extractor import AudioFeatureExtractor
-from audio.audio_normalizer import AudioNormalizer
-from audio.context_window_builder import ContextWindowBuilder
-from core import ProcessingSettings
+from app.audio import (
+    AudioCleaner,
+    AudioFeatureExtractor,
+    AudioNormalizer,
+    ContextWindowBuilder,
+)
+from app.core import ProcessingSettings
 from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)

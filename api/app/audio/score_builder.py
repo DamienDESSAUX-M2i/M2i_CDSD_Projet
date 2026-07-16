@@ -1,9 +1,11 @@
 import logging
-import shutil
-import subprocess
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
+import cairosvg
+import verovio
 from music21 import note, stream, tempo
+from pypdf import PdfWriter
 
 from .rhythm_quantizer import QuantizedNoteEvent
 
@@ -12,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class ScoreBuilder:
     """
-    Build and export musical scores from quantized MIDI events.
+    Build and render musical scores.
 
     Workflow:
 
@@ -22,43 +24,16 @@ class ScoreBuilder:
             music21
                 |
                 v
-           MusicXML
+            MusicXML
                 |
                 v
-           LilyPond
+            Verovio
                 |
           +-----+------+
           |            |
           v            v
          PDF          SVG
-
-
-    Notes:
-        Rhythm quantization is performed upstream by RhythmQuantizer.
-        This class only converts symbolic musical events into notation
-        formats and renders the final score.
     """
-
-    def __init__(
-        self,
-        lilypond_binary: str = "lilypond",
-    ) -> None:
-        """
-        Initialize score builder.
-
-        Args:
-            lilypond_binary:
-                LilyPond executable name or path.
-        """
-
-        self.lilypond_binary = lilypond_binary
-        self._lilypond_available = shutil.which(lilypond_binary) is not None
-
-    @property
-    def has_lilypond(self) -> bool:
-        """Return whether the LilyPond executable is available."""
-
-        return self._lilypond_available
 
     def build_musicxml(
         self,
@@ -80,7 +55,10 @@ class ScoreBuilder:
                 Tempo of the generated score.
         """
 
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
         logger.info(f"Building MusicXML from {len(notes)} notes.")
 
@@ -98,7 +76,10 @@ class ScoreBuilder:
 
             current_note.duration.quarterLength = event.duration
 
-            part.insert(event.offset, current_note)
+            part.insert(
+                event.offset,
+                current_note,
+            )
 
         score.append(part)
 
@@ -106,142 +87,157 @@ class ScoreBuilder:
 
         logger.info(f"MusicXML generated: {output_path}")
 
-        return output_path
-
-    def build_lilypond(
-        self,
-        musicxml_path: Path,
-        output_path: Path,
-    ) -> None:
-        """
-        Convert MusicXML into a LilyPond source file.
-
-        Args:
-            musicxml_path:
-                Input MusicXML file.
-
-            output_path:
-                Output LilyPond output path.
-        """
-
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        command = [
-            self.lilypond_binary,
-            "--pdf",
-            "--output",
-            str(self.output_dir),
-            str(musicxml_path),
-        ]
-
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        if result.returncode != 0:
-            raise RuntimeError(
-                "LilyPond conversion failed.\n"
-                f"stdout:\n{result.stdout}\n"
-                f"stderr:\n{result.stderr}"
-            )
-
-        return output_path
-
-    def export_rendered_score(
+    def render(
         self,
         musicxml_path: Path,
     ) -> tuple[Path, Path]:
         """
-        Render a MusicXML score into PDF and SVG.
+        Render MusicXML into SVG and PDF.
 
         Args:
             musicxml_path:
-                Source MusicXML file.
+                Input MusicXML file.
 
         Returns:
             Tuple containing:
-                - PDF output path
                 - SVG output path
+                - PDF output path
         """
 
-        musicxml_path.parent.mkdir(parents=True, exist_ok=True)
+        output_dir = musicxml_path.parent
 
-        if not self.has_lilypond:
-            logger.warning(
-                f"LilyPond executable '{self.lilypond_binary}' not found. "
-                f"Skipping score rendering."
-            )
-            return None, None
+        svg_path = output_dir / f"{musicxml_path.stem}.svg"
 
-        logger.info("Rendering score with LilyPond.")
+        pdf_path = output_dir / f"{musicxml_path.stem}.pdf"
 
-        self._run_lilypond(
-            input_file=musicxml_path,
-            output_format="pdf",
-            output_dir=musicxml_path.parent,
+        verovio_toolkit = verovio.toolkit()
+
+        verovio_toolkit.setOptions(
+            {
+                "inputFrom": "xml",
+                "pageWidth": 2100,
+                "pageHeight": 2970,
+                "scale": 40,
+            }
         )
 
-        self._run_lilypond(
-            input_file=musicxml_path,
-            output_format="svg",
-            output_dir=musicxml_path.parent,
-        )
+        logger.info("Loading MusicXML into Verovio.")
 
-        pdf_path = musicxml_path.parent / f"{musicxml_path.stem}.pdf"
+        loaded = verovio_toolkit.loadFile(str(musicxml_path))
 
-        svg_path = musicxml_path.parent / f"{musicxml_path.stem}.svg"
+        if not loaded:
+            raise RuntimeError(f"Unable to load {musicxml_path}")
+
+        page_count = verovio_toolkit.getPageCount()
+
+        logger.info(f"Rendering {page_count} page(s).")
+
+        svg_pages: list[Path] = []
+        for page_number in range(1, page_count + 1):
+            page_svg = output_dir / f"{musicxml_path.stem}_page_{page_number}.svg"
+            verovio_toolkit.renderToSVGFile(str(page_svg), page_number)
+            svg_pages.append(page_svg)
+
+        pdf_pages: list[Path] = []
+        for svg_page in svg_pages:
+            pdf_page = svg_page.with_suffix(".pdf")
+            cairosvg.svg2pdf(url=str(svg_page), write_to=str(pdf_page))
+            pdf_pages.append(pdf_page)
+
+        # Merge SVG pages if necessary.
+        if len(svg_pages) == 1:
+            svg_pages[0].rename(svg_path)
+        else:
+            self._merge_pdfs(svg_pages, svg_path)
+
+        # Merge PDF pages if necessary.
+        if len(pdf_pages) == 1:
+            pdf_pages[0].rename(pdf_path)
+        else:
+            self._merge_pdfs(pdf_pages, pdf_path)
+
+        logger.info(f"PDF generated: {pdf_path}")
+
+        logger.info(f"SVG generated: {svg_path}")
 
         return pdf_path, svg_path
 
-    def _run_lilypond(
-        self, input_file: Path, output_format: str, output_dir: Path
+    @staticmethod
+    def _merge_svgs(
+        svg_files: list[Path],
+        output: Path,
     ) -> None:
         """
-        Execute LilyPond rendering.
-
-        Args:
-            input_file:
-                Input MusicXML file.
-
-            output_format:
-                Rendering format:
-                    - pdf
-                    - svg
-
-        Raises:
-            ValueError:
-                If format is unsupported.
-
-            RuntimeError:
-                If LilyPond execution fails.
+        Merge multiple SVG pages into one vertical SVG document.
         """
 
-        output_dir.mkdir(parents=True, exist_ok=True)
+        if not svg_files:
+            raise ValueError("No SVG files to merge")
 
-        if output_format not in {"pdf", "svg"}:
-            raise ValueError(f"Unsupported LilyPond format: {output_format}")
+        namespaces = {"svg": "http://www.w3.org/2000/svg"}
 
-        command = [
-            self.lilypond_binary,
-            f"--{output_format}",
-            "--output",
-            str(output_dir),
-            str(input_file),
-        ]
+        ET.register_namespace("", namespaces["svg"])
 
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            check=False,
+        root = ET.parse(svg_files[0]).getroot()
+
+        width = root.get("width")
+        page_height = root.get("height")
+
+        if width is None or page_height is None:
+            raise ValueError("SVG dimensions missing")
+
+        # Namespace cleaning
+        root.tag = "{http://www.w3.org/2000/svg}svg"
+
+        total_height = len(svg_files) * float(page_height.replace("px", ""))
+
+        merged = ET.Element(
+            "{http://www.w3.org/2000/svg}svg",
+            {
+                "width": width,
+                "height": str(total_height),
+                "viewBox": (f"0 0 {width.replace('px', '')} {total_height}"),
+            },
         )
 
-        if result.returncode != 0:
-            raise RuntimeError(
-                "LilyPond rendering failed.\n"
-                f"stdout:\n{result.stdout}\n"
-                f"stderr:\n{result.stderr}"
+        for index, svg_file in enumerate(svg_files):
+            page_root = ET.parse(svg_file).getroot()
+
+            group = ET.Element(
+                "{http://www.w3.org/2000/svg}g",
+                {
+                    "transform": (
+                        f"translate(0,{index * float(page_height.replace('px', ''))})"
+                    )
+                },
             )
+
+            for element in page_root:
+                group.append(element)
+
+            merged.append(group)
+
+        tree = ET.ElementTree(merged)
+
+        tree.write(
+            output,
+            encoding="utf-8",
+            xml_declaration=True,
+        )
+
+    @staticmethod
+    def _merge_pdfs(
+        pdf_files: list[Path],
+        output: Path,
+    ) -> None:
+        """
+        Merge PDF pages.
+        """
+
+        pdf_writer = PdfWriter()
+
+        for pdf_file in pdf_files:
+            pdf_writer.append(str(pdf_file))
+
+        with output.open("wb") as file:
+            pdf_writer.write(file)

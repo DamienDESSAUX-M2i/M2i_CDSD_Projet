@@ -1,18 +1,18 @@
 import platform
 
 import tensorflow as tf
-from core import ModelManager
-from models import ApiResponse, HealthResponse, HealthStatus
+
+from app.core import ModelManager
+from app.models import ApiResponse, HealthResponse, HealthStatus
 
 
-def get_health_status() -> ApiResponse[HealthResponse]:
+def get_health_status(model_manager: ModelManager) -> ApiResponse[HealthResponse]:
     """
     Returns system health information.
     """
 
     try:
-        manager = ModelManager.get_instance()
-        model_loaded = manager.model is not None
+        model_loaded = model_manager.model is not None
 
         status = HealthStatus.OK if model_loaded else HealthStatus.DEGRADED
 

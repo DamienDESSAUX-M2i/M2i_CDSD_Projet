@@ -4,7 +4,9 @@ from pathlib import Path
 from time import perf_counter
 
 import pretty_midi
-from audio import (
+from numpy.typing import NDArray
+
+from app.audio import (
     BeatTracker,
     MidiBuilder,
     NoteEvent,
@@ -14,8 +16,7 @@ from audio import (
     RhythmQuantizer,
     ScoreBuilder,
 )
-from core import ProcessingSettings
-from numpy.typing import NDArray
+from app.core import ProcessingSettings
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +176,7 @@ class PostprocessingService:
         # Score rendering
         # ===
 
-        score_pdf_path, score_svg_path = self._score_builder.export_rendered_score(
+        score_pdf_path, score_svg_path = self._score_builder.render(
             musicxml_path=musicxml_path
         )
 

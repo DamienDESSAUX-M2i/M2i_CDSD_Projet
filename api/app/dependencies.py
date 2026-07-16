@@ -1,6 +1,6 @@
-from core import ModelManager
+from app.core import ModelManager
+from app.services import PredictionService
 from fastapi import Request
-from services import PredictionService
 
 
 def get_model_manager(

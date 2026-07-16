@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import librosa
-from audio import DenoiseMethod, NormalizationType
+from app.audio import DenoiseMethod, NormalizationType
 
 API_DIR = Path(__file__).parent.parent.resolve()
 

@@ -2,8 +2,9 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Generic, TypeVar
 
-from core import TIME_ZONE
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.core import TIME_ZONE
 
 T = TypeVar("T")
 
@@ -19,6 +20,10 @@ class HealthStatus(StrEnum):
     ERROR = "error"
 
 
+def current_time() -> datetime:
+    return datetime.now(TIME_ZONE)
+
+
 class ApiResponse(BaseModel, Generic[T]):
     """Generic API response."""
 
@@ -27,7 +32,7 @@ class ApiResponse(BaseModel, Generic[T]):
     )
 
     success: ResponseStatus = ResponseStatus.SUCCESS
-    timestamp: datetime = Field(default_factory=datetime.now(TIME_ZONE))
+    timestamp: datetime = Field(default_factory=current_time)
     data: T
 
 
