@@ -1,5 +1,8 @@
+import logging
 from pathlib import Path
 
+import matplotlib.axes
+import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
 import pretty_midi
@@ -7,15 +10,19 @@ from matplotlib.ticker import MultipleLocator
 
 from .note_tracker import NoteEvent
 
+logger = logging.getLogger(__name__)
+
 
 class PianoRollRenderer:
     """
-    Render MIDI note events as piano roll images.
+    Render MIDI note events into piano-roll visualizations.
 
-    Supported outputs:
-        - PNG image
-        - SVG vector image
-        - raw PNG bytes for HTTP responses
+    Supported output formats:
+        - PNG raster image.
+        - SVG vector image.
+
+    The renderer expects note events expressed in MIDI pitch space
+    with timestamps expressed in seconds.
     """
 
     def __init__(
@@ -25,94 +32,121 @@ class PianoRollRenderer:
         figsize: tuple[int, int] = (12, 7),
     ) -> None:
         """
-        Initialize piano roll renderer.
+        Initialize piano-roll renderer.
 
         Args:
             pitch_min:
                 Lowest MIDI pitch displayed.
+
             pitch_max:
                 Highest MIDI pitch displayed.
+
             figsize:
-                Matplotlib figure size.
+                Matplotlib figure size in inches.
+
+        Raises:
+            ValueError:
+                If MIDI pitch bounds are invalid.
         """
 
-        self.pitch_min = pitch_min
-        self.pitch_max = pitch_max
-        self.figsize = figsize
+        if not 0 <= pitch_min <= 127:
+            raise ValueError(f"Invalid minimum MIDI pitch: {pitch_min}")
+
+        if not 0 <= pitch_max <= 127:
+            raise ValueError(f"Invalid maximum MIDI pitch: {pitch_max}")
+
+        if pitch_min >= pitch_max:
+            raise ValueError("pitch_min must be lower than pitch_max.")
+
+        self._pitch_min = pitch_min
+        self._pitch_max = pitch_max
+        self._figsize = figsize
+
+        logger.debug(
+            "PianoRollRenderer initialized: pitch_range=%d-%d, figsize=%s",
+            pitch_min,
+            pitch_max,
+            figsize,
+        )
 
     def _create_figure(
         self,
         notes: list[NoteEvent],
-    ) -> tuple[plt.Figure, plt.Axes]:
+    ) -> tuple[
+        matplotlib.figure.Figure,
+        matplotlib.axes.Axes,
+    ]:
         """
-        Create a publication-quality piano roll figure.
+        Create a Matplotlib piano-roll figure.
 
         Args:
             notes:
-                Detected note events.
+                Musical note events to display.
 
         Returns:
-            Matplotlib figure and axis.
+            Tuple containing the Matplotlib figure and axes.
         """
 
-        fig, ax = plt.subplots(figsize=self.figsize, constrained_layout=True)
-
-        # ====
-        # Notes
-        # ====
+        fig, ax = plt.subplots(
+            figsize=self._figsize,
+            constrained_layout=True,
+        )
 
         for note in notes:
             ax.broken_barh(
-                xranges=[(note.start_time, note.end_time - note.start_time)],
-                yrange=(note.pitch - 0.4, 0.8),
+                xranges=[
+                    (
+                        note.start_time,
+                        note.duration,
+                    )
+                ],
+                yrange=(
+                    note.pitch - 0.4,
+                    0.8,
+                ),
             )
 
-        # ====
-        # Axes
-        # ====
+        ax.set_xlabel(
+            "Time (s)",
+            fontsize=12,
+        )
 
-        ax.set_xlabel("Time (s)", fontsize=12)
+        ax.set_ylabel(
+            "Pitch",
+            fontsize=12,
+        )
 
-        ax.set_ylabel("Pitch", fontsize=12)
+        ax.set_title(
+            "Automatic Guitar Transcription",
+            fontsize=14,
+        )
 
-        ax.set_title("Automatic Guitar Transcription", fontsize=14, pad=12)
-
-        # ====
-        # Pitch axis
-        # ====
-
-        pitches = np.arange(self.pitch_min, self.pitch_max + 1)
+        pitches = np.arange(
+            self._pitch_min,
+            self._pitch_max + 1,
+        )
 
         ax.set_yticks(pitches)
 
         ax.set_yticklabels(
-            [pretty_midi.note_number_to_name(p) for p in pitches], fontsize=8
+            [pretty_midi.note_number_to_name(pitch) for pitch in pitches],
+            fontsize=8,
         )
 
         ax.set_ylim(
-            self.pitch_min - 0.5,
-            self.pitch_max + 0.5,
+            self._pitch_min - 0.5,
+            self._pitch_max + 0.5,
         )
 
-        # ====
-        # Time axis
-        # ====
-
         if notes:
-            xmax = max(note.end_time for note in notes)
-
             ax.set_xlim(
                 0,
-                xmax,
+                max(note.end_time for note in notes),
             )
 
         ax.xaxis.set_major_locator(MultipleLocator(1.0))
 
         ax.xaxis.set_minor_locator(MultipleLocator(0.25))
-
-        # ====
-        # Grid
-        # ====
 
         ax.grid(
             which="major",
@@ -135,17 +169,8 @@ class PianoRollRenderer:
             alpha=0.25,
         )
 
-        # ====
-        # Clean style
-        # ====
-
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-
-        ax.tick_params(
-            axis="both",
-            labelsize=9,
-        )
 
         return fig, ax
 
@@ -155,31 +180,41 @@ class PianoRollRenderer:
         output_path: Path,
     ) -> None:
         """
-        Render piano roll as PNG.
-
-        The image is also saved locally.
+        Render piano roll as PNG image.
 
         Args:
             notes:
-                Detected MIDI notes.
+                Musical note events.
+
             output_path:
-                Output path.
+                Destination PNG file path.
         """
+
+        logger.debug(
+            "Rendering piano roll PNG: notes=%d, path=%s",
+            len(notes),
+            output_path,
+        )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         fig, _ = self._create_figure(notes)
 
-        fig.tight_layout()
+        try:
+            fig.savefig(
+                output_path,
+                format="png",
+                dpi=150,
+                bbox_inches="tight",
+            )
 
-        fig.savefig(
+        finally:
+            plt.close(fig)
+
+        logger.info(
+            "Piano roll PNG generated: %s",
             output_path,
-            format="png",
-            dpi=150,
-            bbox_inches="tight",
         )
-
-        plt.close(fig)
 
     def render_svg(
         self,
@@ -187,28 +222,40 @@ class PianoRollRenderer:
         output_path: Path,
     ) -> None:
         """
-        Render piano roll as SVG.
+        Render piano roll as SVG vector image.
 
         Args:
             notes:
-                Detected MIDI notes.
+                Musical note events.
+
             output_path:
-                Output path.
+                Destination SVG file path.
         """
+
+        logger.debug(
+            "Rendering piano roll SVG: notes=%d, path=%s",
+            len(notes),
+            output_path,
+        )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         fig, _ = self._create_figure(notes)
 
-        fig.tight_layout()
+        try:
+            fig.savefig(
+                output_path,
+                format="svg",
+                bbox_inches="tight",
+            )
 
-        fig.savefig(
+        finally:
+            plt.close(fig)
+
+        logger.info(
+            "Piano roll SVG generated: %s",
             output_path,
-            format="svg",
-            bbox_inches="tight",
         )
-
-        plt.close(fig)
 
     def render(
         self,
@@ -217,17 +264,26 @@ class PianoRollRenderer:
         svg_path: Path,
     ) -> None:
         """
-        Render both PNG and SVG outputs.
+        Generate all piano-roll visual outputs.
 
         Args:
             notes:
-                Detected MIDI notes.
+                Musical note events.
+
             png_path:
-                PNG output path.
+                Output path for PNG rendering.
+
             svg_path:
-                SVG output path.
+                Output path for SVG rendering.
         """
 
-        png_path = self.render_png(notes=notes, output_path=png_path)
+        logger.info(
+            "Generating piano roll artifacts: notes=%d",
+            len(notes),
+        )
 
-        svg_path = self.render_svg(notes=notes, output_path=svg_path)
+        self.render_png(notes=notes, output_path=png_path)
+
+        self.render_svg(notes=notes, output_path=svg_path)
+
+        logger.info("Piano roll rendering completed.")

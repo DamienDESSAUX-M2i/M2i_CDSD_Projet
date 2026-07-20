@@ -4,53 +4,81 @@ import tempfile
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from app.core import ModelManager
-from app.dependencies import get_model_manager, get_prediction_service
-from app.models import ApiResponse, InferenceMetrics, ModelInfo, PredictionResponse
-from app.services.prediction_service import PredictionService
+from app.dependencies import (
+    get_model_manager,
+    get_prediction_service,
+)
+from app.models import (
+    ApiResponse,
+    InferenceMetrics,
+    ModelInfo,
+    PredictionResponse,
+)
+from app.services import PredictionService
 
 logger = logging.getLogger(__name__)
 
 
 predict_router = APIRouter(
     prefix="/predict",
-    tags=["Prediction"],
+    tags=["prediction"],
 )
 
 
 @predict_router.post(
     "",
     response_model=ApiResponse[PredictionResponse],
+    summary="Run audio transcription",
 )
 async def predict(
     file: UploadFile = File(...),
     model_manager: ModelManager = Depends(get_model_manager),
     prediction_service: PredictionService = Depends(get_prediction_service),
 ) -> ApiResponse[PredictionResponse]:
-    """
-    Run audio transcription pipeline.
+    """Run the complete audio transcription pipeline.
+
+    The pipeline executes:
+
+        1. Audio preprocessing.
+        2. Neural network inference.
+        3. Musical post-processing.
 
     Args:
         file:
             Uploaded WAV audio file.
 
-        service:
-            Prediction pipeline service.
+        model_manager:
+            Loaded machine learning model manager.
+
+        prediction_service:
+            Audio transcription orchestration service.
 
     Returns:
-        Generated transcription artifacts and metrics.
+        Generated transcription artifacts and processing metrics.
 
     Raises:
         HTTPException:
-            If prediction fails.
+            If the uploaded file is invalid or processing fails.
     """
 
-    if file.content_type not in (
+    logger.info(
+        "Prediction request received: filename='%s'.",
+        file.filename,
+    )
+
+    if file.content_type not in {
         "audio/wav",
         "audio/x-wav",
         "audio/wave",
-    ):
+    }:
+        logger.warning(
+            "Rejected file with unsupported content type: %s.",
+            file.content_type,
+        )
+
         raise HTTPException(
             status_code=400,
             detail="Only WAV files are supported.",
@@ -59,34 +87,72 @@ async def predict(
     temporary_path: Path | None = None
 
     try:
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temporary_file:
-            shutil.copyfileobj(file.file, temporary_file)
+        with tempfile.NamedTemporaryFile(
+            suffix=".wav",
+            delete=False,
+        ) as temporary_file:
+            shutil.copyfileobj(
+                file.file,
+                temporary_file,
+            )
 
-            temporary_path = Path(temporary_file.name)
+            temporary_path = Path(
+                temporary_file.name,
+            )
 
-        result = prediction_service.predict(temporary_path)
+        await file.close()
+
+        result = await run_in_threadpool(
+            prediction_service.predict,
+            temporary_path,
+        )
 
         postprocessing = result.postprocessing
+
+        total_time = (
+            result.preprocessing.preprocessing_time
+            + result.inference.inference_time
+            + postprocessing.postprocessing_time
+        )
+
+        logger.info(
+            (
+                "Prediction completed successfully "
+                "(processing_id=%s, total_time=%.3f s)."
+            ),
+            result.processing_id,
+            total_time,
+        )
 
         return ApiResponse(
             data=PredictionResponse(
                 processing_id=result.processing_id,
                 detected_notes=len(postprocessing.notes),
-                quantized_notes=len(postprocessing.quantized_notes),
+                quantized_notes=len(
+                    postprocessing.quantized_notes,
+                ),
                 midi_path=str(postprocessing.midi_path),
-                piano_roll_png_path=str(postprocessing.piano_roll_png_path),
-                piano_roll_svg_path=str(postprocessing.piano_roll_svg_path),
-                score_pdf_path=str(postprocessing.score_pdf_path),
-                score_svg_path=str(postprocessing.score_svg_path),
+                piano_roll_png_path=str(
+                    postprocessing.piano_roll_png_path,
+                ),
+                piano_roll_svg_path=str(
+                    postprocessing.piano_roll_svg_path,
+                ),
+                score_pdf_path=(
+                    str(postprocessing.score_pdf_path)
+                    if postprocessing.score_pdf_path
+                    else None
+                ),
+                score_svg_path=(
+                    str(postprocessing.score_svg_path)
+                    if postprocessing.score_svg_path
+                    else None
+                ),
                 metrics=InferenceMetrics(
-                    preprocessing_secondes=result.preprocessing.preprocessing_time,
-                    inference_secondes=result.inference.inference_time,
-                    postprocessing_secondes=postprocessing.postprocessing_time,
-                    total_secondes=(
-                        result.preprocessing.preprocessing_time
-                        + postprocessing.postprocessing_time
-                        + postprocessing.postprocessing_time
-                    ),
+                    preprocessing_seconds=(result.preprocessing.preprocessing_time),
+                    inference_seconds=(result.inference.inference_time),
+                    postprocessing_seconds=(postprocessing.postprocessing_time),
+                    total_seconds=total_time,
                 ),
                 model=ModelInfo(
                     name=model_manager.metadata.name,
@@ -96,14 +162,27 @@ async def predict(
                     output_shape=model_manager.metadata.output_shape,
                     threshold=model_manager.metadata.threshold,
                 ),
-            )
+            ),
         )
 
-    except Exception as exc:
-        logger.exception("Prediction failed.")
+    except HTTPException:
+        raise
 
-        raise HTTPException(status_code=500, detail="Prediction failed.") from exc
+    except Exception:
+        logger.exception(
+            "Prediction failed.",
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Prediction failed.",
+        )
 
     finally:
-        if temporary_path and temporary_path.exists():
+        if temporary_path is not None and temporary_path.exists():
             temporary_path.unlink()
+
+            logger.debug(
+                "Temporary audio file removed: '%s'.",
+                temporary_path,
+            )

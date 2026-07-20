@@ -11,19 +11,25 @@ from .audio_validator import validate_audio
 logger = logging.getLogger(__name__)
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class ExtractedFeatures:
-    """Container for raw extracted feature matrices.
-
-    This structure holds time-aligned feature matrices before conversion
-    into tabular format.
+    """Container holding extracted audio feature matrices.
 
     Attributes:
-        stft_db: STFT magnitude in decibel scale, shape (freq_bins, time_frames).
-        mel_db: Mel spectrogram in decibel scale, shape (mel_bins, time_frames).
-        cqt_db: Constant-Q transform in decibel scale, shape (cqt_bins, time_frames).
-        chroma: Chromagram (12 pitch classes), shape (12, time_frames).
-        mfcc: MFCC coefficients, shape (n_mfcc, time_frames).
+        stft_db:
+            STFT magnitude in decibel scale.
+
+        mel_db:
+            Mel spectrogram in decibel scale.
+
+        cqt_db:
+            Constant-Q transform in decibel scale.
+
+        chroma:
+            Chromagram representation.
+
+        mfcc:
+            Mel-frequency cepstral coefficients.
     """
 
     stft_db: NDArray[np.floating[Any]] | None = None
@@ -34,22 +40,19 @@ class ExtractedFeatures:
 
 
 class AudioFeatureExtractor:
-    """Deterministic feature extraction for audio ML pipelines.
+    """Extract deterministic audio features for ML inference.
 
-    This class extracts multiple time-frequency representations from mono audio
-    signals and ensures temporal alignment across features using a shared hop length.
+    The extractor generates time-aligned spectral representations.
 
-    Extracted representations include:
-        - STFT (log-magnitude in dB)
-        - Mel spectrogram (power in dB)
-        - Constant-Q Transform (log-magnitude in dB)
-        - Chromagram (pitch class energy)
-        - MFCC (cepstral coefficients)
+    Supported features:
 
-    Assumptions:
-        - Input audio is mono and already validated
-        - Sampling rate is consistent across all calls
-        - Features are aligned along time axis (frame axis)
+        - STFT magnitude in dB.
+        - Mel spectrogram in dB.
+        - Constant-Q transform in dB.
+        - CQT chromagram.
+        - MFCC coefficients.
+
+    Input audio must be mono and floating point.
     """
 
     def __init__(
@@ -63,6 +66,34 @@ class AudioFeatureExtractor:
         cqt_fmin: float = librosa.note_to_hz("E2"),
         chroma_cqt_norm: int | float | None = 2,
     ) -> None:
+        """Initialize feature extractor.
+
+        Args:
+            n_fft:
+                FFT window size.
+
+            hop_length:
+                Hop size between frames.
+
+            n_mels:
+                Number of Mel bands.
+
+            n_mfcc:
+                Number of MFCC coefficients.
+
+            n_cqt_bins:
+                Number of CQT frequency bins.
+
+            bins_per_octave:
+                CQT bins per octave.
+
+            cqt_fmin:
+                Minimum CQT frequency.
+
+            chroma_cqt_norm:
+                Chromagram normalization mode.
+        """
+
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.n_mels = n_mels
@@ -72,99 +103,136 @@ class AudioFeatureExtractor:
         self.cqt_fmin = cqt_fmin
         self.chroma_cqt_norm = chroma_cqt_norm
 
-    def compute_stft(
-        self, audio_data: NDArray[np.floating[Any]]
-    ) -> NDArray[np.floating[Any]]:
-        """Compute Short-Time Fourier Transform (STFT) magnitude in dB scale.
+    def _validate_input(
+        self,
+        audio_data: NDArray[np.floating[Any]],
+        sample_rate: int,
+    ) -> None:
+        """Validate extractor inputs."""
 
-        The STFT is computed using a Hann window with configurable FFT size and hop length.
-        Output is converted to log-amplitude scale for numerical stability.
+        validate_audio(audio_data)
+
+        if audio_data.ndim != 1:
+            raise ValueError("AudioFeatureExtractor requires mono audio.")
+
+        if sample_rate <= 0:
+            raise ValueError("Sample rate must be strictly positive.")
+
+    def compute_stft(
+        self,
+        audio_data: NDArray[np.floating[Any]],
+    ) -> NDArray[np.floating[Any]]:
+        """Compute STFT magnitude representation.
 
         Args:
-            audio_data: Input mono audio signal (1D float array).
+            audio_data:
+                Mono waveform.
 
         Returns:
-            STFT spectrogram in decibel scale with shape (freq_bins, time_frames).
+            STFT matrix in dB scale.
         """
 
-        logger.debug("Computing STFT.")
-        stft = librosa.stft(
+        logger.debug(
+            "Computing STFT: n_fft=%d hop_length=%d.",
+            self.n_fft,
+            self.hop_length,
+        )
+
+        spectrum = librosa.stft(
             audio_data,
             n_fft=self.n_fft,
             hop_length=self.hop_length,
-            center=True,
         )
-        return librosa.amplitude_to_db(np.abs(stft), ref=np.max)
+
+        return librosa.amplitude_to_db(np.abs(spectrum), ref=np.max)
 
     def compute_mel(
-        self, audio_data: NDArray[np.floating[Any]], sample_rate: int
+        self,
+        audio_data: NDArray[np.floating[Any]],
+        sample_rate: int,
     ) -> NDArray[np.floating[Any]]:
-        """Compute Mel-scaled spectrogram in dB scale.
-
-        The Mel spectrogram is computed from a power spectrogram and mapped
-        onto a perceptual frequency scale.
+        """Compute Mel spectrogram.
 
         Args:
-            audio_data: Input mono audio signal (1D float array).
-            sample_rate: Sampling rate of the audio signal in Hz.
+            audio_data:
+                Mono waveform.
+
+            sample_rate:
+                Sampling rate.
 
         Returns:
-            Mel spectrogram in dB scale with shape (mel_bins, time_frames).
+            Mel spectrogram in dB.
         """
 
-        logger.debug("Computing Mel spectrogram.")
+        logger.debug(
+            "Computing Mel spectrogram: n_mels=%d.",
+            self.n_mels,
+        )
+
         mel = librosa.feature.melspectrogram(
             y=audio_data,
             sr=sample_rate,
             n_fft=self.n_fft,
             hop_length=self.hop_length,
             n_mels=self.n_mels,
-            center=True,
         )
+
         return librosa.power_to_db(mel, ref=np.max)
 
     def compute_cqt(
-        self, audio_data: NDArray[np.floating[Any]], sample_rate: int
+        self,
+        audio_data: NDArray[np.floating[Any]],
+        sample_rate: int,
     ) -> NDArray[np.floating[Any]]:
-        """Compute Constant-Q Transform (CQT) in dB scale.
-
-        The CQT provides a logarithmic frequency resolution aligned with musical pitch.
+        """Compute Constant-Q transform.
 
         Args:
-            audio_data: Input mono audio signal (1D float array).
-            sample_rate: Sampling rate of the audio signal in Hz.
+            audio_data:
+                Mono waveform.
+
+            sample_rate:
+                Sampling rate.
 
         Returns:
-            CQT spectrogram in dB scale with shape (cqt_bins, time_frames).
+            CQT representation in dB.
         """
 
-        logger.debug("Computing CQT.")
+        logger.debug(
+            "Computing CQT: bins=%d.",
+            self.n_cqt_bins,
+        )
+
         cqt = librosa.cqt(
-            audio_data,
+            y=audio_data,
             sr=sample_rate,
             hop_length=self.hop_length,
             n_bins=self.n_cqt_bins,
             bins_per_octave=self.bins_per_octave,
             fmin=self.cqt_fmin,
         )
+
         return librosa.amplitude_to_db(np.abs(cqt), ref=np.max)
 
     def compute_chroma(
-        self, audio_data: NDArray[np.floating[Any]], sample_rate: int
+        self,
+        audio_data: NDArray[np.floating[Any]],
+        sample_rate: int,
     ) -> NDArray[np.floating[Any]]:
-        """Compute chromagram using Constant-Q Transform (CQT).
-
-        The chromagram represents energy distribution across the 12 pitch classes.
+        """Compute CQT chromagram.
 
         Args:
-            audio_data: Input mono audio signal (1D float array).
-            sample_rate: Sampling rate of the audio signal in Hz.
+            audio_data:
+                Mono waveform.
+
+            sample_rate:
+                Sampling rate.
 
         Returns:
-            Chromagram with shape (12, time_frames).
+            Chromagram matrix.
         """
 
-        logger.debug("Computing chroma.")
+        logger.debug("Computing chromagram.")
+
         return librosa.feature.chroma_cqt(
             y=audio_data,
             sr=sample_rate,
@@ -174,21 +242,28 @@ class AudioFeatureExtractor:
         )
 
     def compute_mfcc(
-        self, audio_data: NDArray[np.floating[Any]], sample_rate: int
+        self,
+        audio_data: NDArray[np.floating[Any]],
+        sample_rate: int,
     ) -> NDArray[np.floating[Any]]:
-        """Compute Mel-Frequency Cepstral Coefficients (MFCCs).
-
-        MFCCs represent a compressed spectral envelope using a DCT over Mel bands.
+        """Compute MFCC representation.
 
         Args:
-            audio_data: Input mono audio signal (1D float array).
-            sample_rate: Sampling rate of the audio signal in Hz.
+            audio_data:
+                Mono waveform.
+
+            sample_rate:
+                Sampling rate.
 
         Returns:
-            MFCC matrix with shape (n_mfcc, time_frames).
+            MFCC matrix.
         """
 
-        logger.debug("Computing MFCC.")
+        logger.debug(
+            "Computing MFCC: coefficients=%d.",
+            self.n_mfcc,
+        )
+
         return librosa.feature.mfcc(
             y=audio_data,
             sr=sample_rate,
@@ -196,7 +271,6 @@ class AudioFeatureExtractor:
             n_mels=self.n_mels,
             n_fft=self.n_fft,
             hop_length=self.hop_length,
-            center=True,
         )
 
     def extract(
@@ -210,24 +284,35 @@ class AudioFeatureExtractor:
         use_chroma: bool = True,
         use_mfcc: bool = False,
     ) -> ExtractedFeatures:
-        """Extract multiple time-aligned audio features.
-
-        Each feature extraction can be enabled or disabled independently.
+        """Extract enabled audio features.
 
         Args:
-            audio_data: Input mono audio signal (1D float array).
-            sample_rate: Sampling rate of the audio signal in Hz.
-            use_stft: Whether to compute STFT features.
-            use_mel: Whether to compute Mel spectrogram features.
-            use_cqt: Whether to compute CQT features.
-            use_chroma: Whether to compute chromagram features.
-            use_mfcc: Whether to compute MFCC features.
+            audio_data:
+                Mono waveform.
+
+            sample_rate:
+                Sampling rate.
+
+            use_stft:
+                Enable STFT extraction.
+
+            use_mel:
+                Enable Mel extraction.
+
+            use_cqt:
+                Enable CQT extraction.
+
+            use_chroma:
+                Enable chromagram extraction.
+
+            use_mfcc:
+                Enable MFCC extraction.
 
         Returns:
-            ExtractedFeatures containing extracted features.
+            Extracted feature container.
         """
 
-        validate_audio(audio_data)
+        self._validate_input(audio_data, sample_rate)
 
         logger.debug("Starting feature extraction.")
 
@@ -242,35 +327,41 @@ class AudioFeatureExtractor:
     def stack_features(
         self,
         features: ExtractedFeatures,
-    ) -> NDArray[np.floating[Any]]:
-        """Concatenate extracted feature matrices along the feature axis.
-
-        Every feature matrix is transposed so that rows correspond to time frames
-        and columns correspond to feature dimensions.
+    ) -> NDArray[np.float32]:
+        """Stack feature matrices into ML input format.
 
         Args:
-            features: Extracted feature container.
+            features:
+                Extracted feature container.
 
         Returns:
-            Feature matrix of shape (n_frames, n_features).
+            Matrix shaped ``(frames, features)``.
 
         Raises:
-            ValueError: If no feature has been extracted.
+            ValueError:
+                If no feature exists.
         """
 
         matrices: list[NDArray[np.floating[Any]]] = []
 
-        for feature in (
+        for matrix in (
             features.stft_db,
             features.mel_db,
             features.cqt_db,
             features.chroma,
             features.mfcc,
         ):
-            if feature is not None:
-                matrices.append(feature.T)
+            if matrix is not None:
+                matrices.append(matrix.T)
 
         if not matrices:
-            raise ValueError("No feature has been extracted.")
+            raise ValueError("No features available for stacking.")
 
-        return np.concatenate(matrices, axis=1).astype(np.float32)
+        stacked = np.concatenate(matrices, axis=1)
+
+        logger.debug(
+            "Feature stack created: shape=%s.",
+            stacked.shape,
+        )
+
+        return stacked.astype(np.float32, copy=False)

@@ -4,6 +4,8 @@ from time import perf_counter
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
 from app.audio import (
     AudioCleaner,
     AudioFeatureExtractor,
@@ -11,13 +13,21 @@ from app.audio import (
     ContextWindowBuilder,
 )
 from app.core import ProcessingSettings
-from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
 class PreprocessingResult:
+    """Result of the preprocessing pipeline.
+
+    Attributes:
+        preprocessing_time: Total preprocessing time in seconds.
+        audio: Preprocessed waveform.
+        sample_rate: Sampling rate of the preprocessed waveform.
+        features: Feature matrix ready for inference.
+    """
+
     preprocessing_time: float
     audio: NDArray[np.floating[Any]]
     sample_rate: int
@@ -25,37 +35,39 @@ class PreprocessingResult:
 
 
 class PreprocessingService:
-    """Inference preprocessing pipeline.
+    """Preprocess audio before model inference.
 
-    This service reproduces exactly the preprocessing pipeline used during
-    model training in order to guarantee identical feature generation during
-    inference.
+    This service reproduces the preprocessing pipeline used during model
+    training to guarantee identical feature generation during inference.
 
     The pipeline consists of:
 
-    1. Audio normalization.
-    2. Audio cleaning.
-    3. Feature extraction.
-    4. Optional temporal context window construction.
+        1. Audio normalization.
+        2. Audio cleaning.
+        3. Feature extraction.
+        4. Optional temporal context window construction.
     """
 
-    def __init__(self, settings: ProcessingSettings):
+    def __init__(
+        self,
+        settings: ProcessingSettings,
+    ) -> None:
         """Initialize the preprocessing service.
 
         Args:
-            settings: Application settings controlling every preprocessing step.
+            settings: Processing configuration.
         """
 
-        self.settings = settings
+        self._settings = settings
 
-        self.normalizer = AudioNormalizer()
+        self._normalizer = AudioNormalizer()
 
-        self.cleaner = AudioCleaner(
+        self._cleaner = AudioCleaner(
             n_fft=settings.n_fft,
             hop_length=settings.hop_length,
         )
 
-        self.extractor = AudioFeatureExtractor(
+        self._extractor = AudioFeatureExtractor(
             n_fft=settings.n_fft,
             hop_length=settings.hop_length,
             n_mels=settings.n_mels,
@@ -66,7 +78,7 @@ class PreprocessingService:
             chroma_cqt_norm=settings.chroma_cqt_norm,
         )
 
-        self.context_builder = ContextWindowBuilder(
+        self._context_builder = ContextWindowBuilder(
             context_size=settings.context_size,
         )
 
@@ -75,49 +87,56 @@ class PreprocessingService:
         audio: NDArray[np.floating[Any]],
         sample_rate: int,
     ) -> PreprocessingResult:
-        """Preprocess an audio signal before inference.
+        """Run the complete preprocessing pipeline.
 
         Args:
             audio: Raw audio waveform.
             sample_rate: Sampling rate of the input waveform.
 
         Returns:
-            Preprocessed feature matrix.
-
-            Shape without context window:
-                (n_frames, n_features)
-
-            Shape with context window:
-                (n_frames, context_window, n_features)
+            Result of the preprocessing pipeline.
         """
 
-        logger.info("Starting preprocessing...")
+        logger.info("Starting audio preprocessing.")
 
-        t0 = perf_counter()
+        logger.debug(
+            "Input audio: sample_rate=%d Hz, shape=%s.",
+            sample_rate,
+            audio.shape,
+        )
+
+        start_time = perf_counter()
 
         audio, sample_rate = self._preprocess_audio(
-            audio,
-            sample_rate,
+            audio=audio,
+            sample_rate=sample_rate,
         )
 
         features = self._extract_features(
-            audio,
-            sample_rate,
+            audio=audio,
+            sample_rate=sample_rate,
         )
 
         features = self._build_context(features)
 
-        preprocessing_time = perf_counter() - t0
+        preprocessing_time = perf_counter() - start_time
 
         logger.info(
-            f"Preprocessing completed in {preprocessing_time:.3f} s. Output shape={features.shape}"
+            "Audio preprocessing completed in %.3f s.",
+            preprocessing_time,
+        )
+
+        logger.debug(
+            "Preprocessing output: audio_shape=%s, features_shape=%s.",
+            audio.shape,
+            features.shape,
         )
 
         return PreprocessingResult(
             preprocessing_time=preprocessing_time,
             audio=audio,
             sample_rate=sample_rate,
-            features=features.astype(np.float32),
+            features=features.astype(np.float32, copy=False),
         )
 
     def _preprocess_audio(
@@ -132,44 +151,55 @@ class PreprocessingService:
             sample_rate: Input sampling rate.
 
         Returns:
-            Tuple containing:
-                - Cleaned and normalized waveform.
-                - Output sampling rate.
+            Tuple containing the processed waveform and its sampling rate.
         """
 
-        audio = self.normalizer.to_mono(audio)
+        logger.debug("Converting audio to mono.")
+        audio = self._normalizer.to_mono(audio)
 
-        if self.settings.use_remove_dc_offset:
-            audio = self.normalizer.remove_dc_offset(audio)
+        if self._settings.use_remove_dc_offset:
+            logger.debug("Removing DC offset.")
+            audio = self._normalizer.remove_dc_offset(audio)
 
-        audio, sample_rate = self.normalizer.resample(
+        logger.debug(
+            "Resampling audio from %d Hz to %d Hz.",
+            sample_rate,
+            self._settings.target_sample_rate,
+        )
+
+        audio, sample_rate = self._normalizer.resample(
             audio,
             sample_rate,
-            self.settings.target_sample_rate,
+            self._settings.target_sample_rate,
         )
 
-        audio = self.cleaner.clean(
+        logger.debug("Cleaning audio signal.")
+
+        audio = self._cleaner.clean(
             audio,
             sample_rate,
-            use_highpass=self.settings.use_highpass,
-            highpass_cutoff=self.settings.highpass_cutoff,
-            use_lowpass=self.settings.use_lowpass,
-            lowpass_cutoff=self.settings.lowpass_cutoff,
-            denoise_method=self.settings.denoise_method,
-            wiener_strength=self.settings.wiener_strength,
-            use_trim=self.settings.use_trim,
-            trim_db=self.settings.trim_db,
+            use_highpass=self._settings.use_highpass,
+            highpass_cutoff=self._settings.highpass_cutoff,
+            use_lowpass=self._settings.use_lowpass,
+            lowpass_cutoff=self._settings.lowpass_cutoff,
+            denoise_method=self._settings.denoise_method,
+            wiener_strength=self._settings.wiener_strength,
+            use_trim=self._settings.use_trim,
+            trim_db=self._settings.trim_db,
         )
 
-        audio = self.normalizer.normalize(
+        logger.debug("Normalizing audio.")
+
+        audio = self._normalizer.normalize(
             audio,
-            normalization_type=self.settings.normalization_type,
-            target_peak=self.settings.target_peak,
-            target_rms=self.settings.target_rms,
+            normalization_type=self._settings.normalization_type,
+            target_peak=self._settings.target_peak,
+            target_rms=self._settings.target_rms,
         )
 
-        if self.settings.use_to_float32:
-            audio = self.normalizer.to_float32(audio)
+        if self._settings.use_to_float32:
+            logger.debug("Converting waveform to float32.")
+            audio = self._normalizer.to_float32(audio)
 
         return audio, sample_rate
 
@@ -178,48 +208,72 @@ class PreprocessingService:
         audio: NDArray[np.floating[Any]],
         sample_rate: int,
     ) -> NDArray[np.floating[Any]]:
-        """Extract frame-wise acoustic features.
+        """Extract acoustic features from an audio waveform.
 
         Args:
             audio: Preprocessed mono waveform.
-            sample_rate: Sampling rate.
+            sample_rate: Waveform sampling rate.
 
         Returns:
-            Feature matrix of shape (n_frames, n_features).
+            Feature matrix of shape ``(n_frames, n_features)``.
         """
 
-        features = self.extractor.extract(
+        logger.debug("Extracting acoustic features.")
+
+        features = self._extractor.extract(
             audio,
             sample_rate,
-            use_stft=self.settings.use_stft,
-            use_mel=self.settings.use_mel,
-            use_cqt=self.settings.use_cqt,
-            use_chroma=self.settings.use_chroma,
-            use_mfcc=self.settings.use_mfcc,
+            use_stft=self._settings.use_stft,
+            use_mel=self._settings.use_mel,
+            use_cqt=self._settings.use_cqt,
+            use_chroma=self._settings.use_chroma,
+            use_mfcc=self._settings.use_mfcc,
         )
 
-        return self.extractor.stack_features(features=features)
+        stacked_features = self._extractor.stack_features(features)
+
+        logger.debug(
+            "Feature extraction completed: shape=%s.",
+            stacked_features.shape,
+        )
+
+        return stacked_features
 
     def _build_context(
         self,
-        features: NDArray[np.floating[Any]],
+        features: NDArray[np.float32],
     ) -> NDArray[np.float32]:
-        """Construct temporal context windows.
-
-        If context windows are disabled, the original feature matrix is returned
-        unchanged.
+        """Build temporal context windows.
 
         Args:
-            features: Feature matrix of shape (n_frames, n_features).
+            features: Frame-wise feature matrix.
 
         Returns:
-            Either:
+            Feature tensor with shape:
 
-            - (n_frames, n_features)
-            - (n_frames, context_window, n_features)
+            Without context:
+                (n_frames, n_features)
+
+            With context:
+                (n_frames, context_window, n_features, 1)
         """
 
-        if not self.settings.use_context_window:
-            return features
+        if not self._settings.use_context_window:
+            logger.debug("Context window disabled.")
+            return features.astype(np.float32, copy=False)
 
-        return self.context_builder.build_context_windows(features)
+        logger.debug(
+            "Building context windows (context_size=%d).",
+            self._settings.context_size,
+        )
+
+        contextual_features = self._context_builder.build_context_windows(
+            features,
+        )
+
+        logger.debug(
+            "Context windows built: shape=%s.",
+            contextual_features.shape,
+        )
+
+        return contextual_features.astype(np.float32, copy=False)

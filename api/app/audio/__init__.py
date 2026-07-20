@@ -6,7 +6,6 @@ from .context_window_builder import ContextWindowBuilder
 from .midi_builder import MidiBuilder
 from .note_tracker import NoteEvent, NoteTracker
 from .piano_roll_renderer import PianoRollRenderer
-from .prefix_features_target import PrefixFeaturesTarget
 from .rhythm_quantizer import QuantizedNoteEvent, RhythmQuantizer
 from .score_builder import ScoreBuilder
 
@@ -23,7 +22,6 @@ __all__ = [
     "NoteEvent",
     "NoteTracker",
     "PianoRollRenderer",
-    "PrefixFeaturesTarget",
     "QuantizedNoteEvent",
     "RhythmQuantizer",
     "ScoreBuilder",

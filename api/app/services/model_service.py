@@ -1,13 +1,27 @@
-from app.core import ModelManager
+import logging
+
+from app.core import ModelManager, ModelMetadata
 from app.models import ApiResponse, ModelResponse
 
+logger = logging.getLogger(__name__)
 
-def get_loaded_model_information(model_manager: ModelManager):
-    """
-    Returns model information.
+
+def get_loaded_model_information(
+    model_manager: ModelManager,
+) -> ApiResponse[ModelResponse]:
+    """Retrieve information about the loaded machine learning model.
+
+    Args:
+        model_manager: Model manager containing the loaded model and its
+            metadata.
+
+    Returns:
+        API response containing the model information.
     """
 
-    meta = model_manager.metadata
+    logger.debug("Retrieving loaded model information.")
+
+    meta: ModelMetadata = model_manager.metadata
 
     return ApiResponse(
         data=ModelResponse(
@@ -19,5 +33,5 @@ def get_loaded_model_information(model_manager: ModelManager):
             threshold=meta.threshold,
             train_dataset=meta.dataset,
             description=meta.description,
-        )
+        ),
     )

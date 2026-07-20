@@ -9,7 +9,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, slots=True)
 class NoteEvent:
-    """Represents a detected musical note."""
+    """Represent a detected musical note event.
+
+    Attributes:
+        pitch:
+            MIDI pitch number.
+        start_time:
+            Note onset time in seconds.
+        end_time:
+            Note offset time in seconds.
+        velocity:
+            MIDI velocity value.
+    """
 
     pitch: int
     start_time: float
@@ -18,47 +29,36 @@ class NoteEvent:
 
     @property
     def duration(self) -> float:
-        """Return note duration in seconds."""
+        """Return note duration in seconds.
+
+        Returns:
+            Duration between onset and offset.
+        """
         return self.end_time - self.start_time
 
 
 class NoteTracker:
-    """Convert frame-wise piano rolls into musical note events.
+    """Convert binary piano-roll predictions into musical notes.
 
-    The model output is expected to be a binary piano roll:
+    The input piano roll is expected to have the shape:
 
-        shape = (frames, pitches)
+        ``(n_frames, n_pitches)``
 
-    where each column corresponds to a MIDI pitch.
+    Consecutive active frames are merged into a single note event.
 
-    Notes are reconstructed by grouping consecutive active frames.
-
-    Example:
-
-        Frame activation:
-
-        [
-            [0,1],
-            [0,1],
-            [0,1],
-            [0,0],
-        ]
-
-        becomes:
-
-        Note(
-            pitch=41,
-            start_time=0,
-            end_time=3 * frame_duration
-        )
-
-    Args:
+    Attributes:
         hop_length:
+            Number of audio samples between consecutive frames.
         sample_rate:
+            Audio sampling rate.
         midi_pitch_min:
+            Lowest MIDI pitch represented by the piano roll.
         midi_pitch_max:
+            Highest MIDI pitch represented by the piano roll.
         min_note_duration:
+            Minimum duration required to keep a detected note.
         velocity:
+            MIDI velocity assigned to generated notes.
     """
 
     def __init__(
@@ -70,14 +70,50 @@ class NoteTracker:
         min_note_duration: float = 0.02,
         velocity: int = 100,
     ) -> None:
+        """Initialize the note tracker.
 
-        self.hop_length = hop_length
-        self.sample_rate = sample_rate
-        self.midi_pitch_min = midi_pitch_min
-        self.midi_pitch_max = midi_pitch_max
-        self.min_note_duration = min_note_duration
-        self.velocity = velocity
-        self.frame_duration = self.hop_length / self.sample_rate
+        Args:
+            hop_length:
+                STFT hop length used during feature extraction.
+            sample_rate:
+                Audio sampling rate.
+            midi_pitch_min:
+                Lowest supported MIDI pitch.
+            midi_pitch_max:
+                Highest supported MIDI pitch.
+            min_note_duration:
+                Minimum note duration in seconds.
+            velocity:
+                MIDI velocity.
+
+        Raises:
+            ValueError:
+                If parameters are invalid.
+        """
+
+        if hop_length <= 0:
+            raise ValueError("hop_length must be strictly positive.")
+
+        if sample_rate <= 0:
+            raise ValueError("sample_rate must be strictly positive.")
+
+        if midi_pitch_min > midi_pitch_max:
+            raise ValueError("midi_pitch_min must be lower than midi_pitch_max.")
+
+        if min_note_duration < 0:
+            raise ValueError("min_note_duration cannot be negative.")
+
+        if not 0 <= velocity <= 127:
+            raise ValueError("velocity must be between 0 and 127.")
+
+        self._hop_length = hop_length
+        self._sample_rate = sample_rate
+        self._midi_pitch_min = midi_pitch_min
+        self._midi_pitch_max = midi_pitch_max
+        self._min_note_duration = min_note_duration
+        self._velocity = velocity
+
+        self._frame_duration = hop_length / sample_rate
 
     def extract_notes(
         self,
@@ -87,32 +123,44 @@ class NoteTracker:
 
         Args:
             piano_roll:
-                Binary matrix with shape:
+                Binary piano roll with shape:
 
-                    (n_frames, n_pitches)
+                ``(n_frames, n_pitches)``
 
         Returns:
-            List of detected notes.
+            List of reconstructed musical notes.
+
+        Raises:
+            ValueError:
+                If the piano roll shape is invalid.
         """
 
         self._validate_piano_roll(piano_roll)
 
-        notes: list[NoteEvent] = []
-
         n_frames, n_pitches = piano_roll.shape
 
         logger.info(
-            f"Tracking notes from piano roll ({n_frames} frames, {n_pitches} pitches)."
+            "Starting note tracking: frames=%d, pitches=%d.",
+            n_frames,
+            n_pitches,
         )
 
-        for pitch_idx in range(n_pitches):
-            pitch = self.midi_pitch_min + pitch_idx
+        notes: list[NoteEvent] = []
 
-            activations = piano_roll[:, pitch_idx]
+        for pitch_index in range(n_pitches):
+            pitch = self._midi_pitch_min + pitch_index
 
-            notes.extend(self._extract_pitch_notes(activations, pitch))
+            notes.extend(
+                self._extract_pitch_notes(
+                    piano_roll[:, pitch_index],
+                    pitch,
+                )
+            )
 
-        logger.info(f"Detected {len(notes)} notes.")
+        logger.info(
+            "Note tracking completed: detected_notes=%d.",
+            len(notes),
+        )
 
         return notes
 
@@ -121,26 +169,60 @@ class NoteTracker:
         activations: NDArray[np.bool_],
         pitch: int,
     ) -> list[NoteEvent]:
-        """Extract consecutive activations for one pitch."""
+        """Extract notes for a single MIDI pitch.
+
+        Args:
+            activations:
+                Binary activation sequence.
+            pitch:
+                MIDI pitch number.
+
+        Returns:
+            List of detected notes.
+        """
 
         notes: list[NoteEvent] = []
 
         start_frame: int | None = None
 
-        for frame, active in enumerate(activations):
+        for frame_index, active in enumerate(activations):
             if active and start_frame is None:
-                start_frame = frame
+                start_frame = frame_index
 
             elif not active and start_frame is not None:
-                notes.append(self._create_note(pitch, start_frame, frame))
+                notes.append(
+                    self._create_note(
+                        pitch,
+                        start_frame,
+                        frame_index,
+                    )
+                )
 
                 start_frame = None
 
-        # Handle note reaching end of sequence
         if start_frame is not None:
-            notes.append(self._create_note(pitch, start_frame, len(activations)))
+            notes.append(
+                self._create_note(
+                    pitch,
+                    start_frame,
+                    len(activations),
+                )
+            )
 
-        return [note for note in notes if note.duration >= self.min_note_duration]
+        filtered_notes = [
+            note for note in notes if note.duration >= self._min_note_duration
+        ]
+
+        removed = len(notes) - len(filtered_notes)
+
+        if removed:
+            logger.debug(
+                "Filtered %d short notes for pitch=%d.",
+                removed,
+                pitch,
+            )
+
+        return filtered_notes
 
     def _create_note(
         self,
@@ -148,29 +230,64 @@ class NoteTracker:
         start_frame: int,
         end_frame: int,
     ) -> NoteEvent:
-        """Create note from frame boundaries."""
+        """Create a note event from frame boundaries.
+
+        Args:
+            pitch:
+                MIDI pitch.
+            start_frame:
+                Starting frame index.
+            end_frame:
+                Ending frame index.
+
+        Returns:
+            Musical note event.
+        """
 
         return NoteEvent(
             pitch=pitch,
-            start_time=(start_frame * self.frame_duration),
-            end_time=(end_frame * self.frame_duration),
-            velocity=self.velocity,
+            start_time=start_frame * self._frame_duration,
+            end_time=end_frame * self._frame_duration,
+            velocity=self._velocity,
         )
 
     def _validate_piano_roll(
         self,
         piano_roll: NDArray[np.bool_],
     ) -> None:
-        """Validate piano roll dimensions."""
+        """Validate piano-roll dimensions.
+
+        Args:
+            piano_roll:
+                Binary piano-roll tensor.
+
+        Raises:
+            ValueError:
+                If dimensions are invalid.
+        """
 
         if piano_roll.ndim != 2:
-            raise ValueError("Piano roll must have shape (frames, pitches).")
-
-        expected_pitches = self.midi_pitch_max - self.midi_pitch_min + 1
-
-        if piano_roll.shape[1] != expected_pitches:
             raise ValueError(
-                "Invalid piano roll pitch dimension. "
-                f"Expected {expected_pitches}, "
-                f"got {piano_roll.shape[1]}."
+                (
+                    "Piano roll must have shape "
+                    f"(frames, pitches), got {piano_roll.shape}."
+                )
             )
+
+        expected_pitches = self._midi_pitch_max - self._midi_pitch_min + 1
+
+        actual_pitches = piano_roll.shape[1]
+
+        if actual_pitches != expected_pitches:
+            raise ValueError(
+                ("Invalid piano roll pitch dimension: expected=%d, received=%d."),
+            )
+
+    @property
+    def frame_duration(self) -> float:
+        """Return duration of one prediction frame.
+
+        Returns:
+            Frame duration in seconds.
+        """
+        return self._frame_duration

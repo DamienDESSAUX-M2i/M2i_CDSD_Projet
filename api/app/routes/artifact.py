@@ -1,15 +1,16 @@
 import logging
 
-from app.core import PROCESSING_SETTINGS
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+
+from app.core import PROCESSING_SETTINGS
 
 logger = logging.getLogger(__name__)
 
 
 artifact_router = APIRouter(
     prefix="/artifacts",
-    tags=["Artifacts"],
+    tags=["artifacts"],
 )
 
 
@@ -19,36 +20,59 @@ def _get_artifact(
     media_type: str,
     download_name: str | None = None,
 ) -> FileResponse:
-    """
-    Return an artifact file.
+    """Return a generated transcription artifact.
 
     Args:
         prediction_id:
-            Tracking process.
+            Unique transcription process identifier.
 
         filename:
-            Artifact filename.
+            Artifact filename stored in the process directory.
 
         media_type:
             MIME type returned to the client.
 
         download_name:
-            Optional filename exposed to the client.
+            Optional filename exposed during download.
 
     Returns:
-        FileResponse containing the artifact.
+        FileResponse containing the requested artifact.
 
     Raises:
         HTTPException:
-            If artifact does not exist.
+            If the artifact does not exist or the path is invalid.
     """
 
-    artifact_path = PROCESSING_SETTINGS.output_dir / prediction_id / filename
+    output_dir = PROCESSING_SETTINGS.output_dir.resolve()
 
-    if not artifact_path.exists():
-        logger.warning("Artifact not found: %s", artifact_path)
+    artifact_path = (output_dir / prediction_id / filename).resolve()
 
-        raise HTTPException(status_code=404, detail="Artifact not found.")
+    if not artifact_path.is_relative_to(output_dir):
+        logger.warning(
+            "Invalid artifact path requested: %s.",
+            artifact_path,
+        )
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid artifact path.",
+        )
+
+    if not artifact_path.exists() or not artifact_path.is_file():
+        logger.warning(
+            "Artifact not found: %s.",
+            artifact_path,
+        )
+
+        raise HTTPException(
+            status_code=404,
+            detail="Artifact not found.",
+        )
+
+    logger.debug(
+        "Serving artifact: %s.",
+        artifact_path,
+    )
 
     return FileResponse(
         path=artifact_path,
@@ -57,12 +81,22 @@ def _get_artifact(
     )
 
 
-@artifact_router.get("/{prediction_id}/midi", summary="Download generated MIDI file")
-def get_midi(prediction_id: str) -> FileResponse:
-    """
-    Download generated MIDI transcription.
-    """
+@artifact_router.get(
+    "/{prediction_id}/midi",
+    summary="Download generated MIDI file",
+)
+def get_midi(
+    prediction_id: str,
+) -> FileResponse:
+    """Download generated MIDI transcription.
 
+    Args:
+        prediction_id:
+            Transcription process identifier.
+
+    Returns:
+        MIDI file response.
+    """
     return _get_artifact(
         prediction_id=prediction_id,
         filename="transcription.mid",
@@ -72,13 +106,21 @@ def get_midi(prediction_id: str) -> FileResponse:
 
 
 @artifact_router.get(
-    "/{prediction_id}/piano-roll/png", summary="Download piano roll PNG image"
+    "/{prediction_id}/piano-roll/png",
+    summary="Download piano roll PNG image",
 )
-def get_piano_roll_png(prediction_id: str) -> FileResponse:
-    """
-    Download piano roll PNG rendering.
-    """
+def get_piano_roll_png(
+    prediction_id: str,
+) -> FileResponse:
+    """Download piano roll PNG rendering.
 
+    Args:
+        prediction_id:
+            Transcription process identifier.
+
+    Returns:
+        PNG image response.
+    """
     return _get_artifact(
         prediction_id=prediction_id,
         filename="piano_roll.png",
@@ -87,13 +129,21 @@ def get_piano_roll_png(prediction_id: str) -> FileResponse:
 
 
 @artifact_router.get(
-    "/{prediction_id}/piano-roll/svg", summary="Download piano roll SVG image"
+    "/{prediction_id}/piano-roll/svg",
+    summary="Download piano roll SVG image",
 )
-def get_piano_roll_svg(prediction_id: str) -> FileResponse:
-    """
-    Download piano roll SVG rendering.
-    """
+def get_piano_roll_svg(
+    prediction_id: str,
+) -> FileResponse:
+    """Download piano roll SVG rendering.
 
+    Args:
+        prediction_id:
+            Transcription process identifier.
+
+    Returns:
+        SVG image response.
+    """
     return _get_artifact(
         prediction_id=prediction_id,
         filename="piano_roll.svg",
@@ -102,13 +152,21 @@ def get_piano_roll_svg(prediction_id: str) -> FileResponse:
 
 
 @artifact_router.get(
-    "/{prediction_id}/score/pdf", summary="Download generated PDF score"
+    "/{prediction_id}/score/pdf",
+    summary="Download generated PDF score",
 )
-def get_score_pdf(prediction_id: str) -> FileResponse:
-    """
-    Download generated PDF musical score.
-    """
+def get_score_pdf(
+    prediction_id: str,
+) -> FileResponse:
+    """Download generated PDF musical score.
 
+    Args:
+        prediction_id:
+            Transcription process identifier.
+
+    Returns:
+        PDF file response.
+    """
     return _get_artifact(
         prediction_id=prediction_id,
         filename="transcription.pdf",
@@ -117,13 +175,21 @@ def get_score_pdf(prediction_id: str) -> FileResponse:
 
 
 @artifact_router.get(
-    "/{prediction_id}/score/svg", summary="Download generated SVG score"
+    "/{prediction_id}/score/svg",
+    summary="Download generated SVG score",
 )
-def get_score_svg(prediction_id: str) -> FileResponse:
-    """
-    Download generated SVG musical score.
-    """
+def get_score_svg(
+    prediction_id: str,
+) -> FileResponse:
+    """Download generated SVG musical score.
 
+    Args:
+        prediction_id:
+            Transcription process identifier.
+
+    Returns:
+        SVG file response.
+    """
     return _get_artifact(
         prediction_id=prediction_id,
         filename="transcription.svg",

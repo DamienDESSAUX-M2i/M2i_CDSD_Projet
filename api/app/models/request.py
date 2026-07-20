@@ -1,9 +1,14 @@
-from pydantic import BaseModel, ConfigDict
+from .common import ApiBaseModel
 
 
-class PredictionRequest(BaseModel):
-    """Inference parameters."""
+class PredictionRequest(ApiBaseModel):
+    """Parameters for an audio transcription request.
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    This model currently acts as a validation boundary for future
+    transcription options.
+
+    Additional fields can be added here when configurable inference
+    parameters are exposed through the API.
+    """
+
+    ...
