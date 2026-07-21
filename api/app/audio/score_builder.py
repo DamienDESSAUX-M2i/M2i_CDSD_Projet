@@ -2,10 +2,16 @@ import logging
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-import cairosvg
 import verovio
 from music21 import note, stream, tempo
 from pypdf import PdfWriter
+
+try:
+    import cairosvg
+
+    CAIROSVG_AVAILABLE = True
+except Exception:
+    CAIROSVG_AVAILABLE = False
 
 from .rhythm_quantizer import QuantizedNoteEvent
 
@@ -92,7 +98,7 @@ class ScoreBuilder:
     def render(
         self,
         musicxml_path: Path,
-    ) -> tuple[Path, Path]:
+    ) -> tuple[Path | None, Path | None]:
         """Render a MusicXML file into SVG and PDF outputs.
 
         Args:
@@ -102,13 +108,16 @@ class ScoreBuilder:
         Returns:
             Tuple containing:
 
-                - PDF output path
-                - SVG output path
+                - PDF output path if cairosvg is available, otherwise None
+                - SVG output path if cairosvg is available, otherwise None
 
         Raises:
             RuntimeError:
                 If Verovio cannot load the MusicXML document.
         """
+
+        if not CAIROSVG_AVAILABLE:
+            return None, None
 
         output_dir = musicxml_path.parent
 

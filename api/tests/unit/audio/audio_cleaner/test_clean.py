@@ -3,20 +3,22 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
+from app.audio.audio_cleaner import DenoiseMethod
 from numpy.typing import NDArray
 from tests import DATA_FOLDER_PATH
 
 if TYPE_CHECKING:
     from app.audio.audio_cleaner import AudioCleaner
 
-IS_UPDATE_REFERENCE_FILE = False
+IS_UPDATE_REFERENCE_FILE = True
 
 
 class ConfigurationCase(enum.StrEnum):
     """Configuration."""
 
-    DEFAULT = enum.auto()
-    NOT_DEFAULT = enum.auto()
+    FILTERING_DENOISE_SPECTRAL = enum.auto()
+    FILTERING_DENOISE_WIENER = enum.auto()
+    NO_FILTERING = enum.auto()
 
 
 @pytest.fixture
@@ -44,7 +46,7 @@ def audio() -> NDArray[np.floating[Any]]:
         / "unit"
         / "audio"
         / "audio_cleaner"
-        / "test_highpass_filter"
+        / "test_clean"
         / "audio.npy"
     )
     assert audio_file_path.exists(), (
@@ -54,12 +56,12 @@ def audio() -> NDArray[np.floating[Any]]:
 
 
 @pytest.mark.parametrize("configuration_case", ConfigurationCase, indirect=True)
-def test_highpass_filter(
+def test_clean(
     configuration_case: ConfigurationCase,
     audio_cleaner: "AudioCleaner",
     audio: NDArray[np.floating[Any]],
 ) -> None:
-    """Check that the highpass_filter method works.
+    """Check that the clean method works.
 
     Args:
         configuration_case (ConfigurationCase): A ConfigurationCase value.
@@ -72,7 +74,7 @@ def test_highpass_filter(
         / "unit"
         / "audio"
         / "audio_cleaner"
-        / "test_highpass_filter"
+        / "test_clean"
         / f"{configuration_case}_reference_array.npy"
     )
     assert reference_array_file_path.exists(), (
@@ -81,11 +83,29 @@ def test_highpass_filter(
 
     # Call the method
     match configuration_case:
-        case ConfigurationCase.DEFAULT:
-            array = audio_cleaner.highpass_filter(audio=audio, sample_rate=22050)
-        case ConfigurationCase.NOT_DEFAULT:
-            array = audio_cleaner.highpass_filter(
-                audio=audio, sample_rate=22050, cutoff=20, filter_order=1
+        case ConfigurationCase.FILTERING_DENOISE_SPECTRAL:
+            array = audio_cleaner.clean(
+                audio=audio,
+                use_highpass=True,
+                use_lowpass=True,
+                denoise_method=DenoiseMethod.SPECTRAL,
+                use_trim=True,
+            )
+        case ConfigurationCase.FILTERING_DENOISE_WIENER:
+            array = audio_cleaner.clean(
+                audio=audio,
+                use_highpass=True,
+                use_lowpass=True,
+                denoise_method=DenoiseMethod.WIENER,
+                use_trim=True,
+            )
+        case ConfigurationCase.NO_FILTERING:
+            array = audio_cleaner.clean(
+                audio=audio,
+                use_highpass=False,
+                use_lowpass=False,
+                denoise_method=DenoiseMethod.NONE,
+                use_trim=False,
             )
 
     # Update the reference or compare it to the returned array

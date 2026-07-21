@@ -9,7 +9,7 @@ from tests import DATA_FOLDER_PATH
 if TYPE_CHECKING:
     from app.audio.audio_cleaner import AudioCleaner
 
-IS_UPDATE_REFERENCE_FILE = False
+IS_UPDATE_REFERENCE_FILE = True
 
 
 class ConfigurationCase(enum.StrEnum):
@@ -44,7 +44,7 @@ def audio() -> NDArray[np.floating[Any]]:
         / "unit"
         / "audio"
         / "audio_cleaner"
-        / "test_highpass_filter"
+        / "test_wiener_denoise"
         / "audio.npy"
     )
     assert audio_file_path.exists(), (
@@ -54,12 +54,12 @@ def audio() -> NDArray[np.floating[Any]]:
 
 
 @pytest.mark.parametrize("configuration_case", ConfigurationCase, indirect=True)
-def test_highpass_filter(
+def test_wiener_denoise(
     configuration_case: ConfigurationCase,
     audio_cleaner: "AudioCleaner",
     audio: NDArray[np.floating[Any]],
 ) -> None:
-    """Check that the highpass_filter method works.
+    """Check that the wiener_denoise method works.
 
     Args:
         configuration_case (ConfigurationCase): A ConfigurationCase value.
@@ -72,7 +72,7 @@ def test_highpass_filter(
         / "unit"
         / "audio"
         / "audio_cleaner"
-        / "test_highpass_filter"
+        / "test_wiener_denoise"
         / f"{configuration_case}_reference_array.npy"
     )
     assert reference_array_file_path.exists(), (
@@ -82,11 +82,9 @@ def test_highpass_filter(
     # Call the method
     match configuration_case:
         case ConfigurationCase.DEFAULT:
-            array = audio_cleaner.highpass_filter(audio=audio, sample_rate=22050)
+            array = audio_cleaner.wiener_denoise(audio=audio)
         case ConfigurationCase.NOT_DEFAULT:
-            array = audio_cleaner.highpass_filter(
-                audio=audio, sample_rate=22050, cutoff=20, filter_order=1
-            )
+            array = audio_cleaner.wiener_denoise(audio=audio, strength=2)
 
     # Update the reference or compare it to the returned array
     if IS_UPDATE_REFERENCE_FILE:

@@ -1,4 +1,3 @@
-import enum
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -9,30 +8,10 @@ from tests import DATA_FOLDER_PATH
 if TYPE_CHECKING:
     from app.audio.audio_cleaner import AudioCleaner
 
-IS_UPDATE_REFERENCE_FILE = False
-
-
-class ConfigurationCase(enum.StrEnum):
-    """Configuration."""
-
-    DEFAULT = enum.auto()
-    NOT_DEFAULT = enum.auto()
+IS_UPDATE_REFERENCE_FILE = True
 
 
 @pytest.fixture
-def configuration_case(request: pytest.FixtureRequest) -> ConfigurationCase:
-    """Return a ConfigurationCase value corresponding to a tested case.
-
-    Args:
-        request (pytest.FixtureRequest): A request from a parametrization.
-
-    Returns:
-        ConfigurationCase: A ConfigurationCase value.
-    """
-    return request.param
-
-
-@pytest.fixture(scope="module")
 def audio() -> NDArray[np.floating[Any]]:
     """Return an array corresponding to an audio to give to the method.
 
@@ -44,7 +23,7 @@ def audio() -> NDArray[np.floating[Any]]:
         / "unit"
         / "audio"
         / "audio_cleaner"
-        / "test_highpass_filter"
+        / "test_spectral_denoise"
         / "audio.npy"
     )
     assert audio_file_path.exists(), (
@@ -53,16 +32,13 @@ def audio() -> NDArray[np.floating[Any]]:
     return np.load(audio_file_path)
 
 
-@pytest.mark.parametrize("configuration_case", ConfigurationCase, indirect=True)
-def test_highpass_filter(
-    configuration_case: ConfigurationCase,
+def test_spectral_denoise(
     audio_cleaner: "AudioCleaner",
     audio: NDArray[np.floating[Any]],
 ) -> None:
-    """Check that the highpass_filter method works.
+    """Check that the spectral_denoise method works.
 
     Args:
-        configuration_case (ConfigurationCase): A ConfigurationCase value.
         audio_cleaner (AudioCleaner): An AudioCleaner object.
         audio (NDArray[np.floating[Any]]): An array corresponding to an audio.
     """
@@ -72,21 +48,14 @@ def test_highpass_filter(
         / "unit"
         / "audio"
         / "audio_cleaner"
-        / "test_highpass_filter"
-        / f"{configuration_case}_reference_array.npy"
+        / "test_spectral_denoise"
+        / "reference_array.npy"
     )
     assert reference_array_file_path.exists(), (
         f"The file containing the reference array should exist ({reference_array_file_path})."
     )
-
     # Call the method
-    match configuration_case:
-        case ConfigurationCase.DEFAULT:
-            array = audio_cleaner.highpass_filter(audio=audio, sample_rate=22050)
-        case ConfigurationCase.NOT_DEFAULT:
-            array = audio_cleaner.highpass_filter(
-                audio=audio, sample_rate=22050, cutoff=20, filter_order=1
-            )
+    array = audio_cleaner.spectral_denoise(audio=audio)
 
     # Update the reference or compare it to the returned array
     if IS_UPDATE_REFERENCE_FILE:
