@@ -35,6 +35,7 @@ class WAVLoader(AbstractLoader):
             ValueError: If the file path is invalid.
             RuntimeError: If writing the WAV file fails.
         """
+
         self._load_validate_inputs(
             audio_data=audio_data,
             sample_rate=sample_rate,
@@ -44,13 +45,11 @@ class WAVLoader(AbstractLoader):
 
         try:
             self.logger.info(
-                "Writing WAV file",
-                extra={
-                    "path": str(file_path),
-                    "sample_rate": sample_rate,
-                    "shape": audio_data.shape,
-                    "dtype": audio_data.dtype,
-                },
+                "Writing WAV file: "
+                f"path={str(file_path)}, "
+                f"sample_rate={sample_rate}, "
+                f"shape={audio_data.shape}, "
+                f"dtype={audio_data.dtype}"
             )
             sf.write(
                 file=file_path,
@@ -58,19 +57,9 @@ class WAVLoader(AbstractLoader):
                 samplerate=sample_rate,
                 **kwargs,
             )
-            self.logger.info(
-                "WAV file successfully written",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"WAV file successfully written: path={str(file_path)}")
         except Exception as exc:
-            self.logger.exception(
-                "Failed to write WAV file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.exception(f"Failed to write WAV file: path={str(file_path)}")
             raise RuntimeError("WAV writing failed") from exc
 
     def _load_validate_inputs(
@@ -80,13 +69,18 @@ class WAVLoader(AbstractLoader):
         file_path: Path,
     ) -> None:
         """Raise an exception if an input is invalid."""
+
         if not isinstance(audio_data, np.ndarray):
             raise TypeError("audio_data must be a numpy ndarray.")
+
         if audio_data.ndim not in {1, 2}:
             raise ValueError("audio_data must be 1D (mono) or 2D (multi-channel).")
+
         if not isinstance(sample_rate, int) or sample_rate <= 0:
             raise TypeError("sample_rate must be a positive integer.")
+
         if not isinstance(file_path, Path):
             raise TypeError("file_path must be a pathlib.Path.")
+
         if not file_path.suffix.lower() == ".wav":
             raise ValueError("file_path must end with '.wav'.")

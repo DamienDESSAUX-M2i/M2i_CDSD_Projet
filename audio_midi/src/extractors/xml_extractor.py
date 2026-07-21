@@ -55,6 +55,7 @@ class XMLExtractor(AbstractExtractor):
             tree = ET.parse(file_path, **kwargs)
             self.logger.debug("XML extraction completed")
             return tree
+
         except Exception as exception:
             self.logger.error(f"Failed to load XML file: {exception}")
             raise RuntimeError("XML extraction failed") from exception
@@ -208,6 +209,7 @@ class XMLExtractor(AbstractExtractor):
                 composer=composer,
                 recording_source=recording_source,
             )
+
         except Exception as exception:
             self.logger.error(f"XML metadata extraction has failed: {exception}")
             raise RuntimeError("XML metadata extraction has failed") from exception
@@ -319,6 +321,7 @@ class XMLExtractor(AbstractExtractor):
                             modulation_frequency=modulation_frequency,
                         )
                     )
+
                 except ValueError as exception:
                     self.logger.error(f"Event cast has failed: {exception}")
                     raise RuntimeError("Event cast has failed") from exception
@@ -345,6 +348,7 @@ class XMLExtractor(AbstractExtractor):
                     ],
                 ),
             )
+
         except Exception as exception:
             self.logger.error(f"XML annotation extraction has failed: {exception}")
             raise RuntimeError("XML annotation extraction has failed") from exception

@@ -28,29 +28,16 @@ class CSVExtractor(AbstractExtractor):
         Returns:
             pd.DataFrame: DataFrame of the CSV file.
         """
+
         validate_file_path(file_path=file_path, suffix=".csv")
 
         try:
-            self.logger.info(
-                "Reading CSV file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"Reading CSV file: path={str(file_path)}")
             df: pd.DataFrame = pd.read_csv(filepath_or_buffer=file_path, **kwargs)
             self.logger.info(
-                "WAV extraction completed",
-                extra={
-                    "path": str(file_path),
-                    "shape": df.shape,
-                },
+                f"WAV extraction completed: path={str(file_path)}, shape={df.shape}"
             )
             return df
         except Exception as exc:
-            self.logger.exception(
-                "Failed to load CSV file.",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.exception(f"Failed to load CSV file: path={str(file_path)}")
             raise RuntimeError("CSV extraction failed") from exc

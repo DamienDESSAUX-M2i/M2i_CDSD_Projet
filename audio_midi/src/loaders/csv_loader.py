@@ -25,6 +25,7 @@ class CSVLoader(AbstractLoader):
             ValueError: If the file path is invalid.
             RuntimeError: If writing the CSV file fails.
         """
+
         self._load_validate_inputs(
             df=df,
             file_path=file_path,
@@ -33,26 +34,13 @@ class CSVLoader(AbstractLoader):
 
         try:
             self.logger.info(
-                "Writing CSV file",
-                extra={
-                    "path": str(file_path),
-                    "shape": df.shape,
-                },
+                f"Writing CSV file: path={str(file_path)}, shape={df.shape}"
             )
             df.to_csv(path_or_buf=file_path, index=False, **kwargs)
-            self.logger.info(
-                "CSV file successfully written",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"CSV file successfully written: path={str(file_path)}")
+
         except Exception as exc:
-            self.logger.exception(
-                "Failed to write CSV file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.exception(f"Failed to write CSV file: path={str(file_path)}")
             raise RuntimeError("CSV writing failed") from exc
 
     def _load_validate_inputs(
@@ -61,9 +49,12 @@ class CSVLoader(AbstractLoader):
         file_path: Path,
     ) -> None:
         """Raise an exception if an input is invalid."""
+
         if not isinstance(df, pd.DataFrame):
             raise TypeError("df must be a numpy pd.DataFrame.")
+
         if not isinstance(file_path, Path):
             raise TypeError("file_path must be a pathlib.Path.")
+
         if not file_path.suffix.lower() == ".csv":
             raise ValueError("file_path must end with '.csv'.")

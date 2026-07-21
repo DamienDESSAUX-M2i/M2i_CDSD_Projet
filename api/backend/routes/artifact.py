@@ -101,7 +101,7 @@ def get_midi(
 
 
 @artifact_router.get(
-    "/{prediction_id}/piano-roll/png",
+    "/{prediction_id}/piano_roll/png",
     summary="Download piano roll PNG image",
 )
 def get_piano_roll_png(
@@ -124,7 +124,7 @@ def get_piano_roll_png(
 
 
 @artifact_router.get(
-    "/{prediction_id}/piano-roll/svg",
+    "/{prediction_id}/piano_roll/svg",
     summary="Download piano roll SVG image",
 )
 def get_piano_roll_svg(

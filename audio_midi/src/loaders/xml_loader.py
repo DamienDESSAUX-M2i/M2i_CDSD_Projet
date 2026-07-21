@@ -24,6 +24,7 @@ class XMLLoader(AbstractLoader):
             ValueError: If the file path is invalid.
             RuntimeError: If writing the XML file fails.
         """
+
         self._load_validate_inputs(
             tree=tree,
             file_path=file_path,
@@ -31,31 +32,16 @@ class XMLLoader(AbstractLoader):
         self._ensure_parent_directory(parent_directory_path=file_path.parent)
 
         try:
-            self.logger.info(
-                "Writing XML file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"Writing XML file: path={str(file_path)}")
             tree.write(
                 file_or_filename=file_path,
                 encoding="utf-8",
                 xml_declaration=True,
                 **kwargs,
             )
-            self.logger.info(
-                "XML file successfully written",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"XML file successfully written: path={str(file_path)}")
         except Exception as exc:
-            self.logger.exception(
-                "Failed to write XML file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.exception(f"Failed to write XML file: path={str(file_path)}")
             raise RuntimeError("XML writing failed") from exc
 
     def _load_validate_inputs(
@@ -64,9 +50,12 @@ class XMLLoader(AbstractLoader):
         file_path: Path,
     ) -> None:
         """Raise an exception if an input is invalid."""
+
         if not isinstance(tree, ET.ElementTree):
             raise TypeError("tree must be an xml.etree.ElementTree.ElementTree.")
+
         if not isinstance(file_path, Path):
             raise TypeError("file_path must be a pathlib.Path.")
+
         if not file_path.suffix.lower() == ".xml":
             raise ValueError("file_path must end with '.xml'.")

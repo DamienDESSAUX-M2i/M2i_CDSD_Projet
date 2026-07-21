@@ -25,6 +25,7 @@ class APIExtractor(AbstractExtractor):
 
     def extract(self, endpoint, params: dict[str, Any] = {}) -> requests.Response:
         """Extract data from API REST"""
+
         try:
             self.logger.info(f"Attempting request {self.base_url}/{endpoint}.")
 

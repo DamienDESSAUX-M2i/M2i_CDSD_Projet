@@ -14,7 +14,7 @@ API_URL = os.getenv(
 # ===
 
 st.set_page_config(
-    page_title="Music Transcriber",
+    page_title="GuitarFlow Transcriber",
     page_icon="🎼",
     layout="wide",
 )
@@ -104,8 +104,12 @@ def api_download(path: str):
 # Header
 # ===
 
-st.title("Music Transcriber")
-st.caption("Audio → MIDI → Partition musicale")
+st.title("GuitarFlow Transcriber")
+st.caption(
+    "Transcription automatique d'un audio de guitare "
+    "en fichier MIDI et partition musical "
+    "par une technique de deep learning."
+)
 
 health_response = api_get("/health")
 health = unwrap_api_response(health_response)
@@ -180,6 +184,14 @@ with st.sidebar:
 # ===
 
 st.subheader("1. Charger un fichier audio")
+st.caption(
+    "Le fichier audio doit respecter les contraintes suivantes :"
+    "\n- format WAV uniquement,"
+    "\n- une seule guitare sur l'enregistrement,"
+    "\n- l'accordage de la guitare est standard (EADGBE),"
+    "\n- aucun effet de modulation ou de distortion (son clean),"
+    "\n- aucun effet de jeu (bend, slide, tapping, ...)."
+)
 
 uploaded_file = st.file_uploader(
     "Importer un fichier WAV",
@@ -239,7 +251,7 @@ if prediction:
 
     st.divider()
 
-    st.subheader("Résultats")
+    st.subheader("2. Résultats")
 
     # ===
     # Summary
@@ -254,13 +266,13 @@ if prediction:
         st.metric("Notes quantifiées", prediction["quantized_notes"])
 
     with col3:
-        st.metric("Durée traitement", f"{prediction['metrics']['total_secondes']:.2f}s")
+        st.metric("Durée traitement", f"{prediction['metrics']['total_seconds']:.2f}s")
 
     # ===
     # Downloads
     # ===
 
-    st.subheader("Téléchargements")
+    st.subheader("2.1. Téléchargements")
 
     col1, col2 = st.columns(2)
 
@@ -292,7 +304,7 @@ if prediction:
     # Piano roll
     # ===
 
-    st.subheader("Piano roll")
+    st.subheader("2.2. Piano roll")
 
     piano_svg = requests.get(
         f"{API_URL}/artifacts/{processing_id}/piano_roll/svg",
@@ -309,7 +321,7 @@ if prediction:
     # Score
     # ===
 
-    st.subheader("Partition")
+    st.subheader("2.3. Partition")
 
     score_svg = requests.get(
         f"{API_URL}/artifacts/{processing_id}/score/svg",

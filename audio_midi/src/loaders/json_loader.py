@@ -24,33 +24,20 @@ class JSONLoader(AbstractLoader):
             ValueError: If the file path is invalid.
             RuntimeError: If writing the JSON file fails.
         """
+
         self._load_validate_inputs(file_path=file_path)
         self._ensure_parent_directory(parent_directory_path=file_path.parent)
 
         try:
-            self.logger.info(
-                "Writing JSON file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"Writing JSON file: path={str(file_path)}")
             file_path.write_text(
                 json.dump(obj=data, indent=4, ensure_ascii=False, **kwargs),
                 encoding="utf-8",
             )
-            self.logger.info(
-                "JSON file successfully written",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"JSON file successfully written: path={str(file_path)}")
+
         except Exception as exc:
-            self.logger.exception(
-                "Failed to write JSON file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.exception(f"Failed to write JSON file: path={str(file_path)}")
             raise RuntimeError("JSON writing failed") from exc
 
     def _load_validate_inputs(
@@ -58,7 +45,9 @@ class JSONLoader(AbstractLoader):
         file_path: Path,
     ) -> None:
         """Raise an exception if an input is invalid."""
+
         if not isinstance(file_path, Path):
             raise TypeError("file_path must be a pathlib.Path.")
+
         if not file_path.suffix.lower() == ".json":
             raise ValueError("file_path must end with '.json'.")

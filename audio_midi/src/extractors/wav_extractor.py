@@ -30,6 +30,7 @@ class WAVExtractor(AbstractExtractor):
             ValueError: If inputs are invalid.
             RuntimeError: If reading the WAV file fails.
         """
+
         validate_file_path(file_path=file_path, suffix=".wav")
 
         try:
@@ -48,6 +49,7 @@ class WAVExtractor(AbstractExtractor):
                 f"dtype={audio_data.dtype}"
             )
             return audio_data, sample_rate
+
         except Exception as exception:
             self.logger.exception(
                 f"Failed to load WAV file: path={str(file_path)}",

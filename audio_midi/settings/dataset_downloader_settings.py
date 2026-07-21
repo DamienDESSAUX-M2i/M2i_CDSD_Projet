@@ -61,6 +61,7 @@ class DatasetsDownloaderSettings:
         Raises:
             ValueError: If a configuration value is invalid.
         """
+
         if self.chunk_size <= 0:
             raise ValueError("chunk_size must be > 0")
 

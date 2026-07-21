@@ -18,14 +18,16 @@ class AbstractExtractor(ABC):
         Args:
             logger: Logger instance.
         """
+
         self.logger = logger
 
     @abstractmethod
-    def extract(self) -> Any:
+    def extract(self, *args, **kwargs) -> Any:
         """
         Extract data from a given input source.
 
         Returns:
             The extracted data in an implementation-defined format.
         """
+
         raise NotImplementedError

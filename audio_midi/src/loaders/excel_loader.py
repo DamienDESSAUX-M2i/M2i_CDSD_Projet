@@ -27,6 +27,7 @@ class ExcelLoader(AbstractLoader):
             ValueError: If the file path is invalid.
             RuntimeError: If writing the XLSX file fails.
         """
+
         self._load_validate_inputs(
             dict_dataframes=dict_dataframes,
             file_path=file_path,
@@ -35,12 +36,9 @@ class ExcelLoader(AbstractLoader):
 
         try:
             self.logger.info(
-                "Writing WAV file",
-                extra={
-                    "path": str(file_path),
-                    "sheet_names": list(dict_dataframes.keys()),
-                    "shapes": [df.shape for df in dict_dataframes.values()],
-                },
+                f"Writing WAV file: path={str(file_path)}, "
+                f"sheet_names={list(dict_dataframes.keys())}, "
+                f"shapes={[df.shape for df in dict_dataframes.values()]}"
             )
             with pd.ExcelWriter(path=file_path) as writer:
                 for sheet_name, df in dict_dataframes.items():
@@ -51,19 +49,10 @@ class ExcelLoader(AbstractLoader):
                         **kwargs,
                     )
                     self.logger.info(f"Written sheet: {sheet_name}")
-            self.logger.info(
-                "XLSX file successfully written",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"XLSX file successfully written: path={str(file_path)}")
+
         except Exception as exc:
-            self.logger.exception(
-                "Failed to write XLSX file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.exception(f"Failed to write XLSX file: path={str(file_path)}")
             raise RuntimeError("WAV writing failed") from exc
 
     def _load_validate_inputs(
@@ -72,6 +61,7 @@ class ExcelLoader(AbstractLoader):
         file_path: Path,
     ) -> None:
         """Raise an exception if an input is invalid."""
+
         if not isinstance(dict_dataframes, dict):
             raise TypeError("dict_dataframes must be a dictionary")
 
@@ -82,7 +72,9 @@ class ExcelLoader(AbstractLoader):
             raise TypeError(
                 "dict_dataframes must have string keys and pandas DataFrame values"
             )
+
         if not isinstance(file_path, Path):
             raise TypeError("file_path must be a pathlib.Path.")
+
         if not file_path.suffix.lower() == ".xlsx":
             raise ValueError("file_path must end with '.xlsx'.")

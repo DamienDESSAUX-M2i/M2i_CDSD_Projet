@@ -29,6 +29,7 @@ class ZipExtractor(AbstractExtractor):
             zipfile.BadZipFile: If the archive is not a valid ZIP file.
             OSError: If extraction or filesystem operations fail.
         """
+
         self.logger.info(
             f"Starting extraction, archive={str(archive)}, output_dir={str(output_dir)}"
         )

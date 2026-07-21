@@ -27,28 +27,15 @@ class JSONExtractor(AbstractExtractor):
         Returns:
             Any: Data extract from the JSON file.
         """
+
         validate_file_path(file_path=file_path, suffix=".json")
 
         try:
-            self.logger.info(
-                "Reading JSON file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"Reading JSON file: path={str(file_path)}")
             dict_data = json.loads(fp=file_path.read_text(encoding="utf-8"), **kwargs)
-            self.logger.info(
-                "JSON extraction completed",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"JSON extraction completed: path={str(file_path)}")
             return dict_data
+
         except Exception as exc:
-            self.logger.exception(
-                "Failed to load JSON file.",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.exception(f"Failed to load JSON file: path={str(file_path)}")
             raise RuntimeError("JSON extraction failed") from exc

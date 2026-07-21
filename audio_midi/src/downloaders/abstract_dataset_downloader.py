@@ -14,6 +14,7 @@ class AbstractDatasetDownloader(ABC):
         Args:
             logger: Logger instance.
         """
+
         self.logger = logger
 
     @abstractmethod
@@ -24,4 +25,5 @@ class AbstractDatasetDownloader(ABC):
         Raises:
             NotImplementedError: Must be implemented by subclasses.
         """
+
         raise NotImplementedError

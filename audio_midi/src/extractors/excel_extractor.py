@@ -28,29 +28,18 @@ class ExcelExtractor(AbstractExtractor):
         Returns:
             dict[str, pd.DataFrame]: Dictionary whose keys are the names of the sheets and whose values ​​are the loaded DataFrames.
         """
+
         validate_file_path(file_path=file_path, suffix=".xlsx")
 
         try:
-            self.logger.info(
-                "Reading XLSX file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"Reading XLSX file: path={str(file_path)}")
             dict_dfs = pd.read_excel(io=file_path, sheet_name=None, **kwargs)
             self.logger.info(
-                "XLSX extraction completed",
-                extra={
-                    "path": str(file_path),
-                    "sheet_names": list(dict_dfs.keys()),
-                },
+                f"XLSX extraction completed: path={str(file_path)}, "
+                f"sheet_names={list(dict_dfs.keys())}"
             )
             return dict_dfs
+
         except Exception as exc:
-            self.logger.exception(
-                "Failed to load CSV file.",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.exception(f"Failed to load CSV file: path={str(file_path)}")
             raise RuntimeError("CSV extraction failed") from exc

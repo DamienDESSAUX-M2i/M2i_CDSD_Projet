@@ -28,6 +28,7 @@ class DatasetDownloader(AbstractDatasetDownloader):
             logger: Application logger.
             config: Download configuration.
         """
+
         super().__init__(logger)
 
         self.settings = settings
@@ -40,6 +41,7 @@ class DatasetDownloader(AbstractDatasetDownloader):
         Returns:
             Configured requests session.
         """
+
         retry = Retry(
             total=self.settings.retry_total,
             backoff_factor=self.settings.retry_backoff_factor,
@@ -62,6 +64,7 @@ class DatasetDownloader(AbstractDatasetDownloader):
         Returns:
             HTTP headers dictionary.
         """
+
         headers = {
             "User-Agent": self.settings.user_agent,
         }
@@ -87,6 +90,7 @@ class DatasetDownloader(AbstractDatasetDownloader):
             FileExistsError: If output file already exists.
             RuntimeError: If download permanently fails.
         """
+
         if output_path.exists():
             raise FileExistsError(f"Output file already exists: {output_path}")
 
@@ -147,6 +151,7 @@ class DatasetDownloader(AbstractDatasetDownloader):
             RuntimeError: If the download is empty or resume is unsupported.
             requests.RequestException: If the HTTP request fails.
         """
+
         existing_size = tmp_path.stat().st_size if tmp_path.exists() else 0
 
         request_headers = headers.copy()

@@ -25,34 +25,22 @@ class JAMSLoader(AbstractLoader):
             ValueError: If the file path is invalid.
             RuntimeError: If writing the JAMS file fails.
         """
+
         self._validate_inputs(jam=jam, file_path=file_path)
         self._ensure_parent_directory(parent_directory_path=file_path.parent)
 
         try:
-            self.logger.info(
-                "Loading JAMS file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"Loading JAMS file: path={str(file_path)}")
             file_path.write_text(jam.dumps(**kwargs), encoding="utf-8")
-            self.logger.info(
-                "JAMS file saved successfully",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.info(f"JAMS file saved successfully: path={str(file_path)}")
+
         except Exception as e:
-            self.logger.error(
-                "Failed to save JAMS file",
-                extra={
-                    "path": str(file_path),
-                },
-            )
+            self.logger.error(f"Failed to save JAMS file: path={str(file_path)}")
             raise RuntimeError("JAMS Loader failed") from e
 
     def _validate_inputs(self, jam: jams.JAMS, file_path: Path) -> None:
         """Raise an exception if an input is invalid."""
+
         if not isinstance(jam, jams.JAMS):
             raise TypeError(
                 f"'jam' must be a jams.JAMS instance, got {type(jam).__name__}"
