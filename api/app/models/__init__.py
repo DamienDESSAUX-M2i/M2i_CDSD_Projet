@@ -1,5 +1,6 @@
 from .common import (
     ApiResponse,
+    ErrorDetails,
     HealthStatus,
     InferenceMetrics,
     ModelInfo,
@@ -10,12 +11,13 @@ from .response import HealthResponse, ModelResponse, PredictionResponse
 
 __all__ = [
     "ApiResponse",
-    "ResponseStatus",
+    "ErrorDetails",
     "HealthStatus",
     "InferenceMetrics",
     "ModelInfo",
+    "ResponseStatus",
     "PredictionRequest",
-    "PredictionResponse",
-    "ModelResponse",
     "HealthResponse",
+    "ModelResponse",
+    "PredictionResponse",
 ]

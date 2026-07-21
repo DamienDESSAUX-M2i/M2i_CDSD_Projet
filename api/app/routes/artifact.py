@@ -1,9 +1,9 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
-
 from app.core import PROCESSING_SETTINGS
+from app.exceptions import ArtifactNotFound, InvalidArtifactPath
+from fastapi import APIRouter
+from fastapi.responses import FileResponse
 
 logger = logging.getLogger(__name__)
 
@@ -53,10 +53,7 @@ def _get_artifact(
             artifact_path,
         )
 
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid artifact path.",
-        )
+        raise InvalidArtifactPath()
 
     if not artifact_path.exists() or not artifact_path.is_file():
         logger.warning(
@@ -64,10 +61,7 @@ def _get_artifact(
             artifact_path,
         )
 
-        raise HTTPException(
-            status_code=404,
-            detail="Artifact not found.",
-        )
+        raise ArtifactNotFound()
 
     logger.debug(
         "Serving artifact: %s.",

@@ -3,14 +3,12 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from starlette.concurrency import run_in_threadpool
-
 from app.core import ModelManager
 from app.dependencies import (
     get_model_manager,
     get_prediction_service,
 )
+from app.exceptions import InvalidAudio, PredictionFailed
 from app.models import (
     ApiResponse,
     InferenceMetrics,
@@ -18,6 +16,8 @@ from app.models import (
     PredictionResponse,
 )
 from app.services import PredictionService
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
 
@@ -79,10 +79,7 @@ async def predict(
             file.content_type,
         )
 
-        raise HTTPException(
-            status_code=400,
-            detail="Only WAV files are supported.",
-        )
+        raise InvalidAudio()
 
     temporary_path: Path | None = None
 
@@ -169,14 +166,9 @@ async def predict(
         raise
 
     except Exception:
-        logger.exception(
-            "Prediction failed.",
-        )
+        logger.exception("Prediction failed.")
 
-        raise HTTPException(
-            status_code=500,
-            detail="Prediction failed.",
-        )
+        raise PredictionFailed()
 
     finally:
         if temporary_path is not None and temporary_path.exists():

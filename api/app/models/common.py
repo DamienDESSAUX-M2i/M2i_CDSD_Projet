@@ -2,14 +2,13 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Generic, TypeVar
 
+from app.core import TIME_ZONE
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     field_validator,
 )
-
-from app.core import TIME_ZONE
 
 T = TypeVar("T")
 
@@ -48,6 +47,13 @@ class ApiBaseModel(BaseModel):
     )
 
 
+class ErrorDetails(ApiBaseModel):
+    """API error description."""
+
+    code: str
+    message: str
+
+
 class ApiResponse(ApiBaseModel, Generic[T]):
     """Generic API response envelope.
 
@@ -68,7 +74,9 @@ class ApiResponse(ApiBaseModel, Generic[T]):
         default_factory=current_time,
     )
 
-    data: T
+    data: T | None
+
+    error: ErrorDetails | None
 
 
 class InferenceMetrics(ApiBaseModel):

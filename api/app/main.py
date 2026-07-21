@@ -2,9 +2,8 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-
 from app.core import PROCESSING_SETTINGS, ModelManager, configure_logging
+from app.exceptions.handlers import register_exception_handlers
 from app.routes import router
 from app.services import (
     InferenceService,
@@ -12,6 +11,7 @@ from app.services import (
     PredictionService,
     PreprocessingService,
 )
+from fastapi import FastAPI
 
 configure_logging()
 
@@ -94,4 +94,5 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+register_exception_handlers(app)
 app.include_router(router)
