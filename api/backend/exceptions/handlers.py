@@ -1,8 +1,9 @@
 import logging
 
-from app.models import ApiResponse, ErrorDetails, ResponseStatus
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+
+from backend.models import ApiResponse, ErrorDetails, ResponseStatus
 
 from .api_exceptions import ApiException
 

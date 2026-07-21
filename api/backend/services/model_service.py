@@ -1,7 +1,7 @@
 import logging
 
-from app.core import ModelManager, ModelMetadata
-from app.models import ApiResponse, ModelResponse
+from backend.core import ModelManager, ModelMetadata
+from backend.models import ApiResponse, ModelResponse
 
 logger = logging.getLogger(__name__)
 

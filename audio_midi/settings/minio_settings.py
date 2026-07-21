@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MinIOSettings:
     minio_endpoint: str = (
         "localhost:9000"  # os.getenv("MINIO_ENDPOINT", "localhost:9000")

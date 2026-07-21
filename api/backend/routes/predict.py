@@ -3,21 +3,22 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from app.core import ModelManager
-from app.dependencies import (
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
+
+from backend.core import ModelManager
+from backend.dependencies import (
     get_model_manager,
     get_prediction_service,
 )
-from app.exceptions import InvalidAudio, PredictionFailed
-from app.models import (
+from backend.exceptions import InvalidAudio, PredictionFailed
+from backend.models import (
     ApiResponse,
     InferenceMetrics,
     ModelInfo,
     PredictionResponse,
 )
-from app.services import PredictionService
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from starlette.concurrency import run_in_threadpool
+from backend.services import PredictionService
 
 logger = logging.getLogger(__name__)
 

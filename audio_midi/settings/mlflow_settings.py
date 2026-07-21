@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MLflowSettings:
     tracking_uri: str = "http://localhost:5000"  # os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
     s3_endpoint_url: str = "http://localhost:9000"  # s3_endpoint_url=os.getenv("MLFLOW_S3_ENDPOINT_URL", "http://localhost:9000")

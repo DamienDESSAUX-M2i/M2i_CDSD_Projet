@@ -251,14 +251,16 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: api/Dockerfile
     restart: unless-stopped
 
     ports:
       - "8000:8000"
+      - "7860:7860"
 
     volumes:
-      - ./api/app:/app/app
+      - ./api/backend:/app/backend
+      - ./api/frontend:/app/frontend
 
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]

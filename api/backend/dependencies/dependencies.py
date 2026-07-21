@@ -2,8 +2,8 @@ from typing import cast
 
 from fastapi import Request
 
-from app.core import ModelManager
-from app.services import PredictionService
+from backend.core import ModelManager
+from backend.services import PredictionService
 
 
 def get_model_manager(

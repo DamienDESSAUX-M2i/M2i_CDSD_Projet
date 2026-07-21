@@ -17,7 +17,9 @@ RUN uv sync \
     --no-dev \
     --group api
 
-COPY api/app ./app
+COPY api/backend ./backend
+COPY api/frontend ./frontend
+COPY api/start.sh ./start.sh
 
 # ===
 # Runtime
@@ -37,13 +39,12 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/app/.venv/bin:${PATH}"
 
-COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/.venv ./.venv
+COPY --from=builder /app/backend ./backend
+COPY --from=builder /app/frontend ./frontend
+COPY --from=builder /app/start.sh ./start.sh
 
-COPY --from=builder /app/app ./app
-
-RUN mkdir -p \
-    /app/output \
-    /app/artifacts
+RUN chmod +x start.sh
 
 RUN useradd \
         --create-home \
@@ -53,6 +54,7 @@ RUN useradd \
 
 USER appuser
 
+EXPOSE 7860
 EXPOSE 8000
 
 HEALTHCHECK \
@@ -62,4 +64,4 @@ HEALTHCHECK \
     --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')" || exit 1
 
-CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","8000"]
+CMD ["./start.sh"]

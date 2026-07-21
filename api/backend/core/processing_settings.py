@@ -4,7 +4,7 @@ from pathlib import Path
 
 import librosa
 
-from app.audio import DenoiseMethod, NormalizationType
+from backend.audio import DenoiseMethod, NormalizationType
 
 logger = logging.getLogger(__name__)
 

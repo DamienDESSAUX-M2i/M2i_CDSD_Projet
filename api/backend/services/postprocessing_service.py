@@ -5,7 +5,9 @@ from time import perf_counter
 
 import numpy as np
 import pretty_midi
-from app.audio import (
+from numpy.typing import NDArray
+
+from backend.audio import (
     BeatTracker,
     MidiBuilder,
     NoteEvent,
@@ -15,8 +17,7 @@ from app.audio import (
     RhythmQuantizer,
     ScoreBuilder,
 )
-from app.core import ProcessingSettings
-from numpy.typing import NDArray
+from backend.core import ProcessingSettings
 
 logger = logging.getLogger(__name__)
 

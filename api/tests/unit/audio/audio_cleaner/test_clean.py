@@ -3,12 +3,12 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
-from app.audio.audio_cleaner import DenoiseMethod
+from backend.audio.audio_cleaner import DenoiseMethod
 from numpy.typing import NDArray
 from tests import DATA_FOLDER_PATH
 
 if TYPE_CHECKING:
-    from app.audio.audio_cleaner import AudioCleaner
+    from backend.audio.audio_cleaner import AudioCleaner
 
 IS_UPDATE_REFERENCE_FILE = True
 

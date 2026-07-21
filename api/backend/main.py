@@ -2,16 +2,17 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from app.core import PROCESSING_SETTINGS, ModelManager, configure_logging
-from app.exceptions.handlers import register_exception_handlers
-from app.routes import router
-from app.services import (
+from fastapi import FastAPI
+
+from backend.core import PROCESSING_SETTINGS, ModelManager, configure_logging
+from backend.exceptions.handlers import register_exception_handlers
+from backend.routes import router
+from backend.services import (
     InferenceService,
     PostprocessingService,
     PredictionService,
     PreprocessingService,
 )
-from fastapi import FastAPI
 
 configure_logging()
 

@@ -2,13 +2,14 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Generic, TypeVar
 
-from app.core import TIME_ZONE
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     field_validator,
 )
+
+from backend.core import TIME_ZONE
 
 T = TypeVar("T")
 
@@ -43,12 +44,20 @@ class ApiBaseModel(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        frozen=True,
+        # frozen=True,
     )
 
 
 class ErrorDetails(ApiBaseModel):
-    """API error description."""
+    """API error description.
+
+    Attributes:
+        code:
+            Error code.
+
+        message:
+            Error message.
+    """
 
     code: str
     message: str
@@ -66,6 +75,9 @@ class ApiResponse(ApiBaseModel, Generic[T]):
 
         data:
             Response payload.
+
+        error:
+            Response error.
     """
 
     success: ResponseStatus = ResponseStatus.SUCCESS
@@ -74,9 +86,9 @@ class ApiResponse(ApiBaseModel, Generic[T]):
         default_factory=current_time,
     )
 
-    data: T | None
+    data: T | None = None
 
-    error: ErrorDetails | None
+    error: ErrorDetails | None = None
 
 
 class InferenceMetrics(ApiBaseModel):

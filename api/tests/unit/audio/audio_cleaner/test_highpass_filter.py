@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from tests import DATA_FOLDER_PATH
 
 if TYPE_CHECKING:
-    from app.audio.audio_cleaner import AudioCleaner
+    from backend.audio.audio_cleaner import AudioCleaner
 
 IS_UPDATE_REFERENCE_FILE = False
 

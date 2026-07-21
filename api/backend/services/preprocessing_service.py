@@ -6,13 +6,13 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-from app.audio import (
+from backend.audio import (
     AudioCleaner,
     AudioFeatureExtractor,
     AudioNormalizer,
     ContextWindowBuilder,
 )
-from app.core import ProcessingSettings
+from backend.core import ProcessingSettings
 
 logger = logging.getLogger(__name__)
 

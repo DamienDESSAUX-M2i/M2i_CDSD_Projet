@@ -1,5 +1,5 @@
 import pytest
-from app.audio.audio_cleaner import AudioCleaner
+from backend.audio.audio_cleaner import AudioCleaner
 
 
 @pytest.fixture

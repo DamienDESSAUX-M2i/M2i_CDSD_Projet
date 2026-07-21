@@ -3,8 +3,8 @@ import platform
 
 import tensorflow as tf
 
-from app.core import ModelManager
-from app.models import ApiResponse, HealthResponse, HealthStatus
+from backend.core import ModelManager
+from backend.models import ApiResponse, HealthResponse, HealthStatus
 
 logger = logging.getLogger(__name__)
 

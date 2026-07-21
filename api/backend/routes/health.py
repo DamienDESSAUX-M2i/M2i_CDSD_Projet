@@ -2,10 +2,10 @@ import logging
 
 from fastapi import APIRouter, Depends
 
-from app.core import ModelManager
-from app.dependencies import get_model_manager
-from app.models import ApiResponse, HealthResponse
-from app.services import get_health_status
+from backend.core import ModelManager
+from backend.dependencies import get_model_manager
+from backend.models import ApiResponse, HealthResponse
+from backend.services import get_health_status
 
 logger = logging.getLogger(__name__)
 
