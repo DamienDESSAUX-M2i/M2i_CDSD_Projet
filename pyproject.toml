@@ -4,49 +4,102 @@ version = "0.1.0"
 description = "Automatic transcription of a guitar audio file into a MIDI file."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [
-    "librosa>=0.11.0",
-    "matplotlib>=3.10.8",
-    "music21>=10.5.0",
-    "pretty-midi>=0.2.11",
-    "scikit-learn>=1.8.0",
-    "seaborn>=0.13.2",
-    "soundfile>=0.13.1",
-    "tensorflow>=2.21.0",
-]
+dependencies = []
 
 [dependency-groups]
 api = [
     "cairosvg>=2.9.0",
     "fastapi>=0.136.3",
+    "librosa>=0.11.0",
+    "matplotlib>=3.10.8",
+    "music21>=10.5.0",
+    "pretty-midi>=0.2.11",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.14.1",
     "pypdf>=6.14.2",
     "python-multipart>=0.0.32",
+    "scikit-learn>=1.8.0",
+    "soundfile>=0.13.1",
     "streamlit>=1.59.2",
+    "tensorflow>=2.21.0",
     "uvicorn>=0.48.0",
     "verovio>=6.2.1",
 ]
+
 audio-midi = [
     "boto3>=1.43.19",
     "jams>=0.3.5",
     "jupyterlab>=4.5.4",
+    "librosa>=0.11.0",
+    "matplotlib>=3.10.8",
     "minio>=7.2.20",
     "mlflow>=3.13.0",
+    "music21>=10.5.0",
     "openpyxl>=3.1.5",
     "pandas>=2.3.3",
+    "pretty-midi>=0.2.11",
     "psycopg[binary]>=3.3.2",
     "pyarrow>=24.0.0",
     "pymongo>=4.16.0",
     "requests>=2.32.5",
+    "scikit-learn>=1.8.0",
+    "seaborn>=0.13.2",
+    "soundfile>=0.13.1",
+    "tensorflow>=2.21.0",
     "tqdm>=4.68.4",
 ]
+
 dev = [
+    "mypy>=2.3.0",
     "pytest>=9.0.2",
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.15.1",
+    "ruff>=0.15.22",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["api"]
 testpaths = ["api/tests"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+src = ["api/backend", "api/frontend"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "UP",
+    "N",
+    "SIM",
+    "C4",
+]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.13"
+
+files = [
+    "api/backend",
+    "api/frontend",
+]
+
+strict = true
+
+warn_unused_configs = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_ignores = true
+show_error_codes = true
+pretty = true
+
+exclude = [
+    "^api/tests/",
+]

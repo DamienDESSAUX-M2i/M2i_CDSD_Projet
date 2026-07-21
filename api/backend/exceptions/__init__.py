@@ -1,15 +1,15 @@
 from .api_exceptions import (
-    ArtifactNotFound,
-    InvalidArtifactPath,
-    InvalidAudio,
-    PredictionFailed,
+    ArtifactNotFoundError,
+    InvalidArtifactPathError,
+    InvalidAudioError,
+    PredictionFailedError,
 )
 from .handlers import register_exception_handlers
 
 __all__ = [
-    "ArtifactNotFound",
-    "InvalidArtifactPath",
-    "InvalidAudio",
-    "PredictionFailed",
+    "ArtifactNotFoundError",
+    "InvalidArtifactPathError",
+    "InvalidAudioError",
+    "PredictionFailedError",
     "register_exception_handlers",
 ]

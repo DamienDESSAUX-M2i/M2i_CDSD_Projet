@@ -88,11 +88,9 @@ class ContextWindowBuilder:
 
         if features.ndim != 2:
             raise ValueError(
-                (
-                    "Expected features with shape "
-                    "(n_frames, n_features), "
-                    f"got {features.shape}."
-                )
+                "Expected features with shape "
+                "(n_frames, n_features), "
+                f"got {features.shape}."
             )
 
         logger.debug(

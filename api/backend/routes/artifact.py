@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
 from backend.core import PROCESSING_SETTINGS
-from backend.exceptions import ArtifactNotFound, InvalidArtifactPath
+from backend.exceptions import ArtifactNotFoundError, InvalidArtifactPathError
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def _get_artifact(
             artifact_path,
         )
 
-        raise InvalidArtifactPath()
+        raise InvalidArtifactPathError()
 
     if not artifact_path.exists() or not artifact_path.is_file():
         logger.warning(
@@ -62,7 +62,7 @@ def _get_artifact(
             artifact_path,
         )
 
-        raise ArtifactNotFound()
+        raise ArtifactNotFoundError()
 
     logger.debug(
         "Serving artifact: %s.",

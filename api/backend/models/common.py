@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import (
     BaseModel,
@@ -44,7 +44,7 @@ class ApiBaseModel(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        # frozen=True,
+        frozen=True,
     )
 
 
@@ -63,7 +63,7 @@ class ErrorDetails(ApiBaseModel):
     message: str
 
 
-class ApiResponse(ApiBaseModel, Generic[T]):
+class ApiResponse(ApiBaseModel, [T]):
     """Generic API response envelope.
 
     Attributes:

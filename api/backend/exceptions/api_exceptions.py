@@ -1,7 +1,7 @@
 from fastapi import status
 
 
-class ApiException(Exception):
+class APIError(Exception):
     """Base API exception."""
 
     def __init__(
@@ -18,7 +18,7 @@ class ApiException(Exception):
         super().__init__(message)
 
 
-class InvalidArtifactPath(ApiException):
+class InvalidArtifactPathError(APIError):
     """Invalid artifact path exception."""
 
     def __init__(self) -> None:
@@ -29,7 +29,7 @@ class InvalidArtifactPath(ApiException):
         )
 
 
-class ArtifactNotFound(ApiException):
+class ArtifactNotFoundError(APIError):
     """Artifact not found exception."""
 
     def __init__(self) -> None:
@@ -40,7 +40,7 @@ class ArtifactNotFound(ApiException):
         )
 
 
-class InvalidAudio(ApiException):
+class InvalidAudioError(APIError):
     """Invalid audio exception."""
 
     def __init__(self) -> None:
@@ -51,7 +51,7 @@ class InvalidAudio(ApiException):
         )
 
 
-class PredictionFailed(ApiException):
+class PredictionFailedError(APIError):
     """Prediction failed exception."""
 
     def __init__(self) -> None:

@@ -117,7 +117,7 @@ class MidiBuilder:
         """
 
         if output_path.suffix.lower() not in {".mid", ".midi"}:
-            raise ValueError(("MIDI output path must have a .mid or .midi extension."))
+            raise ValueError("MIDI output path must have a .mid or .midi extension.")
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 

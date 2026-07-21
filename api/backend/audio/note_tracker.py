@@ -268,10 +268,7 @@ class NoteTracker:
 
         if piano_roll.ndim != 2:
             raise ValueError(
-                (
-                    "Piano roll must have shape "
-                    f"(frames, pitches), got {piano_roll.shape}."
-                )
+                f"Piano roll must have shape (frames, pitches), got {piano_roll.shape}."
             )
 
         expected_pitches = self._midi_pitch_max - self._midi_pitch_min + 1

@@ -11,7 +11,7 @@ from backend.dependencies import (
     get_model_manager,
     get_prediction_service,
 )
-from backend.exceptions import InvalidAudio, PredictionFailed
+from backend.exceptions import InvalidAudioError, PredictionFailedError
 from backend.models import (
     ApiResponse,
     InferenceMetrics,
@@ -80,7 +80,7 @@ async def predict(
             file.content_type,
         )
 
-        raise InvalidAudio()
+        raise InvalidAudioError()
 
     temporary_path: Path | None = None
 
@@ -166,10 +166,10 @@ async def predict(
     except HTTPException:
         raise
 
-    except Exception:
+    except Exception as exception:
         logger.exception("Prediction failed.")
 
-        raise PredictionFailed()
+        raise PredictionFailedError() from exception
 
     finally:
         if temporary_path is not None and temporary_path.exists():

@@ -5,17 +5,17 @@ from fastapi.responses import JSONResponse
 
 from backend.models import ApiResponse, ErrorDetails, ResponseStatus
 
-from .api_exceptions import ApiException
+from .api_exceptions import APIError
 
 logger = logging.getLogger(__name__)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
 
-    @app.exception_handler(ApiException)
+    @app.exception_handler(APIError)
     async def api_exception_handler(
         request: Request,
-        exc: ApiException,
+        exc: APIError,
     ):
         logger.warning(
             "%s %s -> %s",
