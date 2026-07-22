@@ -8,7 +8,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.13"
-  COVERAGE_THRESHOLD: 1
+  COVERAGE_THRESHOLD: 10
 
 jobs:
   tests:
@@ -33,20 +33,20 @@ jobs:
         run: uv sync --group api --group dev
 
       - name: Run tests
-          uv run pytest \
+        run: uv run pytest \
             -v \
             --disable-warnings \
             --cov-fail-under=${{ env.COVERAGE_THRESHOLD }}
 
       - name: Upload HTML coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-html
           path: htmlcov/
 
       - name: Upload XML coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-xml
