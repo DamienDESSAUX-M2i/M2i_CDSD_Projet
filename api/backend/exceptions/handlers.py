@@ -16,7 +16,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def api_exception_handler(
         request: Request,
         exc: APIError,
-    ):
+    ) -> JSONResponse:
         logger.warning(
             "%s %s -> %s",
             request.method,
@@ -39,7 +39,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def http_exception_handler(
         request: Request,
         exc: HTTPException,
-    ):
+    ) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
             content=ApiResponse(
@@ -55,7 +55,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def unhandled_exception_handler(
         request: Request,
         exc: Exception,
-    ):
+    ) -> JSONResponse:
         logger.exception("Unhandled exception.")
 
         return JSONResponse(

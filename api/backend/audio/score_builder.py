@@ -75,7 +75,7 @@ class ScoreBuilder:
         )
 
         score = stream.Score()
-        part = stream.Part()
+        part = stream.Part()  # type: ignore
 
         part.insert(0, tempo.MetronomeMark(number=bpm))
 
@@ -86,9 +86,9 @@ class ScoreBuilder:
 
             part.insert(event.offset, musical_note)
 
-        score.append(part)
+        score.append(part)  # type: ignore
 
-        score.write("musicxml", fp=output_path)
+        score.write("musicxml", fp=output_path)  # type: ignore
 
         logger.info(
             "MusicXML generated: %s",

@@ -1,9 +1,11 @@
 import logging
 from dataclasses import dataclass
+from typing import cast
 
 import librosa
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 
 from src.transformers import AbstractTransformer
 from src.utils import FeatureMatrix, FloatAudioArray, validate_audio
@@ -61,7 +63,7 @@ class AudioFeatureExtractor(AbstractTransformer):
         n_mfcc: int = 20,
         n_cqt_bins: int = 84,
         bins_per_octave: int = 12,
-        cqt_fmin: float = librosa.note_to_hz("E2"),
+        cqt_fmin: float = float(librosa.note_to_hz("E2")),
         chroma_cqt_norm: int | float | None = 2,
     ) -> None:
         super().__init__(logger)
@@ -88,13 +90,19 @@ class AudioFeatureExtractor(AbstractTransformer):
         """
 
         self.logger.debug("Computing STFT.")
-        stft = librosa.stft(
-            audio_data,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            center=True,
+        stft = cast(
+            NDArray[np.float32],
+            librosa.stft(
+                audio_data,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                center=True,
+            ),
         )
-        return librosa.amplitude_to_db(np.abs(stft), ref=np.max)
+        return cast(
+            NDArray[np.float32],
+            librosa.amplitude_to_db(np.abs(stft), ref=np.max),
+        )
 
     def compute_mel(
         self, audio_data: FloatAudioArray, sample_rate: int
@@ -113,15 +121,21 @@ class AudioFeatureExtractor(AbstractTransformer):
         """
 
         self.logger.debug("Computing Mel spectrogram.")
-        mel = librosa.feature.melspectrogram(
-            y=audio_data,
-            sr=sample_rate,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            n_mels=self.n_mels,
-            center=True,
+        mel = cast(
+            NDArray[np.float32],
+            librosa.feature.melspectrogram(
+                y=audio_data,
+                sr=sample_rate,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                n_mels=self.n_mels,
+                center=True,
+            ),
         )
-        return librosa.power_to_db(mel, ref=np.max)
+        return cast(
+            NDArray[np.float32],
+            librosa.power_to_db(mel, ref=np.max),
+        )
 
     def compute_cqt(
         self, audio_data: FloatAudioArray, sample_rate: int
@@ -139,15 +153,21 @@ class AudioFeatureExtractor(AbstractTransformer):
         """
 
         self.logger.debug("Computing CQT.")
-        cqt = librosa.cqt(
-            audio_data,
-            sr=sample_rate,
-            hop_length=self.hop_length,
-            n_bins=self.n_cqt_bins,
-            bins_per_octave=self.bins_per_octave,
-            fmin=self.cqt_fmin,
+        cqt = cast(
+            NDArray[np.float32],
+            librosa.cqt(
+                audio_data,
+                sr=sample_rate,
+                hop_length=self.hop_length,
+                n_bins=self.n_cqt_bins,
+                bins_per_octave=self.bins_per_octave,
+                fmin=self.cqt_fmin,
+            ),
         )
-        return librosa.amplitude_to_db(np.abs(cqt), ref=np.max)
+        return cast(
+            NDArray[np.float32],
+            librosa.amplitude_to_db(np.abs(cqt), ref=np.max),
+        )
 
     def compute_chroma(
         self, audio_data: FloatAudioArray, sample_rate: int
@@ -165,12 +185,15 @@ class AudioFeatureExtractor(AbstractTransformer):
         """
 
         self.logger.debug("Computing chroma.")
-        return librosa.feature.chroma_cqt(
-            y=audio_data,
-            sr=sample_rate,
-            hop_length=self.hop_length,
-            bins_per_octave=self.bins_per_octave,
-            norm=self.chroma_cqt_norm,
+        return cast(
+            NDArray[np.float32],
+            librosa.feature.chroma_cqt(
+                y=audio_data,
+                sr=sample_rate,
+                hop_length=self.hop_length,
+                bins_per_octave=self.bins_per_octave,
+                norm=self.chroma_cqt_norm,
+            ),
         )
 
     def compute_mfcc(
@@ -189,14 +212,17 @@ class AudioFeatureExtractor(AbstractTransformer):
         """
 
         self.logger.debug("Computing MFCC.")
-        return librosa.feature.mfcc(
-            y=audio_data,
-            sr=sample_rate,
-            n_mfcc=self.n_mfcc,
-            n_mels=self.n_mels,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            center=True,
+        return cast(
+            NDArray[np.float32],
+            librosa.feature.mfcc(
+                y=audio_data,
+                sr=sample_rate,
+                n_mfcc=self.n_mfcc,
+                n_mels=self.n_mels,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                center=True,
+            ),
         )
 
     def extract(

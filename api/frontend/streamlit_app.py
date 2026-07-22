@@ -107,7 +107,7 @@ def api_download(path: str):
 st.title("GuitarFlow Transcriber")
 st.caption(
     "Transcription automatique d'un audio de guitare "
-    "en fichier MIDI et partition musical "
+    "en fichier MIDI et partition musicale "
     "par une technique de deep learning."
 )
 

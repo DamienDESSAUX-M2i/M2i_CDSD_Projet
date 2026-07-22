@@ -1,5 +1,6 @@
 import logging
 import platform
+from typing import Literal
 
 import tensorflow as tf
 
@@ -33,7 +34,9 @@ def get_health_status(
         status = HealthStatus.ERROR
         model_loaded = False
 
-    device = "gpu" if tf.config.list_physical_devices("GPU") else "cpu"
+    device: Literal["gpu", "cpu"] = (
+        "gpu" if tf.config.list_physical_devices("GPU") else "cpu"
+    )
 
     logger.debug(
         "Health status collected: status=%s, model_loaded=%s, device=%s.",

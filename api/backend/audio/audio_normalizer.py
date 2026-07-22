@@ -71,12 +71,9 @@ class AudioNormalizer:
                 info.max,
             )
 
-            return audio_data.astype(np.float32) / scale
+            return (audio_data / scale).astype(np.float32, copy=False)
 
-        return audio_data.astype(
-            np.float32,
-            copy=False,
-        )
+        return audio_data.astype(np.float32, copy=False)
 
     def to_mono(
         self,

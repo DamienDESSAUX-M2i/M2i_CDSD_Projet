@@ -63,7 +63,7 @@ class ErrorDetails(ApiBaseModel):
     message: str
 
 
-class ApiResponse(ApiBaseModel, [T]):
+class ApiResponse[T](ApiBaseModel):
     """Generic API response envelope.
 
     Attributes:

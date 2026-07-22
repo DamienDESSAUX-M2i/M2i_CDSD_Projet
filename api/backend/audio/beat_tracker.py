@@ -24,7 +24,7 @@ class BeatTrackingResult:
             Beat positions expressed in seconds.
     """
 
-    tempo: float
+    tempo: int
     beat_frames: NDArray[np.int64]
     beat_times: NDArray[np.float32]
 
@@ -147,7 +147,7 @@ class BeatTracker:
         )
 
         return BeatTrackingResult(
-            tempo=tempo_value,
+            tempo=int(tempo_value),
             beat_frames=beat_frames,
             beat_times=beat_times,
         )

@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import librosa
 import numpy as np
@@ -63,7 +63,7 @@ class AudioFeatureExtractor:
         n_mfcc: int = 20,
         n_cqt_bins: int = 84,
         bins_per_octave: int = 12,
-        cqt_fmin: float = librosa.note_to_hz("E2"),
+        cqt_fmin: float = float(librosa.note_to_hz("E2")),
         chroma_cqt_norm: int | float | None = 2,
     ) -> None:
         """Initialize feature extractor.
@@ -138,13 +138,19 @@ class AudioFeatureExtractor:
             self.hop_length,
         )
 
-        spectrum = librosa.stft(
-            audio_data,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
+        spectrum = cast(
+            NDArray[np.float32],
+            librosa.stft(
+                audio_data,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+            ),
         )
 
-        return librosa.amplitude_to_db(np.abs(spectrum), ref=np.max)
+        return cast(
+            NDArray[np.float32],
+            librosa.amplitude_to_db(np.abs(spectrum), ref=np.max),
+        )
 
     def compute_mel(
         self,
@@ -169,15 +175,21 @@ class AudioFeatureExtractor:
             self.n_mels,
         )
 
-        mel = librosa.feature.melspectrogram(
-            y=audio_data,
-            sr=sample_rate,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            n_mels=self.n_mels,
+        mel = cast(
+            NDArray[np.float32],
+            librosa.feature.melspectrogram(
+                y=audio_data,
+                sr=sample_rate,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                n_mels=self.n_mels,
+            ),
         )
 
-        return librosa.power_to_db(mel, ref=np.max)
+        return cast(
+            NDArray[np.float32],
+            librosa.power_to_db(mel, ref=np.max),
+        )
 
     def compute_cqt(
         self,
@@ -202,16 +214,22 @@ class AudioFeatureExtractor:
             self.n_cqt_bins,
         )
 
-        cqt = librosa.cqt(
-            y=audio_data,
-            sr=sample_rate,
-            hop_length=self.hop_length,
-            n_bins=self.n_cqt_bins,
-            bins_per_octave=self.bins_per_octave,
-            fmin=self.cqt_fmin,
+        cqt = cast(
+            NDArray[np.float32],
+            librosa.cqt(
+                y=audio_data,
+                sr=sample_rate,
+                hop_length=self.hop_length,
+                n_bins=self.n_cqt_bins,
+                bins_per_octave=self.bins_per_octave,
+                fmin=self.cqt_fmin,
+            ),
         )
 
-        return librosa.amplitude_to_db(np.abs(cqt), ref=np.max)
+        return cast(
+            NDArray[np.float32],
+            librosa.amplitude_to_db(np.abs(cqt), ref=np.max),
+        )
 
     def compute_chroma(
         self,
@@ -233,12 +251,15 @@ class AudioFeatureExtractor:
 
         logger.debug("Computing chromagram.")
 
-        return librosa.feature.chroma_cqt(
-            y=audio_data,
-            sr=sample_rate,
-            hop_length=self.hop_length,
-            bins_per_octave=self.bins_per_octave,
-            norm=self.chroma_cqt_norm,
+        return cast(
+            NDArray[np.float32],
+            librosa.feature.chroma_cqt(
+                y=audio_data,
+                sr=sample_rate,
+                hop_length=self.hop_length,
+                bins_per_octave=self.bins_per_octave,
+                norm=self.chroma_cqt_norm,
+            ),
         )
 
     def compute_mfcc(
@@ -264,13 +285,16 @@ class AudioFeatureExtractor:
             self.n_mfcc,
         )
 
-        return librosa.feature.mfcc(
-            y=audio_data,
-            sr=sample_rate,
-            n_mfcc=self.n_mfcc,
-            n_mels=self.n_mels,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
+        return cast(
+            NDArray[np.float32],
+            librosa.feature.mfcc(
+                y=audio_data,
+                sr=sample_rate,
+                n_mfcc=self.n_mfcc,
+                n_mels=self.n_mels,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+            ),
         )
 
     def extract(
@@ -364,4 +388,7 @@ class AudioFeatureExtractor:
             stacked.shape,
         )
 
-        return stacked.astype(np.float32, copy=False)
+        return cast(
+            NDArray[np.float32],
+            stacked.astype(np.float32, copy=False),
+        )

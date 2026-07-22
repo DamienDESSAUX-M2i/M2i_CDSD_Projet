@@ -55,6 +55,8 @@ dev = [
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.15.1",
     "ruff>=0.15.22",
+    "scipy-stubs>=1.18.0.1",
+    "types-python-dateutil>=2.9.0.20260716",
 ]
 
 [tool.pytest.ini_options]
@@ -103,3 +105,16 @@ pretty = true
 exclude = [
     "^api/tests/",
 ]
+
+[[tool.mypy.overrides]]
+module = [
+    "tensorflow",
+    "tensorflow.*",
+    "soundfile",
+    "joblib",
+    "pretty_midi",
+    "verovio",
+    "cairosvg",
+    "music21",
+]
+ignore_missing_imports = true

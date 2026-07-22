@@ -3,8 +3,12 @@ from pathlib import Path
 
 import soundfile as sf
 
-from core import PROCESSING_SETTINGS, ModelManager
-from services import InferenceService, PostprocessingService, PreprocessingService
+from core import PROCESSING_SETTINGS, ModelManager  # type: ignore
+from services import (  # type: ignore
+    InferenceService,
+    PostprocessingService,
+    PreprocessingService,
+)
 
 API_DIR = Path(__file__).parent.resolve()
 AUDIO_PATH = API_DIR / "00_BN1-129-Eb_comp_mix.wav"

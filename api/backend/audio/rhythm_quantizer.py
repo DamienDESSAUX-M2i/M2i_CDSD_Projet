@@ -157,7 +157,7 @@ class RhythmQuantizer:
 
         index = np.searchsorted(beat_times, time, side="right") - 1
 
-        index = int(np.clip(index, 0, len(beat_times) - 2))
+        index = int(np.clip(index, 0, len(beat_times) - 2))  # type: ignore
 
         left = float(beat_times[index])
 

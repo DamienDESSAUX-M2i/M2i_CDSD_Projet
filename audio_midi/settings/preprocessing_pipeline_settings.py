@@ -64,7 +64,7 @@ class PreprocessingPipelineSettings(AbstractPipelineSettings):
     n_mels: int = 128
 
     use_cqt: bool = True
-    cqt_fmin: float = librosa.note_to_hz("E2")
+    cqt_fmin: float = float(librosa.note_to_hz("E2"))
     n_cqt_bins: int = 84
     bins_per_octave: int = 12
 
