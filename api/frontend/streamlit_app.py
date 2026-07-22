@@ -209,36 +209,35 @@ if uploaded_file:
 # Transcription
 # ===
 
-if uploaded_file:
-    if st.button(
-        "Transcrire",
-        type="primary",
-        use_container_width=True,
-    ):
-        with st.spinner("Transcription en cours..."):
-            try:
-                files = {
-                    "file": (
-                        uploaded_file.name,
-                        uploaded_file.getvalue(),
-                        "audio/wav",
-                    )
-                }
-
-                response = requests.post(
-                    f"{API_URL}/predict",
-                    files=files,
-                    timeout=900,
+if uploaded_file and st.button(
+    "Transcrire",
+    type="primary",
+    use_container_width=True,
+):
+    with st.spinner("Transcription en cours..."):
+        try:
+            files = {
+                "file": (
+                    uploaded_file.name,
+                    uploaded_file.getvalue(),
+                    "audio/wav",
                 )
+            }
 
-                response.raise_for_status()
-                prediction_response = response.json()
-                prediction = unwrap_api_response(prediction_response)
-                st.session_state["prediction"] = prediction
-                st.success("Transcription terminée")
+            response = requests.post(
+                f"{API_URL}/predict",
+                files=files,
+                timeout=900,
+            )
 
-            except Exception as exc:
-                st.error(f"Erreur pendant la transcription : {exc}")
+            response.raise_for_status()
+            prediction_response = response.json()
+            prediction = unwrap_api_response(prediction_response)
+            st.session_state["prediction"] = prediction
+            st.success("Transcription terminée")
+
+        except Exception as exc:
+            st.error(f"Erreur pendant la transcription : {exc}")
 
 
 # ===

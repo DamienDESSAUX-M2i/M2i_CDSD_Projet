@@ -1,10 +1,14 @@
-name: ci
+name: cicd
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+env:
+  PYTHON_VERSION: "3.13"
+  COVERAGE_THRESHOLD: 1
 
 jobs:
   tests:
@@ -22,14 +26,31 @@ jobs:
 
       - name: Install Python
         run: |
-          uv python install 3.13
-          uv python pin 3.13
+          uv python install $PYTHON_VERSION
+          uv python pin $PYTHON_VERSION
 
       - name: Sync dependencies
-        run: uv sync --group api
+        run: uv sync --group api --group dev
 
       - name: Run tests
-        run: uv run pytest -v --disable-warnings
+          uv run pytest \
+            -v \
+            --disable-warnings \
+            --cov-fail-under=${{ env.COVERAGE_THRESHOLD }}
+
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-html
+          path: htmlcov/
+
+      - name: Upload XML coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-xml
+          path: coverage.xml
 
   quality:
     name: Ruff & MyPy
@@ -46,8 +67,8 @@ jobs:
 
       - name: Install Python
         run: |
-          uv python install 3.13
-          uv python pin 3.13
+          uv python install $PYTHON_VERSION
+          uv python pin $PYTHON_VERSION
 
       - name: Sync dependencies
         run: uv sync --group api --group dev
