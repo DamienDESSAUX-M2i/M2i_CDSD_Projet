@@ -53,11 +53,33 @@ def audio() -> NDArray[np.floating[Any]]:
     return np.load(audio_file_path)
 
 
+@pytest.fixture(scope="module")
+def sample_rate() -> int:
+    """Return an integer corresponding to a sample_rate to give to the method.
+
+    Returns:
+        int: An integer corresponding to a sample_rate.
+    """
+    sample_rate_file_path = (
+        DATA_FOLDER_PATH
+        / "unit"
+        / "audio"
+        / "audio_cleaner"
+        / "test_clean"
+        / "sample_rate.npy"
+    )
+    assert sample_rate_file_path.exists(), (
+        f"The path to the audio file should exist ({sample_rate_file_path})."
+    )
+    return int(np.load(sample_rate_file_path))
+
+
 @pytest.mark.parametrize("configuration_case", ConfigurationCase, indirect=True)
 def test_highpass_filter(
     configuration_case: ConfigurationCase,
     audio_cleaner: "AudioCleaner",
     audio: NDArray[np.floating[Any]],
+    sample_rate: int,
 ) -> None:
     """Check that the highpass_filter method works.
 
@@ -65,6 +87,7 @@ def test_highpass_filter(
         configuration_case (ConfigurationCase): A ConfigurationCase value.
         audio_cleaner (AudioCleaner): An AudioCleaner object.
         audio (NDArray[np.floating[Any]]): An array corresponding to an audio.
+        sample_rate (int): An integer corresponding to a sample_rate.
     """
     # Check that the file containing the reference array exists
     reference_array_file_path = (
@@ -82,10 +105,10 @@ def test_highpass_filter(
     # Call the method
     match configuration_case:
         case ConfigurationCase.DEFAULT:
-            array = audio_cleaner.highpass_filter(audio=audio, sample_rate=22050)
+            array = audio_cleaner.highpass_filter(audio=audio, sample_rate=sample_rate)
         case ConfigurationCase.NOT_DEFAULT:
             array = audio_cleaner.highpass_filter(
-                audio=audio, sample_rate=22050, cutoff=20, filter_order=1
+                audio=audio, sample_rate=sample_rate, cutoff=20, filter_order=1
             )
 
     # Update the reference or compare it to the returned array

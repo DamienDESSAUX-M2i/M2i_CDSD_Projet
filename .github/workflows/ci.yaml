@@ -30,3 +30,30 @@ jobs:
 
       - name: Run tests
         run: uv run pytest -v --disable-warnings
+
+  quality:
+    name: Ruff & MyPy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+        with:
+          enable-cache: true
+
+      - name: Install Python
+        run: |
+          uv python install 3.13
+          uv python pin 3.13
+
+      - name: Sync dependencies
+        run: uv sync --group api --group dev
+
+      - name: Run Ruff
+        run: uv run ruff check api/backend api/frontend
+
+      - name: Run MyPy
+        run: uv run mypy api/backend api/frontend

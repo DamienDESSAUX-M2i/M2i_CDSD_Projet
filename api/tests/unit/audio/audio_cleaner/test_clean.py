@@ -10,7 +10,7 @@ from tests import DATA_FOLDER_PATH
 if TYPE_CHECKING:
     from backend.audio.audio_cleaner import AudioCleaner
 
-IS_UPDATE_REFERENCE_FILE = True
+IS_UPDATE_REFERENCE_FILE = False
 
 
 class ConfigurationCase(enum.StrEnum):
@@ -55,11 +55,33 @@ def audio() -> NDArray[np.floating[Any]]:
     return np.load(audio_file_path)
 
 
+@pytest.fixture(scope="module")
+def sample_rate() -> int:
+    """Return an integer corresponding to a sample_rate to give to the method.
+
+    Returns:
+        int: An integer corresponding to a sample_rate.
+    """
+    sample_rate_file_path = (
+        DATA_FOLDER_PATH
+        / "unit"
+        / "audio"
+        / "audio_cleaner"
+        / "test_clean"
+        / "sample_rate.npy"
+    )
+    assert sample_rate_file_path.exists(), (
+        f"The path to the audio file should exist ({sample_rate_file_path})."
+    )
+    return int(np.load(sample_rate_file_path))
+
+
 @pytest.mark.parametrize("configuration_case", ConfigurationCase, indirect=True)
 def test_clean(
     configuration_case: ConfigurationCase,
     audio_cleaner: "AudioCleaner",
     audio: NDArray[np.floating[Any]],
+    sample_rate: int,
 ) -> None:
     """Check that the clean method works.
 
@@ -67,6 +89,7 @@ def test_clean(
         configuration_case (ConfigurationCase): A ConfigurationCase value.
         audio_cleaner (AudioCleaner): An AudioCleaner object.
         audio (NDArray[np.floating[Any]]): An array corresponding to an audio.
+        sample_rate (int): An integer corresponding to a sample_rate.
     """
     # Check that the file containing the reference array exists
     reference_array_file_path = (
@@ -78,7 +101,8 @@ def test_clean(
         / f"{configuration_case}_reference_array.npy"
     )
     assert reference_array_file_path.exists(), (
-        f"The file containing the reference array should exist ({reference_array_file_path})."
+        f"The file containing the reference array should exist "
+        f"({reference_array_file_path})."
     )
 
     # Call the method
@@ -86,6 +110,7 @@ def test_clean(
         case ConfigurationCase.FILTERING_DENOISE_SPECTRAL:
             array = audio_cleaner.clean(
                 audio=audio,
+                sample_rate=sample_rate,
                 use_highpass=True,
                 use_lowpass=True,
                 denoise_method=DenoiseMethod.SPECTRAL,
@@ -94,6 +119,7 @@ def test_clean(
         case ConfigurationCase.FILTERING_DENOISE_WIENER:
             array = audio_cleaner.clean(
                 audio=audio,
+                sample_rate=sample_rate,
                 use_highpass=True,
                 use_lowpass=True,
                 denoise_method=DenoiseMethod.WIENER,
@@ -102,6 +128,7 @@ def test_clean(
         case ConfigurationCase.NO_FILTERING:
             array = audio_cleaner.clean(
                 audio=audio,
+                sample_rate=sample_rate,
                 use_highpass=False,
                 use_lowpass=False,
                 denoise_method=DenoiseMethod.NONE,
