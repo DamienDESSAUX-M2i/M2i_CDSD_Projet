@@ -1,4 +1,5 @@
 import os
+from typing import Any, cast
 
 import requests
 import streamlit as st
@@ -60,7 +61,7 @@ h1 {
 # ===
 
 
-def api_get(path: str):
+def api_get(path: str) -> Any:
     try:
         response = requests.get(
             f"{API_URL}{path}",
@@ -75,7 +76,7 @@ def api_get(path: str):
         return None
 
 
-def unwrap_api_response(response: dict) -> dict:
+def unwrap_api_response(response: dict[str, Any]) -> dict[str, Any]:
     """
     Extract data from generic API response.
     """
@@ -86,10 +87,10 @@ def unwrap_api_response(response: dict) -> dict:
     if response.get("success") != "success":
         raise RuntimeError(response)
 
-    return response.get("data", {})
+    return cast(dict[str, Any], response.get("data", {}))
 
 
-def api_download(path: str):
+def api_download(path: str) -> bytes | Any:
     response = requests.get(
         f"{API_URL}{path}",
         timeout=60,
@@ -209,6 +210,8 @@ if uploaded_file:
 # Transcription
 # ===
 
+prediction = {}
+
 if uploaded_file and st.button(
     "Transcrire",
     type="primary",
@@ -244,7 +247,6 @@ if uploaded_file and st.button(
 # Results
 # ===
 
-prediction = st.session_state.get("prediction")
 if prediction:
     processing_id = prediction["processing_id"]
 

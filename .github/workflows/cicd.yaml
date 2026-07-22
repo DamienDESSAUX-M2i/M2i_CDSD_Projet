@@ -33,7 +33,8 @@ jobs:
         run: uv sync --group api --group dev
 
       - name: Run tests
-        run: uv run pytest \
+        run: |
+          uv run pytest \
             -v \
             --disable-warnings \
             --cov-fail-under=${{ env.COVERAGE_THRESHOLD }}
