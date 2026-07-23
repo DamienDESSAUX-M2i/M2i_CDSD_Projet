@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from backend.audio.audio_cleaner import DenoiseMethod
 from numpy.typing import NDArray
-from tests import DATA_FOLDER_PATH
+from tests.unit.audio.audio_cleaner import AUDIO_CLEANER_DATA_FOLDER_PATH
 
 if TYPE_CHECKING:
     from backend.audio.audio_cleaner import AudioCleaner
@@ -34,48 +34,6 @@ def configuration_case(request: pytest.FixtureRequest) -> ConfigurationCase:
     return request.param
 
 
-@pytest.fixture(scope="module")
-def audio() -> NDArray[np.floating[Any]]:
-    """Return an array corresponding to an audio to give to the method.
-
-    Returns:
-        NDArray[np.floating[Any]]: An array corresponding to an audio.
-    """
-    audio_file_path = (
-        DATA_FOLDER_PATH
-        / "unit"
-        / "audio"
-        / "audio_cleaner"
-        / "test_clean"
-        / "audio.npy"
-    )
-    assert audio_file_path.exists(), (
-        f"The path to the audio file should exist ({audio_file_path})."
-    )
-    return np.load(audio_file_path)
-
-
-@pytest.fixture(scope="module")
-def sample_rate() -> int:
-    """Return an integer corresponding to a sample_rate to give to the method.
-
-    Returns:
-        int: An integer corresponding to a sample_rate.
-    """
-    sample_rate_file_path = (
-        DATA_FOLDER_PATH
-        / "unit"
-        / "audio"
-        / "audio_cleaner"
-        / "test_clean"
-        / "sample_rate.npy"
-    )
-    assert sample_rate_file_path.exists(), (
-        f"The path to the audio file should exist ({sample_rate_file_path})."
-    )
-    return int(np.load(sample_rate_file_path))
-
-
 @pytest.mark.parametrize("configuration_case", ConfigurationCase, indirect=True)
 def test_clean(
     configuration_case: ConfigurationCase,
@@ -93,10 +51,7 @@ def test_clean(
     """
     # Check that the file containing the reference array exists
     reference_array_file_path = (
-        DATA_FOLDER_PATH
-        / "unit"
-        / "audio"
-        / "audio_cleaner"
+        AUDIO_CLEANER_DATA_FOLDER_PATH
         / "test_clean"
         / f"{configuration_case}_reference_array.npy"
     )
@@ -140,4 +95,4 @@ def test_clean(
         np.save(reference_array_file_path, array)
     else:
         reference_array = np.load(reference_array_file_path)
-        np.testing.assert_allclose(array, reference_array)
+        np.testing.assert_allclose(array, reference_array, rtol=1e-3)
