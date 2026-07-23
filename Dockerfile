@@ -19,6 +19,7 @@ RUN uv sync \
 
 COPY api/backend ./backend
 COPY api/frontend ./frontend
+COPY api/.streamlit ./.streamlit
 COPY api/start.sh ./start.sh
 
 # ===
@@ -42,15 +43,19 @@ ENV PYTHONUNBUFFERED=1 \
 COPY --from=builder /app/.venv ./.venv
 COPY --from=builder /app/backend ./backend
 COPY --from=builder /app/frontend ./frontend
+COPY --from=builder /app/.streamlit ./.streamlit
 COPY --from=builder /app/start.sh ./start.sh
 
 RUN chmod +x start.sh
+
+RUN mkdir -p /tmp
 
 RUN useradd \
         --create-home \
         --shell /usr/sbin/nologin \
         appuser \
-    && chown -R appuser:appuser /app
+    && chown -R appuser:appuser /app \
+    && chmod 777 /tmp
 
 USER appuser
 
