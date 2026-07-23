@@ -1,6 +1,6 @@
-from typing import Annotated, cast
+from typing import cast
 
-from fastapi import Depends, File, Request, UploadFile
+from fastapi import Request
 
 from backend.core import ModelManager
 from backend.services import PredictionService
@@ -70,19 +70,3 @@ def get_prediction_service(
         PredictionService,
         prediction_service,
     )
-
-
-FileDep = Annotated[
-    UploadFile,
-    File(...),
-]
-
-PredictionServiceDep = Annotated[
-    PredictionService,
-    Depends(get_prediction_service),
-]
-
-ModelManagerDep = Annotated[
-    ModelManager,
-    Depends(get_model_manager),
-]

@@ -108,6 +108,9 @@ select = [
 ]
 ignore = []
 
+[tool.ruff.lint.per-file-ignores]
+"api/backend/routes/*.py" = ["B008"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

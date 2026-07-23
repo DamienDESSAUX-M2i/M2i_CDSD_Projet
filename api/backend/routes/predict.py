@@ -3,14 +3,13 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from starlette.concurrency import run_in_threadpool
 
 from backend.core import ModelManager
 from backend.dependencies import (
-    FileDep,
-    ModelManagerDep,
-    PredictionServiceDep,
+    get_model_manager,
+    get_prediction_service,
 )
 from backend.exceptions import InvalidAudioError, PredictionFailedError
 from backend.models import (
@@ -36,9 +35,9 @@ predict_router = APIRouter(
     summary="Run audio transcription",
 )
 async def predict(
-    file: UploadFile = FileDep,  # type: ignore
-    model_manager: ModelManager = ModelManagerDep,  # type: ignore
-    prediction_service: PredictionService = PredictionServiceDep,  # type: ignore
+    file: UploadFile = File(...),
+    model_manager: ModelManager = Depends(get_model_manager),
+    prediction_service: PredictionService = Depends(get_prediction_service),
 ) -> ApiResponse[PredictionResponse]:
     """Run the complete audio transcription pipeline.
 

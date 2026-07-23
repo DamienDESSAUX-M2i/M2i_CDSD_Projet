@@ -1,9 +1,9 @@
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from backend.core import ModelManager
-from backend.dependencies import ModelManagerDep
+from backend.dependencies import get_model_manager
 from backend.models import ApiResponse, HealthResponse
 from backend.services import get_health_status
 
@@ -22,7 +22,7 @@ health_router = APIRouter(
     summary="Health check",
 )
 def health_check(
-    model_manager: ModelManager = ModelManagerDep,  # type: ignore
+    model_manager: ModelManager = Depends(get_model_manager),
 ) -> ApiResponse[HealthResponse]:
     """Check API and model readiness.
 

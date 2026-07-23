@@ -1,9 +1,9 @@
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from backend.core import ModelManager
-from backend.dependencies import ModelManagerDep
+from backend.dependencies import get_model_manager
 from backend.models import ApiResponse, ModelResponse
 from backend.services import get_loaded_model_information
 
@@ -22,7 +22,7 @@ model_router = APIRouter(
     summary="Get loaded model information",
 )
 def get_model_information(
-    model_manager: ModelManager = ModelManagerDep,  # type: ignore
+    model_manager: ModelManager = Depends(get_model_manager),
 ) -> ApiResponse[ModelResponse]:
     """Return information about the loaded transcription model.
 
