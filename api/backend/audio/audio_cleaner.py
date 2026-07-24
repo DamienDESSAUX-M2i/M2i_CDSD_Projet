@@ -1,12 +1,11 @@
 import logging
 from enum import StrEnum
 from time import perf_counter
-from typing import Any
 
 import librosa
 import numpy as np
 import scipy.signal as signal
-from numpy.typing import NDArray
+from api.backend.type_aliases import FloatArray
 
 from .audio_validator import validate_audio
 
@@ -57,11 +56,11 @@ class AudioCleaner:
 
     def highpass_filter(
         self,
-        audio: NDArray[np.floating[Any]],
+        audio: FloatArray,
         sample_rate: int,
         cutoff: float = 80.0,
         filter_order: int = 6,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Apply zero-phase high-pass filtering.
 
         Args:
@@ -100,11 +99,11 @@ class AudioCleaner:
 
     def lowpass_filter(
         self,
-        audio: NDArray[np.floating[Any]],
+        audio: FloatArray,
         sample_rate: int,
         cutoff: float = 8000.0,
         filter_order: int = 6,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Apply zero-phase low-pass filtering.
 
         Args:
@@ -143,8 +142,8 @@ class AudioCleaner:
 
     def spectral_denoise(
         self,
-        audio: NDArray[np.floating[Any]],
-    ) -> NDArray[np.floating[Any]]:
+        audio: FloatArray,
+    ) -> FloatArray:
         """Apply spectral masking denoising.
 
         Args:
@@ -184,9 +183,9 @@ class AudioCleaner:
 
     def wiener_denoise(
         self,
-        audio: NDArray[np.floating[Any]],
+        audio: FloatArray,
         strength: float = 1.0,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Apply Wiener spectral denoising.
 
         Args:
@@ -234,9 +233,9 @@ class AudioCleaner:
 
     def trim_silence(
         self,
-        audio: NDArray[np.floating[Any]],
+        audio: FloatArray,
         top_db: float = 40.0,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Remove leading and trailing silence.
 
         Args:
@@ -266,7 +265,7 @@ class AudioCleaner:
 
     def clean(
         self,
-        audio: NDArray[np.floating[Any]],
+        audio: FloatArray,
         sample_rate: int,
         *,
         use_highpass: bool = True,
@@ -277,7 +276,7 @@ class AudioCleaner:
         wiener_strength: float = 1.0,
         use_trim: bool = False,
         trim_db: float = 40.0,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Execute complete cleaning pipeline.
 
         Args:

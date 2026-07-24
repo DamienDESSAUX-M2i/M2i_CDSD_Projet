@@ -1,9 +1,9 @@
 import logging
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Any
 
 import numpy as np
+from api.backend.type_aliases import FloatArray
 from numpy.typing import NDArray
 
 from backend.audio import (
@@ -29,7 +29,7 @@ class PreprocessingResult:
     """
 
     preprocessing_time: float
-    audio: NDArray[np.floating[Any]]
+    audio: FloatArray
     sample_rate: int
     features: NDArray[np.float32]
 
@@ -84,7 +84,7 @@ class PreprocessingService:
 
     def preprocess(
         self,
-        audio: NDArray[np.floating[Any]],
+        audio: FloatArray,
         sample_rate: int,
     ) -> PreprocessingResult:
         """Run the complete preprocessing pipeline.
@@ -141,9 +141,9 @@ class PreprocessingService:
 
     def _preprocess_audio(
         self,
-        audio: NDArray[np.floating[Any]],
+        audio: FloatArray,
         sample_rate: int,
-    ) -> tuple[NDArray[np.floating[Any]], int]:
+    ) -> tuple[FloatArray, int]:
         """Apply deterministic audio preprocessing.
 
         Args:
@@ -205,9 +205,9 @@ class PreprocessingService:
 
     def _extract_features(
         self,
-        audio: NDArray[np.floating[Any]],
+        audio: FloatArray,
         sample_rate: int,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Extract acoustic features from an audio waveform.
 
         Args:

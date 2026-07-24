@@ -1,14 +1,20 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import cast
 
 import librosa
 import numpy as np
+from api.backend.type_aliases import FloatArray
 from numpy.typing import NDArray
 
 from .audio_validator import validate_audio
 
 logger = logging.getLogger(__name__)
+
+FEATURE_EXTRACTOR_AUDIO_DATA_ERROR_MESSAGE = (
+    "AudioFeatureExtractor requires mono audio."
+)
+FEATURE_EXTRACTOR_SAMPLE_RATE_ERROR_MESSAGE = "Sample rate must be strictly positive."
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,11 +38,11 @@ class ExtractedFeatures:
             Mel-frequency cepstral coefficients.
     """
 
-    stft_db: NDArray[np.floating[Any]] | None = None
-    mel_db: NDArray[np.floating[Any]] | None = None
-    cqt_db: NDArray[np.floating[Any]] | None = None
-    chroma: NDArray[np.floating[Any]] | None = None
-    mfcc: NDArray[np.floating[Any]] | None = None
+    stft_db: FloatArray | None = None
+    mel_db: FloatArray | None = None
+    cqt_db: FloatArray | None = None
+    chroma: FloatArray | None = None
+    mfcc: FloatArray | None = None
 
 
 class AudioFeatureExtractor:
@@ -105,7 +111,7 @@ class AudioFeatureExtractor:
 
     def _validate_input(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         sample_rate: int,
     ) -> None:
         """Validate extractor inputs."""
@@ -113,15 +119,15 @@ class AudioFeatureExtractor:
         validate_audio(audio_data)
 
         if audio_data.ndim != 1:
-            raise ValueError("AudioFeatureExtractor requires mono audio.")
+            raise ValueError(FEATURE_EXTRACTOR_AUDIO_DATA_ERROR_MESSAGE)
 
         if sample_rate <= 0:
-            raise ValueError("Sample rate must be strictly positive.")
+            raise ValueError(FEATURE_EXTRACTOR_SAMPLE_RATE_ERROR_MESSAGE)
 
     def compute_stft(
         self,
-        audio_data: NDArray[np.floating[Any]],
-    ) -> NDArray[np.floating[Any]]:
+        audio_data: FloatArray,
+    ) -> FloatArray:
         """Compute STFT magnitude representation.
 
         Args:
@@ -154,9 +160,9 @@ class AudioFeatureExtractor:
 
     def compute_mel(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         sample_rate: int,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Compute Mel spectrogram.
 
         Args:
@@ -193,9 +199,9 @@ class AudioFeatureExtractor:
 
     def compute_cqt(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         sample_rate: int,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Compute Constant-Q transform.
 
         Args:
@@ -233,9 +239,9 @@ class AudioFeatureExtractor:
 
     def compute_chroma(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         sample_rate: int,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Compute CQT chromagram.
 
         Args:
@@ -264,9 +270,9 @@ class AudioFeatureExtractor:
 
     def compute_mfcc(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         sample_rate: int,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Compute MFCC representation.
 
         Args:
@@ -299,7 +305,7 @@ class AudioFeatureExtractor:
 
     def extract(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         sample_rate: int,
         *,
         use_stft: bool = True,
@@ -366,7 +372,7 @@ class AudioFeatureExtractor:
                 If no feature exists.
         """
 
-        matrices: list[NDArray[np.floating[Any]]] = []
+        matrices: list[FloatArray] = []
 
         for matrix in (
             features.stft_db,

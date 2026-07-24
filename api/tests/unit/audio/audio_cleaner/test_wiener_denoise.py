@@ -1,9 +1,9 @@
 import enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
-from numpy.typing import NDArray
+from api.backend.type_aliases import FloatArray
 from tests.unit.audio.audio_cleaner import AUDIO_CLEANER_DATA_FOLDER_PATH
 
 if TYPE_CHECKING:
@@ -36,14 +36,14 @@ def configuration_case(request: pytest.FixtureRequest) -> ConfigurationCase:
 def test_wiener_denoise(
     configuration_case: ConfigurationCase,
     audio_cleaner: "AudioCleaner",
-    audio: NDArray[np.floating[Any]],
+    audio: FloatArray,
 ) -> None:
     """Check that the wiener_denoise method works.
 
     Args:
         configuration_case (ConfigurationCase): A ConfigurationCase value.
         audio_cleaner (AudioCleaner): An AudioCleaner object.
-        audio (NDArray[np.floating[Any]]): An array corresponding to an audio.
+        audio (FloatArray): An array corresponding to an audio.
     """
     # Check that the file containing the reference array exists
     reference_array_file_path = (

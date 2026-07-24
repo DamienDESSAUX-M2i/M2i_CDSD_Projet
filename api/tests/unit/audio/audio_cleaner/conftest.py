@@ -1,9 +1,7 @@
-from typing import Any
-
 import numpy as np
 import pytest
+from api.backend.type_aliases import FloatArray
 from backend.audio.audio_cleaner import AudioCleaner
-from numpy.typing import NDArray
 from tests.unit.audio.audio_cleaner import AUDIO_CLEANER_DATA_FOLDER_PATH
 
 
@@ -18,11 +16,11 @@ def audio_cleaner() -> AudioCleaner:
 
 
 @pytest.fixture(scope="session")
-def audio() -> NDArray[np.floating[Any]]:
+def audio() -> FloatArray:
     """Return an array corresponding to an audio to give to the method.
 
     Returns:
-        NDArray[np.floating[Any]]: An array corresponding to an audio.
+        FloatArray: An array corresponding to an audio.
     """
     audio_file_path = AUDIO_CLEANER_DATA_FOLDER_PATH / "audio.npy"
     assert audio_file_path.exists(), (

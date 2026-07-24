@@ -2,34 +2,43 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from api.backend.type_aliases import FloatArray
-from tests.unit.audio.audio_cleaner import AUDIO_CLEANER_DATA_FOLDER_PATH
+from tests.unit.audio.audio_feature_extractor import (
+    AUDIO_FEATURE_EXTRACTOR_DATA_FOLDER_PATH,
+)
 
 if TYPE_CHECKING:
-    from backend.audio.audio_cleaner import AudioCleaner
+    from backend.audio.audio_feature_extractor import AudioFeatureExtractor
 
 IS_UPDATE_REFERENCE_FILE = False
 
 
-def test_spectral_denoise(
-    audio_cleaner: "AudioCleaner",
+def test_compute_chroma(
+    audio_feature_extractor: "AudioFeatureExtractor",
     audio: FloatArray,
+    sample_rate: int,
 ) -> None:
-    """Check that the spectral_denoise method works.
+    """Check that the compute_chroma method works.
 
     Args:
-        audio_cleaner (AudioCleaner): An AudioCleaner object.
+        audio_feature_extractor (AudioFeatureExtractor): An AudioFeatureExtractor object.
         audio (FloatArray): An array corresponding to an audio.
+        sample_rate (int): A sample rate.
     """
     # Check that the file containing the reference array exists
     reference_array_file_path = (
-        AUDIO_CLEANER_DATA_FOLDER_PATH / "test_spectral_denoise" / "reference_array.npy"
+        AUDIO_FEATURE_EXTRACTOR_DATA_FOLDER_PATH
+        / "test_compute_chroma"
+        / "reference_array.npy"
     )
     assert reference_array_file_path.exists(), (
         f"The file containing the reference array should exist "
         f"({reference_array_file_path})."
     )
+
     # Call the method
-    array = audio_cleaner.spectral_denoise(audio=audio)
+    array = audio_feature_extractor.compute_chroma(
+        audio_data=audio, sample_rate=sample_rate
+    )
 
     # Update the reference or compare it to the returned array
     if IS_UPDATE_REFERENCE_FILE:

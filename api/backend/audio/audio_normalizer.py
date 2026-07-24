@@ -4,6 +4,7 @@ from typing import Any
 
 import librosa
 import numpy as np
+from api.backend.type_aliases import FloatArray
 from numpy.typing import NDArray
 
 from .audio_validator import validate_audio
@@ -77,8 +78,8 @@ class AudioNormalizer:
 
     def to_mono(
         self,
-        audio_data: NDArray[np.floating[Any]],
-    ) -> NDArray[np.floating[Any]]:
+        audio_data: FloatArray,
+    ) -> FloatArray:
         """Convert multi-channel audio to mono.
 
         Args:
@@ -107,8 +108,8 @@ class AudioNormalizer:
 
     def remove_dc_offset(
         self,
-        audio_data: NDArray[np.floating[Any]],
-    ) -> NDArray[np.floating[Any]]:
+        audio_data: FloatArray,
+    ) -> FloatArray:
         """Remove constant DC component.
 
         Args:
@@ -132,10 +133,10 @@ class AudioNormalizer:
 
     def resample(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         sample_rate: int,
         target_sample_rate: int = 22_050,
-    ) -> tuple[NDArray[np.floating[Any]], int]:
+    ) -> tuple[FloatArray, int]:
         """Resample waveform.
 
         Args:
@@ -186,9 +187,9 @@ class AudioNormalizer:
 
     def normalize_peak(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         target_peak: float = 0.99,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Normalize waveform peak amplitude.
 
         Args:
@@ -228,10 +229,10 @@ class AudioNormalizer:
 
     def normalize_rms(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         target_rms: float = 0.1,
         clip: bool = False,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Normalize waveform RMS energy.
 
         Args:
@@ -278,11 +279,11 @@ class AudioNormalizer:
 
     def normalize(
         self,
-        audio_data: NDArray[np.floating[Any]],
+        audio_data: FloatArray,
         normalization_type: NormalizationType,
         target_rms: float = 0.1,
         target_peak: float = 0.99,
-    ) -> NDArray[np.floating[Any]]:
+    ) -> FloatArray:
         """Apply selected normalization strategy.
 
         Args:
