@@ -5,7 +5,8 @@ from time import perf_counter
 import librosa
 import numpy as np
 import scipy.signal as signal
-from api.backend.type_aliases import FloatArray
+
+from backend.type_aliases import FloatArray
 
 from .audio_validator import validate_audio
 

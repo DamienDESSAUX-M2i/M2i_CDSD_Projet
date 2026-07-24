@@ -1,5 +1,6 @@
 import numpy as np
-from api.backend.type_aliases import FloatArray
+
+from backend.type_aliases import FloatArray
 
 
 def validate_audio(

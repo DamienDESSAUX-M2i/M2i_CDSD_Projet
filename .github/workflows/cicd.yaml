@@ -142,6 +142,7 @@ jobs:
         env:
           HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
           HUGGINGFACE_SPACENAME: ${{ secrets.HUGGINGFACE_SPACENAME }}
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/m2i-cdsd-projet
         run: |
           git clone https://huggingface.co/spaces/${HUGGINGFACE_SPACENAME} hf-space
 

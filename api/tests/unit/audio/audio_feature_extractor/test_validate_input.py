@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
-from api.backend.audio.audio_feature_extractor import (
+from backend.audio.audio_feature_extractor import (
     FEATURE_EXTRACTOR_AUDIO_DATA_ERROR_MESSAGE,
     FEATURE_EXTRACTOR_SAMPLE_RATE_ERROR_MESSAGE,
 )
-from api.backend.type_aliases import FloatArray
+from backend.type_aliases import FloatArray
 
 if TYPE_CHECKING:
     from backend.audio.audio_feature_extractor import AudioFeatureExtractor

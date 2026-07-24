@@ -4,8 +4,9 @@ from typing import cast
 
 import librosa
 import numpy as np
-from api.backend.type_aliases import FloatArray
 from numpy.typing import NDArray
+
+from backend.type_aliases import FloatArray
 
 from .audio_validator import validate_audio
 

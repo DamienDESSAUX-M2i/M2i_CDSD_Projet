@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from api.backend.type_aliases import FloatArray
 from backend.audio.audio_cleaner import AudioCleaner
+from backend.type_aliases import FloatArray
 from tests.unit.audio.audio_cleaner import AUDIO_CLEANER_DATA_FOLDER_PATH
 
 

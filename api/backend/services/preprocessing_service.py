@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from time import perf_counter
 
 import numpy as np
-from api.backend.type_aliases import FloatArray
 from numpy.typing import NDArray
 
 from backend.audio import (
@@ -13,6 +12,7 @@ from backend.audio import (
     ContextWindowBuilder,
 )
 from backend.core import ProcessingSettings
+from backend.type_aliases import FloatArray
 
 logger = logging.getLogger(__name__)
 

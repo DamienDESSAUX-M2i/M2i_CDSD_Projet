@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from api.backend.type_aliases import FloatArray
 from backend.audio.audio_feature_extractor import AudioFeatureExtractor
+from backend.type_aliases import FloatArray
 from tests.unit.audio.audio_feature_extractor import (
     AUDIO_FEATURE_EXTRACTOR_DATA_FOLDER_PATH,
 )
