@@ -95,4 +95,4 @@ def test_clean(
         np.save(reference_array_file_path, array)
     else:
         reference_array = np.load(reference_array_file_path)
-        np.testing.assert_allclose(array, reference_array, rtol=1e-3)
+        np.testing.assert_allclose(array, reference_array, rtol=1e-5)
