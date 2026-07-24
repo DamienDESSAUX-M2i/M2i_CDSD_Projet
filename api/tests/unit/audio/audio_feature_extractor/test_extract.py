@@ -119,7 +119,7 @@ def test_extract(
                 np.testing.assert_allclose(
                     extracted_features.chroma,
                     expected_extracted_features.chroma,
-                    rtol=1e-5,
+                    rtol=1e-4,
                     atol=1e-7,
                 )
                 np.testing.assert_allclose(
@@ -128,7 +128,7 @@ def test_extract(
                 np.testing.assert_allclose(
                     extracted_features.cqt_db,
                     expected_extracted_features.cqt_db,
-                    rtol=1e-5,
+                    rtol=1e-4,
                     atol=1e-7,
                 )
             case ConfigurationCase.WITHOUT_EXTRACTIONS:

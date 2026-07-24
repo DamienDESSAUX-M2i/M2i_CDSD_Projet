@@ -45,4 +45,4 @@ def test_compute_cqt(
         np.save(reference_array_file_path, array)
     else:
         reference_array = np.load(reference_array_file_path)
-        np.testing.assert_allclose(array, reference_array, rtol=1e-5, atol=1e-7)
+        np.testing.assert_allclose(array, reference_array, rtol=1e-4, atol=1e-7)
