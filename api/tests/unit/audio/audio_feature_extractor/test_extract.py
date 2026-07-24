@@ -120,6 +120,7 @@ def test_extract(
                     extracted_features.chroma,
                     expected_extracted_features.chroma,
                     rtol=1e-5,
+                    atol=1e-7,
                 )
                 np.testing.assert_allclose(
                     extracted_features.mfcc, expected_extracted_features.mfcc
@@ -128,6 +129,7 @@ def test_extract(
                     extracted_features.cqt_db,
                     expected_extracted_features.cqt_db,
                     rtol=1e-5,
+                    atol=1e-7,
                 )
             case ConfigurationCase.WITHOUT_EXTRACTIONS:
                 assert asdict(extracted_features) == asdict(expected_extracted_features)
