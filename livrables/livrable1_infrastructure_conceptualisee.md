@@ -188,7 +188,7 @@ L'architecture du projet est décrite par le schéma ci-dessous.
                                                   │
                                                   ▼
                                   ┌───────────────────────────────┐
-                                  │ ML Pipeline (Python)          │
+                                  │ ML Exploration (Jupyter)      │
                                   └───────────────┬───────────────┘
                                                   │
                ┌──────────────────────────────────┼─────────────────────────────────┐
@@ -198,10 +198,16 @@ L'architecture du projet est décrite par le schéma ci-dessous.
 │ MinIO                         │ │ MongoDB                       │ │ PostgreSQL MLflow             │
 │ (Object Storage)              │ │ (Document Storage)            │ │ (SGBD)                        │
 │                               │ │                               │ │                               │
-│ Bucket: output                │ │ Collections:                  │ │                               │
-│ • artifacts (MLflow)          │ │ • dataset_metadata            │ │                               │
-│ • MIDI (.midi)                │ │                               │ │                               │
+│ Bucket: mlflow                │ │ Collections:                  │ │ Tables:                       │
+│ • artifacts (MLflow)          │ │ • dataset_metadata            │ │ • models parameters           │
+│                               │ │                               │ │ • metrics                     │
 └───────────────────────────────┘ └───────────────────────────────┘ └───────────────────────────────┘
+               │
+               ▼
+┌───────────────────────────────┐
+│ API (FastApi)                 │
+│ Interface (Streamlit)         │
+└───────────────────────────────┘
 ```
 
 ## 4.3. Description des composants
