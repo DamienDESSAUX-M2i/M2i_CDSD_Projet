@@ -4,7 +4,6 @@ from src.pipelines import (
     DatasetsDownloadPipeline,
     GuitarSetIngestionPipeline,
     IDMTSMTGuitarIngestionPipeline,
-    MLPipeline,
     PreprocessingPipeline,
 )
 from src.utils import initialize_logger
@@ -88,13 +87,6 @@ def main() -> None:
         help="Launch preprocessing pipeline",
     )
 
-    # Predict notes
-    parser.add_argument(
-        "--run_ml",
-        action="store_true",
-        help="Launch machine learning pipeline",
-    )
-
     args = parser.parse_args()
 
     if args.download_datasets:
@@ -138,15 +130,6 @@ def main() -> None:
         )
         preprocessing_pipeline.run()
         preprocessing_pipeline.close()
-
-    if args.run_ml:
-        ml_pipeline = MLPipeline(
-            logger=logger,
-            guitarset=args.guitar_set,
-            idmt_smt_guitar=args.idmt_smt_guitar,
-        )
-        ml_pipeline.run()
-        ml_pipeline.close()
 
 
 if __name__ == "__main__":

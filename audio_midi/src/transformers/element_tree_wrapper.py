@@ -68,7 +68,8 @@ class ElementTreeWrapper:
         """Cast an Element to dict.
 
         Args:
-            element (ET.Element | None): Element to cast in dictionary. Default self.root.
+            element (ET.Element | None): Element to cast in dictionary.
+            Default self.root.
 
         Returns:
             dict: Dictionary whose keys are Element.tag and values are Element.text.

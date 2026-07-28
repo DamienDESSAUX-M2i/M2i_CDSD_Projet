@@ -116,7 +116,8 @@ class DatasetDownloader(AbstractDatasetDownloader):
 
             except requests.RequestException as exception:
                 self.logger.warning(
-                    f"Download attempt failed: attempt={attempt} url={url} error={exception}",
+                    f"Download attempt failed: "
+                    f"attempt={attempt} url={url} error={exception}",
                 )
 
                 if attempt >= self.settings.max_retry_attempts:

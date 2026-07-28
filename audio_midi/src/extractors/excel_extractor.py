@@ -26,7 +26,8 @@ class ExcelExtractor(AbstractExtractor):
             RuntimeError: If reading the XLSX file fails.
 
         Returns:
-            dict[str, pd.DataFrame]: Dictionary whose keys are the names of the sheets and whose values ​​are the loaded DataFrames.
+            dict[str, pd.DataFrame]: Dictionary whose keys are the names of the sheets
+            and whose values are the loaded DataFrames.
         """
 
         validate_file_path(file_path=file_path, suffix=".xlsx")
