@@ -1,5 +1,7 @@
 <h1>Livrable 1</h1>
 
+> **Consigne :** Une étude de 1 page décrivant schématiquement l'infrastructure conceptualisée et le code source permettant de construire l'infrastructure.
+
 # 1. Table des matières
 - [1. Table des matières](#1-table-des-matières)
 - [2. Contexte et problématique](#2-contexte-et-problématique)
@@ -10,7 +12,6 @@
   - [3.1. Besoins fonctionnels](#31-besoins-fonctionnels)
   - [3.2. Contraintes techniques](#32-contraintes-techniques)
 - [4. Principes d'architecture retenus](#4-principes-darchitecture-retenus)
-  - [4.1. Une architecture organisée autour du cycle de vie de la donnée](#41-une-architecture-organisée-autour-du-cycle-de-vie-de-la-donnée)
 - [5. Architecture globale de la plateforme](#5-architecture-globale-de-la-plateforme)
 - [6. Description détaillée des composants](#6-description-détaillée-des-composants)
   - [6.1. MinIO : stockage objet](#61-minio--stockage-objet)
@@ -57,7 +58,7 @@
 # 2. Contexte et problématique
 ## 2.1. Contexte
 
-La transcription automatique de musique (Automatic Music Transcription – AMT) consiste à convertir un signal audio en une représentation musicale exploitable, telle qu'une partition ou un fichier MIDI. Cette problématique mobilise plusieurs disciplines complémentaires, notamment le traitement du signal, le traitement et l'analyse des données et l'analyse musicale.
+La transcription automatique de musique (Automatic Music Transcription – AMT) consiste à convertir un signal audio en une représentation musicale exploitable, telle qu'une partition ou un fichier MIDI. Cette problématique mobilise plusieurs disciplines complémentaires, notamment le traitement du signal, l'apprentissage machine et l'analyse musicale.
 
 Le projet présenté dans ce dossier a pour objectif de développer une solution capable de transcrire automatiquement un enregistrement de guitare monophonique ou polyphonique en fichier MIDI et partition. La qualité d'un tel système repose autant sur les performances du modèle de Machine Learning que sur la maîtrise de l'ensemble du cycle de vie des données ayant permis son apprentissage.
 
@@ -83,36 +84,34 @@ La problématique peut ainsi être formulée de la manière suivante :
 
 Afin de répondre à cette problématique, l'infrastructure conçue poursuit plusieurs objectifs complémentaires :
 
-* centraliser le stockage des données brutes, des jeux de données construits, des modèles et des artefacts de traitement ;
-* assurer la traçabilité des jeux de données et des pipelines de prétraitement afin de garantir la reproductibilité des expérimentations ;
-* faciliter l'entraînement, la comparaison et le versionnement des modèles de Machine Learning grâce à une plateforme dédiée au suivi des expérimentations ;
-* standardiser l'environnement de développement afin de garantir des conditions d'exécution identiques entre les différents environnements (développement, intégration continue et production) ;
-* automatiser les opérations de validation, de construction et de déploiement au moyen d'une chaîne d'intégration et de déploiement continus (CI/CD) ;
-* proposer une architecture modulaire permettant de faire évoluer les traitements de préparation des données, notamment par l'intégration future d'un moteur de calcul distribué tel qu'Apache Spark, sans remettre en cause l'organisation globale de la plateforme.
+- centraliser le stockage des données brutes, des jeux de données construits, des modèles et des artefacts de traitement,
+- assurer la traçabilité des jeux de données et des pipelines de prétraitement afin de garantir la reproductibilité des expérimentations,
+- faciliter l'entraînement, la comparaison et le versionnement des modèles de Machine Learning grâce à une plateforme dédiée au suivi des expérimentations,
+- standardiser l'environnement de développement afin de garantir des conditions d'exécution identiques entre les différents environnements (développement, intégration continue et production),
+- automatiser les opérations de validation, de construction et de déploiement au moyen d'une chaîne d'intégration et de déploiement continus (CI/CD),
+- proposer une architecture modulaire permettant de faire évoluer la plateforme sans remettre en cause son organisation globale.
 
 L'ensemble de ces objectifs a conduit à concevoir une architecture reposant sur des composants spécialisés, orchestrés par Docker Compose et entièrement décrits sous forme de code (Infrastructure as Code), afin de garantir la reproductibilité, la maintenabilité et l'évolutivité de la solution.
 
 # 3. Analyse des besoins et des contraintes
 
-L'objectif du projet est de concevoir une infrastructure complète permettant de développer, entraîner, évaluer puis déployer un modèle d'intelligence artificielle capable de transcrire automatiquement un enregistrement audio de guitare monophonique ou polyphonique en partition musicale (MIDI et partition PDF). Cette infrastructure doit couvrir l'ensemble du cycle de vie de la donnée et du modèle, depuis l'acquisition des données jusqu'à la mise à disposition d'une application exploitable par un utilisateur final.
-
 L'analyse des besoins a conduit à distinguer deux usages principaux :
 
-* un environnement de développement et d'expérimentation destiné au data scientist pour construire les jeux de données, entraîner plusieurs modèles et comparer leurs performances ;
-* un environnement de déploiement permettant d'exposer le modèle retenu au travers d'une API REST et d'une interface web.
+- un environnement de développement et d'expérimentation destiné au data scientist pour construire les jeux de données, entraîner plusieurs modèles et comparer leurs performances ;
+- un environnement de déploiement permettant d'exposer le modèle retenu au travers d'une API REST et d'une interface web.
 
 ## 3.1. Besoins fonctionnels
 
 L'infrastructure doit permettre de :
 
-* centraliser les jeux de données audio et leurs annotations ;
-* assurer la traçabilité des traitements appliqués aux données ;
-* construire plusieurs versions de jeux d'entraînement à partir de pipelines de prétraitement ;
-* expérimenter plusieurs architectures de modèles de deep learning ;
-* assurer le suivi des expérimentations (paramètres, métriques, modèles et artefacts) ;
-* charger le modèle retenu dans une API REST ;
-* proposer une interface web simple permettant de déposer un fichier audio et de récupérer la transcription générée ;
-* automatiser les contrôles qualité et le déploiement de l'application.
+- centraliser les jeux de données audio et leurs annotations,
+- assurer la traçabilité des traitements appliqués aux données,
+- construire plusieurs versions de jeux d'entraînement à partir de pipelines de prétraitement,
+- expérimenter plusieurs architectures de modèles de deep learning,
+- assurer le suivi des expérimentations (paramètres, métriques, modèles et artefacts),
+- charger le modèle retenu dans une API REST,
+- proposer une interface web simple permettant de déposer un fichier audio et de récupérer la transcription générée,
+- automatiser les contrôles qualité et le déploiement de l'application.
 
 ## 3.2. Contraintes techniques
 
@@ -120,27 +119,31 @@ Plusieurs contraintes ont orienté les choix d'architecture.
 
 **Reproductibilité**
 
-L'ensemble des environnements Python est géré avec uv, garantissant une installation déterministe des dépendances grâce au fichier uv.lock. Cette approche permet de reconstruire exactement le même environnement.
+L'ensemble des environnements Python est géré avec `uv`, garantissant une installation déterministe des dépendances grâce au fichier [uv.lock](../uv.lock). Cette approche permet de reconstruire exactement le même environnement.
 
 **Conteneurisation**
 
-Tous les composants de la plateforme sont exécutés dans des conteneurs Docker orchestrés par Docker Compose. Cette approche permet :
+Tous les composants de la plateforme sont exécutés dans des conteneurs `Docker` orchestrés par `Docker Compose`. Cette approche permet :
 
-* d'isoler les différents services ;
-* de simplifier le déploiement ;
-* d'obtenir un environnement identique en développement et en démonstration.
+- d'isoler les différents services,
+- de simplifier le déploiement,
+- d'obtenir l'idempotence de l'environnement de développement.
 
-On peut ainsi reconstruire l'intégralité de l'infrastructure à partir d'une simple commande : `docker compose up -d`.
+On peut ainsi reconstruire l'intégralité de l'infrastructure à partir de la commande :
+
+```bash
+docker compose up -d
+```
 
 **Séparation des responsabilités**
- 
+
 L'architecture a été volontairement découpée en composants indépendants :
 
-* stockage objet (MinIO) ;
-* bases de données métier (MongoDB et PostgreSQL) ;
-* suivi des expérimentations (MLflow) ;
-* API d'inférence (FastAPI) ;
-* interface utilisateur (Streamlit).
+- stockage objet (`MinIO`),
+- bases de données (`MongoDB` et `PostgreSQL`),
+- suivi des expérimentations (`MLflow`),
+- API d'inférence (`FastAPI`),
+- interface utilisateur (`Streamlit`).
 
 Cette séparation facilite la maintenance et permet de faire évoluer chaque composant indépendamment.
 
@@ -148,114 +151,113 @@ Cette séparation facilite la maintenance et permet de faire évoluer chaque com
 
 L'infrastructure doit permettre de connaître précisément :
 
-* l'origine d'un fichier audio ;
-* le pipeline de prétraitement appliqué ;
-* les jeux de données auxquels appartient chaque échantillon ;
-* les modèles ayant été entraînés avec ces données.
+- l'origine d'un fichier audio,
+- le pipeline de prétraitement appliqué,
+- les jeux de données auxquels appartient chaque échantillon,
+- les modèles ayant été entraînés avec ces données.
 
-Cette traçabilité est assurée conjointement par MongoDB, MinIO et MLflow.
+Cette traçabilité est assurée conjointement par `MongoDB`, `MinIO` et `MLflow`.
 
 **Industrialisation**
 
-L'ensemble du code est versionné sous GitHub.
+L'ensemble du code est versionné sous `GitHub`.
 L'API d'inférence et l'interface utilisateur sont également contrôlées automatiquement via une chaîne CI/CD comprenant :
 
-* l'exécution des tests unitaires et d'intégration ;
-* le contrôle qualité avec Ruff ;
-* la vérification statique avec MyPy ;
-* la construction d'une image Docker ;
-* la publication de cette image dans GitHub Container Registry ;
-* le déploiement automatique sur Hugging Face Spaces.
+- l'exécution des tests unitaires et d'intégration,
+- le contrôle qualité avec `Ruff`,
+- la vérification statique avec `MyPy`,
+- la construction d'une image `Docker`,
+- la publication de cette image dans `GitHub Container Registry`,
+- le déploiement automatique sur `Hugging Face Spaces`.
 
 Cette automatisation garantit que seule une version validée du projet peut être déployée.
 
 **Évolutivité**
 
 L'architecture a été pensée pour évoluer.
-Ainsi, bien que les pipelines ETL soient actuellement développés en Python, un cluster Spark est déjà intégré à l'infrastructure. Il permettra, dans une future version du projet, de distribuer les traitements de prétraitement audio sur plusieurs nœuds sans modifier l'organisation générale de la plateforme.
+Ainsi, bien que les pipelines ETL soient actuellement développés en Python, un cluster `Spark` est déjà intégré à l'infrastructure. Il permettra, dans une future version du projet, de distribuer les traitements de prétraitement audio sur plusieurs noeuds sans modifier l'organisation générale de la plateforme.
 
 # 4. Principes d'architecture retenus
 
 L'infrastructure a été conçue selon une architecture modulaire distinguant clairement les différentes étapes du cycle de vie d'un projet de science des données : collecte des données, préparation des jeux d'entraînement, expérimentation des modèles, déploiement et exploitation. Cette séparation permet de faire évoluer chaque composant indépendamment tout en garantissant la reproductibilité des traitements.
 
-## 4.1. Une architecture organisée autour du cycle de vie de la donnée
-
 L'architecture s'articule autour de cinq couches fonctionnelles.
 
 **Acquisition et stockage des données**
 
-Les données sources (enregistrements audio et annotations musicales) sont stockées dans MinIO, utilisé comme stockage objet compatible S3. Les fichiers sont organisés dans plusieurs buckets correspondant aux différentes étapes du projet :
+Les données sources (enregistrements audio et annotations musicales) sont stockées dans `MinIO`, utilisé comme stockage objet compatible S3. Les fichiers sont organisés dans plusieurs buckets correspondant aux différentes étapes du projet :
 
-raw : données brutes (audios et annotations) ;
-processed : données prétraitées, caractéristiques audio (features) et annotations alignées ;
-output : réservé aux futures productions de l'API ;
-mlflow : stockage des artefacts générés par MLflow (modèles, figures, métriques, etc.).
+raw : données brutes (audios et annotations),
+processed : audio prétraitées et échantillon (caractéristiques audio (features) et annotations alignées),
+output : réservé aux futures productions de l'API,
+mlflow : stockage des artefacts générés par `MLflow` (modèles, figures, métriques, etc.).
 
 Cette organisation permet de conserver l'historique complet des transformations appliquées aux données tout en évitant la duplication des fichiers.
 
-En parallèle, MongoDB stocke les métadonnées décrivant les pipelines de traitement. Chaque objet manipulé (audio, dataset ou pipeline) possède ainsi une description permettant de garantir la traçabilité des traitements réalisés.
+En parallèle, `MongoDB` stocke les métadonnées décrivant les pipelines de traitement. Chaque objet manipulé (audio, dataset ou pipeline) possède ainsi une description permettant de garantir la traçabilité des traitements réalisés.
 
 **Construction des jeux d'entraînement**
 
 Les pipelines ETL sont actuellement développés en Python. Ils réalisent successivement :
 
-* la collecte des données (téléchargement des datasets GuitarSet et IDMT-SMT-Guitar)
-* la normalisation et le nettoyage des enregistrements audio ;
-* l'extraction des représentations fréquentielles (Constant-Q Transform, ...) ;
-* l'alignement des annotations musicales ;
-* la génération des jeux d'entraînement.
+- la collecte des données (téléchargement des datasets `GuitarSet` et `IDMT-SMT-Guitar`),
+- l'ingestion des données (`MinIo` stocke les données bruts et `MongoDB` les annotations),
+- la normalisation et le nettoyage des enregistrements audio,
+- l'extraction des représentations fréquentielles (Constant-Q Transform, ...),
+- l'alignement des annotations musicales,
+- la génération des jeux d'entraînement.
 
-Les informations produites sont enregistrées dans MongoDB tandis que les fichiers générés sont stockés dans MinIO.
+Les informations produites sont enregistrées dans `MongoDB` tandis que les fichiers générés sont stockés dans MinIO.
 
-L'infrastructure intègre également un cluster Apache Spark composé d'un nœud maître et de deux nœuds de calcul. Cette partie n'est pas encore exploitée dans la version actuelle mais constitue une évolution prévue afin de distribuer les traitements de prétraitement lorsque les volumes de données deviendront plus importants.
+L'infrastructure intègre également un cluster Apache Spark composé d'un noeud maître et de deux noeuds de calcul. Cette partie n'est pas encore exploitée dans la version actuelle mais constitue une évolution prévue afin de distribuer les traitements de prétraitement lorsque les volumes de données deviendront plus importants.
 
 **Expérimentation des modèles**
 
-Les expérimentations sont réalisées avec MLflow.
+Les expérimentations sont réalisées avec `MLflow`.
 
 Chaque entraînement enregistre automatiquement :
 
-* l'identité du dataset utilisé ;
-* les paramètres d'apprentissage ;
-* les métriques d'évaluation ;
-* les modèles entraînés ;
-* les graphiques produits durant les expérimentations.
+- l'identité du dataset utilisé,
+- les paramètres d'apprentissage,
+- les métriques d'évaluation,
+- les modèles entraînés,
+- les graphiques produits durant les expérimentations.
 
-MLflow s'appuie sur deux composants complémentaires :
+`MLflow` s'appuie sur deux composants complémentaires :
 
-* PostgreSQL, utilisé comme base de données du serveur MLflow ;
-* MinIO, utilisé pour conserver les artefacts (modèles TensorFlow, figures, jeux de paramètres...).
+- `PostgreSQL`, utilisé comme base de données du serveur `MLflow` ;
+- `MinIO`, utilisé pour conserver les artefacts (modèles TensorFlow, figures, jeux de paramètres...).
 
 Cette architecture garantit la reproductibilité complète des expérimentations et facilite la comparaison entre plusieurs versions de modèles.
 
 **Déploiement du modèle**
 
-Le modèle retenu est exporté depuis MLflow sous la forme d'un modèle TensorFlow (.keras) puis intégré au dépôt Git.
+Le modèle retenu est exporté depuis `MLflow` sous la forme d'un modèle `Scikit-learn` (.joblib) ou d'un `TensorFlow` (.keras) puis intégré au dépôt Git.
 
 Lors du démarrage de l'API, un ModelManager charge automatiquement :
 
-* le modèle TensorFlow ;
-* le scaler utilisé lors de l'entraînement ;
-* les métadonnées décrivant le modèle.
+- le modèle,
+- le scaler utilisé lors de l'entraînement si nécessaire,
+- les métadonnées décrivant le modèle.
 
-Le modèle est ainsi chargé une seule fois au démarrage de l'application puis partagé entre toutes les requêtes, ce qui limite fortement le temps de réponse de l'API.
+Le modèle est ainsi chargé une seule fois au démarrage de l'application puis partagé entre toutes les requêtes, ce qui limite le temps de réponse de l'API.
 
 **Exposition du service**
 
 La couche d'exploitation repose sur deux composants complémentaires :
 
-* une API REST FastAPI qui expose les services de prédiction ;
-* une application Streamlit constituant l'interface utilisateur.
+- une API REST `FastAPI` qui expose les services de prédiction,
+- une application `Streamlit` constituant l'interface utilisateur.
 
 Lorsqu'un utilisateur dépose un fichier audio, la requête suit le pipeline suivant :
 
-* réception du fichier par Streamlit ;
-* envoi à l'API REST ;
-* prétraitement audio ;
-* inférence par le modèle TensorFlow ;
-* post-traitement musical ;
-* génération des fichiers MIDI, SVG et PDF ;
-* restitution des résultats à l'utilisateur.
+- réception du fichier par `Streamlit`,
+- envoi à l'API REST,
+- prétraitement audio,
+- inférence par le modèle TensorFlow,
+- post-traitement musical,
+- génération des fichiers MIDI, SVG et PDF,
+- restitution des résultats à l'utilisateur.
 
 Cette séparation entre interface graphique et logique métier facilite les évolutions futures et permet à d'autres applications de consommer directement l'API.
 
@@ -267,14 +269,14 @@ Chaque service possède une responsabilité unique :
 
 | Service | Rôle |
 | :- | :- |
-| MinIO | Stockage objet des données et des artefacts |
-| MongoDB | Métadonnées des pipelines et des datasets |
-| PostgreSQL | Données métier |
-| PostgreSQL MLflow | Base de données des expérimentations MLflow |
-| MLflow | Gestion des expériences de machine learning |
-| API FastAPI | Inférence et orchestration des traitements |
-| Streamlit | Interface utilisateur |
-| Spark | Prétraitement distribué (évolution prévue) |
+| `MinIO` | Stockage objet des données et des artefacts |
+| `MongoDB` | Métadonnées des pipelines et des datasets |
+| `PostgreSQL` | Données métier |
+| `PostgreSQL` MLflow | Base de données des expérimentations MLflow |
+| `MLflow` | Gestion des expériences de machine learning |
+| API `FastAPI` | Inférence et orchestration des traitements |
+| `Streamlit` | Interface utilisateur |
+| `Spark` | Prétraitement distribué (évolution prévue) |
 
 Cette organisation limite le couplage entre les composants et facilite leur maintenance ou leur remplacement.
 
@@ -282,30 +284,20 @@ Cette organisation limite le couplage entre les composants et facilite leur main
 
 La reproductibilité constitue un principe central de l'architecture.
 
-L'environnement Python est standardisé avec uv, qui garantit des versions identiques des dépendances grâce au fichier uv.lock.
+L'environnement Python est standardisé avec `uv`, qui garantit des versions identiques des dépendances grâce au fichier [`uv.lock`](../uv.lock).
 
-L'ensemble des services est défini dans un unique fichier docker-compose.yml, permettant de reconstruire automatiquement la plateforme complète.
+L'ensemble des services est défini dans un unique fichier [`docker-compose.yml`](../docker-compose.yml), permettant de reconstruire automatiquement la plateforme complète.
 
-Enfin, une chaîne CI/CD GitHub Actions automatise pour l'API d'inérence et l'interface utilisateur :
+Enfin, une chaîne CI/CD `GitHub Actions` automatise pour l'API d'inérence et l'interface utilisateur :
 
-* l'exécution des tests unitaires et d'intégration ;
-* la mesure de la couverture de code ;
-* l'analyse statique avec Ruff et MyPy ;
-* la construction de l'image Docker ;
-* la publication de cette image sur GitHub Container Registry ;
-* le déploiement automatique sur Hugging Face Spaces.
+- l'exécution des tests unitaires et d'intégration,
+- la mesure de la couverture de code,
+- l'analyse statique avec `Ruff` et `MyPy`,
+- la construction de l'image `Docker`,
+- la publication de cette image sur `GitHub Container Registry`,
+- le déploiement automatique sur `Hugging Face Spaces`.
 
-Cette automatisation garantit qu'une version déployée a systématiquement satisfait les contrôles qualité définis pour le projet.
-
-**Justification des choix d'architecture**
-
-Les choix retenus répondent aux objectifs identifiés lors de l'analyse des besoins :
-
-* modularité, grâce à la séparation des responsabilités entre les services ;
-* traçabilité, grâce à la combinaison de MongoDB, MinIO et MLflow ;
-* reproductibilité, assurée par uv, Docker et GitHub Actions ;
-* maintenabilité, par une architecture logicielle clairement découpée ;
-* évolutivité, grâce à l'intégration anticipée d'un cluster Spark et à la séparation entre entraînement et inférence.
+Cette automatisation garantit qu'une version déployée satisfait les contrôles qualité définis pour le projet.
 
 # 5. Architecture globale de la plateforme
 
@@ -467,7 +459,7 @@ Deux instances PostgreSQL sont présentes dans l'infrastructure.
 
 La première instance est destinée aux données relationnelles de l'application.
 
-La base de données conteint :
+La base de données contient :
 
 * les métadonnées des audios collectés.
 
