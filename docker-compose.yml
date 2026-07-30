@@ -3,6 +3,7 @@ name: audio_midi
 services:
   minio:
     image: quay.io/minio/minio
+    container_name: minio
     restart: unless-stopped
     env_file:
       - ./.env
@@ -24,9 +25,10 @@ services:
     networks:
       - network_minio
 
-  minio-init:
+  minio_init:
     build:
       context: ./minio/init
+    container_name: minio_init
     restart: "no"
     env_file:
       - ./.env
@@ -45,6 +47,7 @@ services:
 
   mongo:
     image: mongo
+    container_name: mongo
     restart: unless-stopped
     env_file:
       - ./.env
@@ -66,8 +69,9 @@ services:
     networks:
       - network_mongo
 
-  mongo-express:
+  mongo_express:
     image: mongo-express
+    container_name: mongo_express
     restart: unless-stopped
     depends_on:
       mongo:
@@ -88,6 +92,7 @@ services:
 
   postgres:
     image: postgres
+    container_name: postgres
     restart: unless-stopped
     env_file:
       - ./.env
@@ -111,6 +116,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
+    container_name: pgadmin
     restart: unless-stopped
     depends_on:
       postgres:
@@ -130,6 +136,7 @@ services:
 
   postgres_mlflow:
     image: postgres
+    container_name: postgres_mlflow
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_MLFLOW_USER}
@@ -147,6 +154,7 @@ services:
 
   mlflow:
     image: ghcr.io/mlflow/mlflow
+    container_name: mlflow
     restart: unless-stopped
     depends_on:
       postgres_mlflow:
@@ -173,19 +181,20 @@ services:
       --backend-store-uri postgresql://${POSTGRES_MLFLOW_USER}:${POSTGRES_MLFLOW_PASSWORD}@postgres_mlflow:5432/${POSTGRES_MLFLOW_DBNAME}
       --default-artifact-root s3://mlflow/
 
-  spark-master:
+  spark_master:
     build:
       context: ./spark
-    hostname: spark-master
+    container_name: spark_master
+    hostname: spark_master
     restart: unless-stopped
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.master.Master
-      --host spark-master
+      --host spark_master
       --port 7077
       --webui-port 8080
     environment:
-      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_HOST: spark_master
       SPARK_MASTER_PORT: 7077
       SPARK_MASTER_WEBUI_PORT: 8080
     ports:
@@ -204,17 +213,18 @@ services:
       - network_spark
       - network_minio
 
-  spark-worker-1:
+  spark_worker_1:
     build:
       context: ./spark
+    container_name: spark_worker_1
     restart: unless-stopped
     depends_on:
-      spark-master:
+      spark_master:
         condition: service_healthy
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.worker.Worker
-      spark://spark-master:7077
+      spark://spark_master:7077
     environment:
       SPARK_WORKER_CORES: 2
       SPARK_WORKER_MEMORY: 2G
@@ -226,17 +236,18 @@ services:
       - network_spark
       - network_minio
 
-  spark-worker-2:
+  spark_worker_2:
     build:
       context: ./spark
+    container_name: spark_worker_2
     restart: unless-stopped
     depends_on:
-      spark-master:
+      spark_master:
         condition: service_healthy
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.worker.Worker
-      spark://spark-master:7077
+      spark://spark_master:7077
     environment:
       SPARK_WORKER_CORES: 2
       SPARK_WORKER_MEMORY: 2G
@@ -252,6 +263,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: api
     restart: unless-stopped
 
     ports:
