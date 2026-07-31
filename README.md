@@ -526,18 +526,17 @@ python app/main.py --ml
 | Option | Description |
 |--------|-------------|
 | `--download_datasets` | Lance la pipeline de téléchargement des datasets |
-| `--no_guitar_set` | Désective le téléchargement du dataset `GuitarSet` |
-| `--no_idmt_smt_guitar` | Désective le téléchargement du dataset `IDMT-SMT-Guitar` |
+| `--no_guitar_set` | Désective le téléchargement, l'ingestion ou le préprocessing du dataset `GuitarSet` |
+| `--no_idmt_smt_guitar` | Désective le téléchargement, l'ingestion ou le préprocessing du dataset `IDMT-SMT-Guitar` |
 | `--ingest_datasets` | Lance la pipeline d'ingestion des datasets |
 | `--ingest_guitar_set` | Lance la pipeline d'ingestion pour le dataset `GuitarSet` |
 | `--ingest_idmt_smt_guitar` | Lance la pipeline d'ingestion pour le dataset `IDMT-SMT-Guitar` |
-| `--limit` | Type: int | None, Défaut: None, Limite le nombre données ingérées |
-| `--no_dataset1` | Désactive l'ingestion du sous ensemble numéro 1 du dataset `IDMT-SMT-Guitar` |
-| `--no_dataset2` | Désactive l'ingestion du sous ensemble numéro 2 du dataset `IDMT-SMT-Guitar` |
-| `--no_dataset3` | Désactive l'ingestion du sous ensemble numéro 3 du dataset `IDMT-SMT-Guitar` |
-| `--no_dataset4` | Désactive l'ingestion du sous ensemble numéro 4 du dataset `IDMT-SMT-Guitar` |
-| `--preprocessor` | Lance la pipeline de prétraitement |
-| `--ml` | Lance la pipeline de machine learning |
+| `--limit` | Type: int | None, Défaut: None, Limite le nombre données ingérées ou pré-traité |
+| `--no_dataset1` | Désactive l'ingestion ou le préprocessing du sous ensemble numéro 1 du dataset `IDMT-SMT-Guitar` |
+| `--no_dataset2` | Désactive l'ingestion ou le préprocessing du sous ensemble numéro 2 du dataset `IDMT-SMT-Guitar` |
+| `--no_dataset3` | Désactive l'ingestion ou le préprocessing du sous ensemble numéro 3 du dataset `IDMT-SMT-Guitar` |
+| `--no_dataset4` | Désactive l'ingestion ou le préprocessing du sous ensemble numéro 4 du dataset `IDMT-SMT-Guitar` |
+| `--preprocess_datasets` | Lance la pipeline de prétraitement |
 
 ### 11.4. Exemples d'utilisations des options
 
@@ -550,6 +549,9 @@ python app/main.py --ingest_guitar_set --limit 10
 
 # Ingestion des 10 premières données des sous ensembles de données numéros 1 et 3 du dataset IDMT-SMT-Guitar
 python app/main.py --ingest_idmt_smt_guitar --limit 10 --no-dataset2 --no-dataset4
+
+# Pré-traitement du dataset GuitarSet
+python app/main.py --ingest_idmt_smt_guitar --no_idmt_smt_guitar
 ```
 
 ### Temps d'exécution estimés

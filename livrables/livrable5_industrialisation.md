@@ -1,308 +1,235 @@
-<h1>Livrable 5 : Industrialisation d'un algorithme d'apprentissage automatique et automatisation des processus de décision</h1>
+<h1>Livrable 5 — Industrialisation d'un algorithme d'apprentissage automatique et automatisation des processus de décision</h1>
 
-> Un code source contenant la création de l'environnement standardisé, le déploiement de l'algorithme et l'application web ainsi qu'un URL vers l'application déployée.
+> **Livrable attendu :** Code source contenant la création de l'environnement standardisé, le déploiement de l'algorithme, l'application web ainsi que l'URL de l'application déployée.
 
 # 1. Table des matières
+
 - [1. Table des matières](#1-table-des-matières)
 - [2. Objectif du livrable](#2-objectif-du-livrable)
-- [3. Architecture générale](#3-architecture-générale)
-- [4. Environnement standardisé](#4-environnement-standardisé)
-- [5. Déploiement de l'algorithme](#5-déploiement-de-lalgorithme)
-- [6. API de production](#6-api-de-production)
-- [7. Interface utilisateur](#7-interface-utilisateur)
-- [8. Conteneurisation](#8-conteneurisation)
-- [9. Déploiement local](#9-déploiement-local)
-- [10. Intégration continue (CI)](#10-intégration-continue-ci)
-- [11. Livraison continue (CD)](#11-livraison-continue-cd)
-- [12. Gestion des dépendances](#12-gestion-des-dépendances)
-- [13. Ressources du projet](#13-ressources-du-projet)
-- [14. Conclusion](#14-conclusion)
+- [3. Vue d'ensemble de l'architecture de déploiement](#3-vue-densemble-de-larchitecture-de-déploiement)
+- [4. Standardisation de l'environnement](#4-standardisation-de-lenvironnement)
+- [5. Industrialisation du modèle d'apprentissage](#5-industrialisation-du-modèle-dapprentissage)
+- [6. Exposition du modèle par une API REST](#6-exposition-du-modèle-par-une-api-rest)
+- [7. Application web de démonstration](#7-application-web-de-démonstration)
+- [8. Industrialisation du déploiement](#8-industrialisation-du-déploiement)
+- [9. Déploiement local et reproductibilité](#9-déploiement-local-et-reproductibilité)
+- [10. Ressources du projet](#10-ressources-du-projet)
+- [11. Conclusion](#11-conclusion)
 
 # 2. Objectif du livrable
 
-Ce document présente les éléments permettant de démontrer l'industrialisation et le déploiement de l'application.
+Ce livrable présente l'industrialisation de la couche applicative développée dans le cadre du projet de transcription automatique de guitare.
 
-Le projet est composé :
+Après avoir été entraîné et sélectionné lors des expérimentations de Machine Learning, le modèle est intégré dans une architecture logicielle permettant son exploitation en production. Cette architecture poursuit trois objectifs :
 
-- d'une API REST `FastAPI`,
-- d'une interface utilisateur `Streamlit`,
-- d'un modèle `TensorFlow` chargé au démarrage de l'API,
-- d'une chaîne CI/CD `GitHub Actions`,
-- d'un déploiement automatisé sur `Hugging Face Spaces`,
-- d'un environnement `Docker` entièrement reproductible.
+- standardiser l'environnement d'exécution afin de garantir la reproductibilité des déploiements,
+- exposer les capacités du modèle au travers d'une API REST documentée,
+- mettre à disposition une application web accessible aux utilisateurs finaux.
 
-# 3. Architecture générale
+L'ensemble de la chaîne de déploiement est entièrement automatisé grâce à une pipeline CI/CD, depuis la validation du code jusqu'à la mise en production sur Hugging Face Spaces.
 
-![Figure d'architecture](./soutenance/figures/BC05/cicd_deployment_architecture.png)
+# 3. Vue d'ensemble de l'architecture de déploiement
 
-# 4. Environnement standardisé
+La figure suivante présente l'architecture de déploiement retenue pour la couche applicative.
 
-L'ensemble du projet est conteneurisé avec `Docker`.
+![Architecture de déploiement](./soutenance/figures/BC05/cicd_deployment_architecture.png)
 
-Les dépendances Python sont gérées par `uv` afin de garantir :
+L'industrialisation débute après la phase d'expérimentation des modèles. Une fois le meilleur modèle **TensorFlow** sélectionné et exporté, celui-ci est intégré à l'API FastAPI.
 
-- la reproductibilité de l'environnement,
-- le verrouillage des versions ([uv.lock](../uv.lock)),
-- une installation identique entre le développement, la CI et la production.
+À chaque évolution du dépôt GitHub, une chaîne d'intégration continue valide automatiquement la qualité du projet avant de construire une image Docker unique. Cette image est publiée sur **GitHub Container Registry (GHCR)** puis utilisée pour mettre à jour automatiquement le **Hugging Face Space** hébergeant l'application.
 
-Les dépendances sont décrites dans :
+L'utilisateur interagit uniquement avec l'interface Streamlit. Celle-ci communique avec l'API REST afin de déclencher la transcription audio et de restituer les différents artefacts générés (MIDI, partition, piano roll).
 
-- [pyproject.toml](../pyproject.toml)
-- [uv.lock](../uv.lock)
+Cette architecture garantit un environnement identique entre le développement, l'intégration continue et la production.
 
-Le conteneur principal embarque :
+# 4. Standardisation de l'environnement
 
-- Python 3.13
-- `FastAPI`
-- `Streamlit`
-- `TensorFlow`
-- `music21`
-- `Verovio`
-- `CairoSVG`
+L'un des objectifs de ce projet consiste à garantir que l'application puisse être exécutée de manière identique quel que soit son environnement d'hébergement.
 
-Le script `start.sh` démarre simultanément :
+Pour répondre à cette exigence, la totalité de la couche applicative est distribuée sous la forme d'une image Docker unique. Cette image est utilisée :
 
-- l'API `FastAPI` ;
-- l'interface `Streamlit`.
+- lors du développement local,
+- dans la chaîne CI/CD GitHub Actions,
+- sur la plateforme de déploiement Hugging Face Spaces.
 
-# 5. Déploiement de l'algorithme
+L'environnement Python est géré avec **uv**, qui assure une installation rapide et déterministe des dépendances. La configuration du projet est décrite dans le fichier `pyproject.toml`, tandis que le fichier `uv.lock` verrouille précisément les versions installées afin de garantir la reproductibilité des environnements.
 
-Le modèle d'apprentissage est développé indépendamment de l'API.
+Le conteneur embarque notamment :
 
-Le cycle du modèle est le suivant :
+- Python 3.13,
+- **FastAPI**,
+- **Pydantic**,
+- **Streamlit**,
+- **TensorFlow**,
+- **music21**,
+- **Verovio**,
+- **CairoSVG**,
+- l'ensemble des dépendances système nécessaires au traitement audio et à la génération des partitions.
 
-1. entraînement de plusieurs modèles,
-2. suivi des expérimentations avec MLflow,
-3. export du meilleur modèle et du scaler associé s'il existe,
-4. intégration manuelle dans l'API,
-5. chargement unique du modèle au démarrage.
+La construction de l'image repose sur un [**Dockerfile multi-stage**](../Dockerfile), permettant de limiter la taille finale de l'image tout en accélérant les temps de construction. Un utilisateur non privilégié est créé afin de renforcer la sécurité du conteneur conformément aux bonnes pratiques Docker.
 
-L'API ne réalise aucun entraînement.
+Enfin, le script [`start.sh`](../api/start.sh) assure le démarrage simultané de l'API **FastAPI** et de l'interface **Streamlit** dans un même conteneur. Ce choix simplifie le déploiement de l'application tout en conservant une séparation logique entre la couche de présentation et la couche de services.
 
-Elle ne réalise que :
+L'utilisation conjointe de **Docker**, **uv** et d'une gestion stricte des dépendances garantit ainsi un environnement standardisé, reproductible et portable.
 
-- le chargement du modèle,
-- le prétraitement audio,
-- l'extraction des features de machine-learning,
-- l'inférence,
-- le post-traitement,
-- la génération des fichiers MIDI et partition.
+# 5. Industrialisation du modèle d'apprentissage
 
-# 6. API de production
+Le modèle de Deep Learning utilisé par l'application est développé indépendamment de la couche applicative. Son cycle de vie est volontairement dissocié de celui de l'API afin de faciliter les expérimentations et les futures évolutions du modèle.
 
-L'API est développée avec **FastAPI**.
+Les différentes architectures de réseaux de neurones sont entraînées puis comparées au cours d'une phase d'expérimentation. Chaque entraînement est suivi avec **MLflow**, qui conserve les paramètres d'apprentissage, les métriques d'évaluation ainsi que les artefacts produits.
 
-Elle expose les routes :
+À l'issue de cette phase, le modèle retenu est exporté au format **TensorFlow (`.keras`)** puis intégré manuellement au projet applicatif.
 
-- `/health`
-- `/model`
-- `/predict`
-- `/artifact/{id}/midi`
-- `/artifact/{id}/piano_roll/svg`
-- `/artifact/{id}/piano_roll/png`
-- `/artifact/{id}/score/svg`
-- `/artifact/{id}/score/pdf`
+L'API n'effectue aucun entraînement. Son rôle se limite exclusivement à l'exécution de la chaîne d'inférence :
 
-Les réponses sont standardisées au travers d'un modèle générique :
+1. chargement du modèle lors du démarrage de l'application,
+2. prétraitement du fichier audio,
+3. extraction des caractéristiques musicales,
+4. inférence du réseau de neurones,
+5. post-traitement des prédictions,
+6. génération des fichiers MIDI, des partitions musicales et des représentations graphiques.
 
-- `ApiResponse<T>`
+Afin d'optimiser les performances, le modèle est chargé une seule fois au démarrage de FastAPI grâce au mécanisme de **lifespan**. L'instance ainsi créée est ensuite partagée entre toutes les requêtes grâce au système d'injection de dépendances, évitant tout rechargement inutile du modèle.
 
-Les erreurs sont centralisées via des gestionnaires d'exceptions dédiés.
+Cette organisation permet de réduire les temps de réponse tout en limitant la consommation mémoire de l'application.
 
-Le modèle TensorFlow est partagé entre toutes les requêtes grâce au cycle de vie (`lifespan`) de FastAPI.
+# 6. Exposition du modèle par une API REST
 
-# 7. Interface utilisateur
+Afin de rendre le modèle de Deep Learning exploitable par d'autres applications et par des utilisateurs métiers, celui-ci est exposé au travers d'une **API REST** développée avec **FastAPI**.
 
-L'application utilisateur est développée avec `Streamlit`.
+Cette API constitue le point d'entrée unique de l'ensemble des traitements. Elle encapsule toute la logique métier nécessaire à la transcription automatique d'un fichier audio et permet de dissocier complètement le moteur de prédiction de l'interface utilisateur.
 
-Elle communique exclusivement avec l'API REST.
+L'architecture logicielle repose sur une séparation claire des responsabilités. Le projet distingue notamment :
 
-Elle permet :
+- les **routes HTTP**, responsables de l'exposition des services REST,
+- les **services métier**, qui implémentent les traitements de transcription,
+- les **modèles Pydantic**, utilisés pour la validation et la sérialisation des données,
+- les **dépendances FastAPI**, qui assurent l'injection des composants techniques,
+- les **composants d'infrastructure**, responsables notamment du chargement du modèle et de la configuration de l'application.
 
-- le dépôt d'un fichier WAV,
-- le lancement de la transcription,
-- l'affichage des résultats,
-- le téléchargement des artefacts générés.
+Cette organisation améliore la lisibilité du code, facilite les tests unitaires et limite le couplage entre les différentes couches de l'application.
 
-# 8. Conteneurisation
+Le modèle **TensorFlow** est chargé une seule fois lors du démarrage de l'application grâce au mécanisme **lifespan** de FastAPI. Il est ensuite partagé entre toutes les requêtes au moyen de l'injection de dépendances, garantissant ainsi des temps de réponse constants et une utilisation optimisée de la mémoire.
 
-Le projet est distribué sous forme d'image `Docker`.
+L'API expose plusieurs services REST permettant de couvrir l'ensemble du processus de transcription :
 
-```yaml
-# ===
-# Builder
-# ===
+| Route                           | Fonction                                             |
+| ------------------------------- | ---------------------------------------------------- |
+| `/health`                       | Vérification de l'état de l'application et du modèle |
+| `/model`                        | Consultation des informations du modèle chargé       |
+| `/predict`                      | Lancement d'une transcription audio                  |
+| `/artifact/{id}/midi`           | Téléchargement du fichier MIDI                       |
+| `/artifact/{id}/piano_roll/png` | Téléchargement du piano roll (PNG)                   |
+| `/artifact/{id}/piano_roll/svg` | Téléchargement du piano roll (SVG)                   |
+| `/artifact/{id}/score/pdf`      | Téléchargement de la partition (PDF)                 |
+| `/artifact/{id}/score/svg`      | Téléchargement de la partition (SVG)                 |
 
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
+Toutes les réponses sont normalisées au travers d'un modèle générique `ApiResponse<T>`, garantissant une structure homogène pour les réponses de succès comme pour les erreurs.
 
-WORKDIR /app
+Les exceptions sont centralisées grâce à des gestionnaires dédiés, permettant de produire des messages d'erreur cohérents tout en simplifiant la maintenance de l'application.
 
-ENV UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy \
-    UV_NO_CACHE=1
+L'utilisation de FastAPI permet également de générer automatiquement une documentation OpenAPI interactive, facilitant l'intégration de l'API par d'autres applications.
 
-COPY pyproject.toml uv.lock ./
+Cette API répond ainsi à la compétence **C5.2** du référentiel en mettant à disposition un service de prédiction standardisé, documenté et réutilisable.
 
-RUN uv sync \
-    --frozen \
-    --no-dev \
-    --group api
+# 7. Application web de démonstration
 
-COPY api/backend ./backend
-COPY api/frontend ./frontend
-COPY api/.streamlit ./.streamlit
-COPY api/start.sh ./start.sh
+Bien qu'une API REST puisse être utilisée directement par des applications tierces, elle reste peu adaptée à des utilisateurs non techniques. Une interface web a donc été développée avec **Streamlit** afin de rendre le modèle immédiatement exploitable.
 
-# ===
-# Runtime
-# ===
+Cette interface communique exclusivement avec l'API REST, sans accéder directement au modèle de Deep Learning. Ce choix garantit une séparation claire entre la couche de présentation et la logique métier.
 
-FROM python:3.13-slim-bookworm AS runtime
+Le parcours utilisateur se déroule selon les étapes suivantes :
 
-WORKDIR /app
+1. dépôt d'un fichier audio au format **WAV**,
+2. envoi de la requête à l'API REST,
+3. exécution de la chaîne complète d'inférence,
+4. affichage des résultats de la transcription,
+5. téléchargement des artefacts générés.
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        libsndfile1 \
-        libcairo2 \
-    && rm -rf /var/lib/apt/lists/*
+L'application permet notamment de récupérer :
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/app/.venv/bin:${PATH}"
+- le fichier MIDI généré,
+- la représentation graphique du piano roll (PNG ou SVG),
+- la partition musicale (PDF ou SVG).
 
-COPY --from=builder /app/.venv ./.venv
-COPY --from=builder /app/backend ./backend
-COPY --from=builder /app/frontend ./frontend
-COPY --from=builder /app/.streamlit ./.streamlit
-COPY --from=builder /app/start.sh ./start.sh
+L'ensemble des traitements est exécuté côté serveur. L'interface Streamlit se limite à la collecte des données utilisateur, à l'appel des services REST et à la restitution des résultats.
 
-RUN chmod +x start.sh
+Cette architecture facilite les évolutions futures, puisque toute nouvelle interface (application mobile, client desktop ou autre interface web) pourra réutiliser la même API sans modification du moteur de prédiction.
 
-RUN mkdir -p /tmp
+# 8. Industrialisation du déploiement
 
-RUN useradd \
-        --create-home \
-        --shell /usr/sbin/nologin \
-        appuser \
-    && chown -R appuser:appuser /app \
-    && chmod 777 /tmp
+Le projet s'appuie sur une chaîne **CI/CD** entièrement automatisée reposant sur **GitHub Actions**.
 
-USER appuser
+Chaque **Push** ou **Pull Request** déclenche automatiquement une succession d'étapes garantissant la qualité du code avant son déploiement.
 
-EXPOSE 7860
-EXPOSE 8000
+La phase d'intégration continue comprend :
 
-HEALTHCHECK \
-    --interval=30s \
-    --timeout=5s \
-    --start-period=20s \
-    --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')" || exit 1
+- l'installation reproductible de l'environnement Python avec **uv**,
+- l'exécution des tests unitaires et d'intégration avec **Pytest**,
+- la mesure du taux de couverture de tests avec validation d'un seuil minimal,
+- l'analyse statique du code avec **Ruff**,
+- la vérification du typage grâce à **MyPy**.
 
-CMD ["./start.sh"]
-```
+Les rapports de couverture sont publiés sous forme d'artefacts **GitHub Actions** afin de conserver un historique des validations réalisées.
 
-Le conteneur contient :
+Lorsque l'ensemble de ces contrôles est validé, la phase de livraison continue est automatiquement exécutée.
 
-- `FastAPI`
-- `Streamlit`
-- le modèle `TensorFlow`
-- les dépendances Python
-- les bibliothèques système nécessaires.
+Elle consiste à :
 
-Le même conteneur est utilisé :
+1. construire l'image **Docker** de l'application,
+2. publier cette image dans **GitHub Container Registry (GHCR)**,
+3. mettre à jour automatiquement le Dockerfile du Space **Hugging Face** afin qu'il référence la dernière image publiée,
+4. déployer automatiquement la nouvelle version de l'application.
 
-- en développement,
-- dans `GitHub Actions`,
-- sur `Hugging Face Spaces`.
+Cette automatisation réduit les interventions manuelles, garantit la reproductibilité des déploiements et assure que seule une version validée du projet est mise en production.
 
-Cette approche garantit un comportement identique sur tous les environnements.
+L'intégration continue et la livraison continue constituent ainsi un élément essentiel de l'industrialisation de la solution.
 
-L'image docker multi-stage pour alléger l'image, ce qui accélère le build.
+# 9. Déploiement local et reproductibilité
 
-Pour sécuriser l'image, un utilisateur est crée avec des droits spécifiques.
+L'application peut être déployée localement afin de reproduire un environnement identique à celui utilisé en intégration continue et en production.
 
-# 9. Déploiement local
-
-Le projet peut être lancé intégralement avec :
+Après avoir créé le fichier de configuration à partir du modèle fourni, l'ensemble des services est démarré à l'aide de Docker Compose.
 
 ```bash
+# Création du fichier .env
+cp .env.example .env
+
+# Construction de l'infrastructure
 docker compose up -d
 ```
 
-Le fichier `docker-compose.yml` déploie :
+Le fichier [`docker-compose.yml`](../docker-compose.yml) orchestre les différents services nécessaires au fonctionnement du projet, notamment :
 
-- API `FastAPI`
-- `Streamlit`
-- `MinIO`
-- `MongoDB`
-- `Mongo Express`
-- `PostgreSQL`
-- `pgAdmin`
-- `PostgreSQL` MLflow
-- `MLflow`
-- `Apache Spark` Master
-- `Apache Spark` Workers
+- l'API **FastAPI**,
+- l'interface utilisateur **Streamlit**.
 
-L'ensemble des paramètres est externalisé dans un fichier `.env`.
+Cette approche garantit que tous les développeurs disposent d'un environnement identique, limitant les écarts entre les phases de développement, de validation et de production.
 
-Un fichier [`env.example`](../.env.example) est fourni afin de reproduire facilement l'environnement.
+Une fois les conteneurs démarrés, les principaux points d'accès sont les suivants :
 
-# 10. Intégration continue (CI)
+| Service               | Adresse                      |
+| --------------------- | ---------------------------- |
+| Interface utilisateur | <http://localhost:7860>      |
+| API REST              | <http://localhost:8000>      |
+| Documentation OpenAPI | <http://localhost:8000/docs> |
 
-Chaque Push ou Pull Request déclenche automatiquement `GitHub Actions`.
+L'utilisation de Docker Compose complète ainsi la démarche de standardisation en permettant de reconstruire l'ensemble de l'environnement applicatif à partir du seul code source.
 
-La chaîne CI réalise :
+# 10. Ressources du projet
 
-**Validation du code**
+L'application déployée est accessible publiquement :
 
-- `Ruff`
-- `MyPy`
+> Hugging Face Spaces : <https://huggingface.co/spaces/DamienDESSAUX/M2i_CDSD_Projet_Deployment>
 
-**Validation fonctionnelle**
+Elle exactement à l'image Docker construite et publiée automatiquement par la chaîne CI/CD.
 
-- exécution des tests `Pytest`
+# 11. Conclusion
 
-**Mesure de qualité**
+Ce projet met en œuvre une chaîne complète d'industrialisation d'un algorithme d'apprentissage automatique, depuis son intégration dans une application jusqu'à son déploiement automatisé en production.
 
-- génération du rapport Coverage
-- vérification d'un seuil minimal de couverture
+L'environnement d'exécution est entièrement standardisé grâce à **Docker** et **uv**, garantissant des installations reproductibles entre les postes de développement, la chaîne CI/CD et la plateforme de production. Le modèle de Deep Learning est intégré dans une **API REST FastAPI**, documentée automatiquement via OpenAPI et organisée selon une architecture en couches favorisant la maintenabilité, les tests et l'évolutivité. Une interface **Streamlit** permet aux utilisateurs de soumettre un fichier audio, de lancer une transcription et de récupérer les artefacts générés sans connaissance technique particulière.
 
-Les rapports de couverture sont publiés comme artefacts `GitHub Actions`.
+L'industrialisation est complétée par une chaîne **GitHub Actions** assurant automatiquement les contrôles qualité (tests, couverture, analyse statique et vérification du typage), la construction de l'image Docker, sa publication sur **GitHub Container Registry (GHCR)** et son déploiement sur **Hugging Face Spaces**. Cette automatisation garantit que chaque version mise à disposition des utilisateurs provient d'un code validé et exécuté dans un environnement maîtrisé.
 
-# 11. Livraison continue (CD)
-
-Après validation de la qualité du code :
-
-1. construction de l'image `Docker`,
-2. publication dans `GitHub Container Registry` (GHCR),
-3. mise à jour automatique du Dockerfile du Space `Hugging Face`,
-4. déploiement automatique de la nouvelle version.
-
-Le Space `Hugging Face` exécute directement la dernière image Docker publiée.
-
-# 12. Gestion des dépendances
-
-Le projet utilise :
-
-- `uv`
-- `pyproject.toml`
-- `uv.lock`
-
-afin d'assurer :
-
-- la reproductibilité,
-- le verrouillage des versions,
-- une installation déterministe.
-
-# 13. Ressources du projet
-
-- [Dépôt GitHub](https://github.com/DamienDESSAUX-M2i/M2i_CDSD_Projet) du projet.
-- [Space Hugging Face](https://huggingface.co/spaces/DamienDESSAUX/M2i_CDSD_Projet_Deployment) du projet.
-
-# 14. Conclusion
-
-Le projet met en œuvre une chaîne complète d'industrialisation.
-
-L'environnement est entièrement reproductible, les contrôles qualité sont automatisés, le déploiement est continu et l'application est disponible publiquement via Hugging Face Spaces.
+L'ensemble de cette architecture constitue une solution d'industrialisation cohérente, reproductible et conforme aux bonnes pratiques actuelles du développement logiciel et du Machine Learning en production.
