@@ -43,7 +43,6 @@
 - [14.  Perspectives d’évolution](#14--perspectives-dévolution)
 - [15.  Validation](#15--validation)
 
-
 # 2. Présentation du projet
 
 ## 2.1. Contexte
@@ -55,6 +54,7 @@ Le projet vise à automatiser les tâches de retranscription musicale afin de r�
 ## 2.2. Objectifs du projet
 
 Le système devra permettre :
+
 - l’import d’un fichier audio guitare au format .wav,
 - la génération d’un fichier MIDI,
 - la visualisation des notes détectées sous forme de piano-roll,
