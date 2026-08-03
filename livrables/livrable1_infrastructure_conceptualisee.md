@@ -84,7 +84,7 @@ L'analyse des besoins a conduit à identifier quatre fonctions principales.
 
 Les données proviennent de sources hétérogènes possédant des formats différents (WAV, JAMS et XML). L'infrastructure doit permettre leur téléchargement automatique puis leur intégration dans un espace de stockage unique afin de constituer un **Data Lake**.
 
-L'[inventaire des sources de donnees](./gestion_de_projet/inventaire_des_sources_de_donnees.pdf) présente les différentes sources collectées.
+L'[inventaire des sources de donnees](./gestion_de_projet/inventaire_des_sources_de_donnees.pdf) et le [descriptif des données](./gestion_de_projet/descriptif_des_donnees.pdf) présentent les différentes sources collectées.
 
 ## 3.2. Préparation des données
 
