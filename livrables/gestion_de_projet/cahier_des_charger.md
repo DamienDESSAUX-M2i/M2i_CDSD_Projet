@@ -1,5 +1,6 @@
 <h1>Cahier des charges</h1>
-<h2>Projet de transcription audio vers MIDI - GuitarFlow</h2>
+
+> GuitarFlow - Projet de transcription audio vers MIDI
 
 # 1. Table des matières
 
@@ -47,7 +48,7 @@
 
 ## 2.1. Contexte
 
-GuitarFlow souhaite développer une solution permettant de convertir automatiquement un enregistrement audio de guitare en fichier MIDI exploitable dans des logiciels de MAO.
+GuitarFlow souhaite développer une solution permettant de convertir automatiquement un enregistrement audio de guitare en fichier MIDI exploitable dans des logiciels de MAO (Musique Assistée par Ordinateur).
 
 Le projet vise à automatiser les tâches de retranscription musicale afin de réduire le temps de traitement manuel et de faciliter la création de contenus pédagogiques et musicaux.
 
@@ -76,6 +77,7 @@ Le système devra permettre :
 ## 3.1. Fonctionnalités incluses
 
 Le système devra :
+
 - accepter des fichiers audio .wav,
 - supporter les guitares acoustiques et électriques,
 - fonctionner avec accordage standard EADGBE,
@@ -89,14 +91,11 @@ Le système devra :
 ## 3.2. Fonctionnalités hors périmètre
 
 Le système ne devra pas gérer :
+
 - les autres instruments,
 - les accordages alternatifs,
 - la transcription temps réel,
-- les techniques avancées de jeu :
-  - bend,
-  - vibrato,
-  - slide,
-  - hammer-on / pull-off,
+- les techniques avancées de jeu (bend, vibrato, slide, hammer-on / pull-off, ...),
 - les applications mobiles,
 - les architectures cloud.
 
@@ -105,6 +104,7 @@ Le système ne devra pas gérer :
 ## 4.1. Profils utilisateurs
 
 Le système cible :
+
 - professeurs de guitare,
 - créateurs de contenu pédagogique,
 - musiciens amateurs,
@@ -112,7 +112,6 @@ Le système cible :
 
 ## 4.2. Cas d’usage principal
 
-**Cas nominal**
 1. L’utilisateur charge un fichier .wav.
 2. Le système traite le signal audio.
 3. Le modèle détecte les notes.
@@ -127,6 +126,7 @@ Le système cible :
 Le projet s’inscrit dans une logique de prototypage à faible coût.
 
 La phase 1 devra privilégier :
+
 - les solutions open source,
 - les infrastructures gratuites ou locales,
 - les composants faiblement coûteux en calcul.
@@ -138,6 +138,7 @@ Aucune infrastructure cloud industrielle n’est prévue dans le cadre de la pha
 ## 6.1. Gestion des fichiers audio
 
 Le système devra :
+
 - accepter les fichiers .wav,
 - vérifier le format d’entrée,
 - rejeter les fichiers invalides,
@@ -145,7 +146,8 @@ Le système devra :
 
 ## 6.2. Préprocessing audio
 
-Le pipeline devra inclure :
+La pipeline devra inclure :
+
 - conversion mono,
 - rééchantillonnage,
 - normalisation des signaux,
@@ -157,6 +159,7 @@ Le système devra garantir l’homogénéité des signaux avant extraction des f
 ## 6.3. Extraction des features
 
 Le système devra permettre l’extraction des représentations suivantes :
+
 - STFT,
 - Mel Spectrogram,
 - MFCC,
@@ -168,6 +171,7 @@ Les features devront être configurables afin de permettre des expérimentations
 ## 6.4. Modélisation
 
 Le système devra permettre l’évaluation de plusieurs approches :
+
 - baseline simple,
 - MLP,
 - architectures convolutionnelles récurrentes (RCNN).
@@ -177,13 +181,15 @@ Les modèles devront être entraînables et versionnés.
 ## 6.5. Génération MIDI
 
 Le système devra :
+
 - convertir les prédictions du modèle en événements MIDI,
 - générer un fichier .mid exploitable dans un logiciel de MAO.
 
 ## 6.6. Interface utilisateur
 
 L’interface web devra permettre :
-- l’upload du fichier audio,
+
+- le téléchargement du fichier audio,
 - le lancement du traitement,
 - le téléchargement du fichier MIDI,
 - l’affichage du piano-roll
@@ -192,6 +198,7 @@ L’interface web devra permettre :
 ## 6.7. API d’inférence
 
 Le système devra exposer une API REST permettant :
+
 - l’envoi d’un fichier audio,
 - la récupération des résultats,
 - l’obtention des métadonnées de traitement.
@@ -200,7 +207,7 @@ Le système devra exposer une API REST permettant :
 
 ## 7.1. Stack technique cible
 
-| Domaine| Technologie envisagée |
+| Domaine | Technologie envisagée |
 | :- | :- |
 | Langage principal | Python |
 | Deep Learning | tensorflow / keras |
@@ -214,6 +221,7 @@ Le système devra exposer une API REST permettant :
 ## 7.2. Contraintes techniques
 
 Le système devra :
+
 - permettre une exécution locale,
 - être reproductible,
 - permettre la réexécution des expérimentations.
@@ -221,6 +229,7 @@ Le système devra :
 ## 7.3. Qualité logicielle
 
 Le projet devra inclure :
+
 - structuration modulaire du code,
 - tests,
 - logging,
@@ -234,12 +243,14 @@ Le projet devra inclure :
 ## 8.1. Sources de données
 
 Les datasets suivants pourront être utilisés :
-- GuitarSet,
-- IDMT-SMT-Guitar.
+
+- [GuitarSet](https://guitarset.weebly.com/),
+- [IDMT-SMT-Guitar](https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html).
 
 ## 8.2. Gouvernance des données
 
 Le système devra assurer :
+
 - séparation train / validation / test,
 - versioning datasets,
 - traçabilité des expérimentations,
@@ -272,6 +283,7 @@ Une vérification préalable des licences datasets devra être réalisée avant 
 ## 10.1. Livrables techniques
 
 Le projet devra fournir :
+
 - pipeline d'ingestion,
 - pipeline de preprocessing,
 - pipeline d’entraînement,
@@ -283,6 +295,7 @@ Le projet devra fournir :
 ## 10.2. Livrables documentaires
 
 Le projet devra fournir :
+
 - note de cadrage,
 - cahier des charges,
 - documentation technique,
@@ -306,6 +319,7 @@ Le projet devra fournir :
 # 12. Critères de recette
 
 Le projet sera considéré conforme si :
+
 - l’API répond correctement,
 - un fichier MIDI valide est généré,
 - les performances minimales sont atteintes,
@@ -317,14 +331,15 @@ Le projet sera considéré conforme si :
 | Risque | Impact | Mitigation |
 | :- | :- | :- |
 | Restrictions de licence sur les datasets | Élevé | Validation juridique préalable |
-| Données insuffisantes | Élevé  | Data augmentation |
-| Polyphonie complexe | Élevé  | Benchmark multi-modèles |
-| Temps d’inférence | Moyen  | Optimisation pipeline |
-| Variabilité audio | Moyen  | Préprocessing robuste |
+| Données insuffisantes | Élevé | Data augmentation |
+| Polyphonie complexe | Élevé | Benchmark multi-modèles |
+| Temps d’inférence | Moyen | Optimisation pipeline |
+| Variabilité audio | Moyen | Préprocessing robuste |
 
 # 14.  Perspectives d’évolution
 
 Les évolutions futures envisagées sont :
+
 - support multi-instruments,
 - transcription temps réel,
 - détection avancée des techniques de jeu,
@@ -335,6 +350,7 @@ Les évolutions futures envisagées sont :
 # 15.  Validation
 
 Le présent cahier des charges servira de référence pour :
+
 - le développement du prototype,
 - le suivi du projet,
 - la validation des livrables,
@@ -342,4 +358,4 @@ Le présent cahier des charges servira de référence pour :
 
 ---
 
-**Auteur:** Damien DESSAUX
+**Auteur :** Damien DESSAUX

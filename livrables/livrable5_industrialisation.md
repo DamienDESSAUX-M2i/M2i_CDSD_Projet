@@ -233,3 +233,7 @@ L'environnement d'exécution est entièrement standardisé grâce à **Docker** 
 L'industrialisation est complétée par une chaîne **GitHub Actions** assurant automatiquement les contrôles qualité (tests, couverture, analyse statique et vérification du typage), la construction de l'image Docker, sa publication sur **GitHub Container Registry (GHCR)** et son déploiement sur **Hugging Face Spaces**. Cette automatisation garantit que chaque version mise à disposition des utilisateurs provient d'un code validé et exécuté dans un environnement maîtrisé.
 
 L'ensemble de cette architecture constitue une solution d'industrialisation cohérente, reproductible et conforme aux bonnes pratiques actuelles du développement logiciel et du Machine Learning en production.
+
+---
+
+**Auteur :** Damien DESSAUX

@@ -921,3 +921,7 @@ Hugging Face Spaces
 ```
 
 Cette représentation synthétise l'ensemble du cycle de vie couvert par le projet, depuis la collecte des données jusqu'au déploiement automatisé de l'application.
+
+---
+
+**Auteur :** Damien DESSAUX

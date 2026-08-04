@@ -1,5 +1,6 @@
 <h1>Note de cadrage</h1>
-<h2>Projet de transcription audio vers MIDI - GuitarFlow</h2>
+
+> GuitarFlow - Projet de transcription audio vers MIDI
 
 # Table des matières
 
@@ -57,6 +58,7 @@ Le projet s’inscrit dans une démarche d’automatisation des tâches de retra
 ## 1.2. Constat métier
 
 La retranscription manuelle d’une performance guitare vers un format éditable représente une opération :
+
 - chronophage,
 - nécessitant une expertise musicale avancée,
 - difficilement scalable pour des usages pédagogiques ou créatifs.
@@ -68,6 +70,7 @@ Bien que plusieurs outils de transcription audio vers MIDI existent sur le march
 ## 1.3. Opportunité
 
 Le projet vise à :
+
 - réduire drastiquement le temps de retranscription,
 - simplifier la création de contenus pédagogiques,
 - accélérer les workflows de composition musicale,
@@ -78,6 +81,7 @@ Le projet vise à :
 ## 2.1. Objectif principal
 
 Développer un prototype fonctionnel capable de :
+
 - recevoir un fichier audio .wav de guitare,
 - générer automatiquement un fichier MIDI exploitable,
 - produire une visualisation piano-roll,
@@ -99,6 +103,7 @@ Développer un prototype fonctionnel capable de :
 Cette phase correspond à un Proof of Concept (POC).
 
 L’objectif est de :
+
 - valider la faisabilité technique,
 - mesurer les performances du modèle,
 - démontrer la valeur métier du service,
@@ -111,6 +116,7 @@ La mise en production industrielle n’entre pas dans le périmètre de cette ph
 ## 3.1. Utilisateurs visés
 
 Le service cible principalement :
+
 - professeurs de guitare,
 - créateurs de contenus pédagogiques,
 - musiciens amateurs,
@@ -119,10 +125,12 @@ Le service cible principalement :
 ## 3.2. Cible prioritaire phase 1
 
 La phase 1 cible prioritairement :
+
 - les professeurs de guitare,
 - les créateurs de contenu pédagogique.
 
 Ces profils présentent :
+
 - des besoins fréquents de retranscription,
 - des workflows répétitifs,
 - un fort gain potentiel en productivité.
@@ -137,6 +145,7 @@ Exemple d’usage cible :
 ## 4.1. Inclus dans le périmètre
 
 Le périmètre de la phase 1 comprend :
+
 - prise en charge des guitares acoustiques et électriques,
 - accordage standard EADGBE,
 - traitement de fichiers audio .wav,
@@ -149,6 +158,7 @@ Le périmètre de la phase 1 comprend :
 ## 4.2. Exclus dans le périmètre
 
 Les éléments suivants sont exclus de la phase 1 :
+
 - autres instruments,
 - open tunings et accordages alternatifs,
 - détection des techniques d’expression de jeu :
@@ -165,6 +175,7 @@ Les éléments suivants sont exclus de la phase 1 :
 ## 5.1. Orientation technique
 
 Le prototype reposera sur une approche supervisée de transcription audio utilisant :
+
 - extraction de features fréquentielles,
 - classification frame-wise,
 - architecture de type RCNN.
@@ -174,6 +185,7 @@ Le prototype reposera sur une approche supervisée de transcription audio utilis
 ### 5.2.1. Préprocessing audio
 
 Le pipeline de préparation des données audio comprendra :
+
 - harmonisation des formats audio,
 - conversion mono,
 - rééchantillonnage,
@@ -186,6 +198,7 @@ Plusieurs techniques de filtrage et de débruitage pourront être évaluées afi
 ### 5.2.2. Features extraction
 
 Plusieurs représentations fréquentielles du signal audio seront étudiées :
+
 - STFT,
 - Mel Spectrogram,
 - MFCC,
@@ -197,11 +210,13 @@ Ces représentations visent à capturer les caractéristiques temporelles, fréq
 ### 5.2.3. Modélisation
 
 Plusieurs approches de modélisation seront évaluées :
+
 - modèles de baseline simples,
 - réseaux de neurones fully connected (MLP),
 - architectures convolutionnelles récurrentes (Recurrent Convolutional Neural Networks).
 
 L’objectif est d’identifier le meilleur compromis entre :
+
 - performances de transcription,
 - robustesse,
 - temps d’inférence.
@@ -211,6 +226,7 @@ L’objectif est d’identifier le meilleur compromis entre :
 Aucune donnée propriétaire n’est disponible.
 
 Le projet s’appuiera sur des datasets publics spécialisés :
+
 - GuitarSet
 - IDMT-SMT-Guitar
 
@@ -230,6 +246,7 @@ Une analyse des licences sera réalisée avant utilisation.
 ## 6.2. Valeur attendue
 
 Le projet vise principalement :
+
 - un gain de productivité,
 - une réduction du travail manuel,
 - une accélération des workflows pédagogiques et créatifs.
@@ -245,6 +262,7 @@ Le projet vise principalement :
 ## 7.2. Infrastructure prévisionnelle
 
 L’infrastructure prévisionnelle repose principalement sur des composants gratuits ou locaux :
+
 | Composant | Solution |
 | :- | :- |
 | Stockage objet | MinIO local |
@@ -327,6 +345,7 @@ Une phase 2 d’industrialisation fera l’objet d’un chiffrage distinct.
 # 11. Critères de succès
 
 La phase 1 sera considérée comme validée si :
+
 - le prototype est accessible via interface web,
 - la transcription MIDI est fonctionnelle,
 - les performances minimales sont atteintes,
@@ -337,6 +356,7 @@ La phase 1 sera considérée comme validée si :
 ## 12.1. Phase 2 — Industrialisation (hors périmètre)
 
 Les évolutions potentielles identifiées sont :
+
 - amélioration de la robustesse polyphonique,
 - détection avancée des techniques de jeu,
 - support d’accordages alternatifs,
@@ -351,6 +371,7 @@ Les évolutions potentielles identifiées sont :
 Le comité de pilotage est sollicité afin de valider le lancement de la phase 1 du projet GuitarFlow.
 
 Cette phase couvre :
+
 - l’étude de faisabilité,
 - la construction du pipeline data,
 - l’entraînement du modèle,
@@ -360,4 +381,4 @@ La phase 2, dédiée à l’industrialisation et à la mise en production, fera 
 
 ---
 
-**Auteur:** Damien DESSAUX
+**Auteur :** Damien DESSAUX

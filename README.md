@@ -488,4 +488,4 @@ L'architecture de la chaîne CI/CD est détaillée dans le [Livrable 5](./livrab
 
 ---
 
-**Auteur** : Damien DESSAUX
+**Auteur :** Damien DESSAUX

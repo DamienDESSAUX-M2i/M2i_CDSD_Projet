@@ -96,7 +96,7 @@ Les fichiers audio doivent subir plusieurs traitements avant d'être exploitable
 - alignement avec les annotations,
 - génération d'échantillons destinés à l'apprentissage.
 
-Ces traitements sont réalisés au travers de pipelines ETL développés en Python.
+Ces traitements sont réalisés au travers de pipelines ETL développées en Python.
 
 ## 3.3. Traçabilité des traitements
 
@@ -104,7 +104,7 @@ Chaque transformation appliquée aux données doit être historisée afin de gar
 
 Les métadonnées enregistrées comprennent notamment :
 
-- les pipelines exécutés,
+- les pipelines exécutées,
 - les paramètres utilisés,
 - les fichiers produits,
 - les échantillons générés,
@@ -148,7 +148,7 @@ Cette séparation facilite les recherches, le suivi des traitements et les futur
 
 ## 4.3. Couche de traitement
 
-Les traitements de données sont organisés sous forme de pipelines ETL indépendants :
+Les traitements de données sont organisés sous forme de pipelines ETL indépendantes :
 
 - téléchargement des jeux de données,
 - ingestion dans le Data Lake,
@@ -205,7 +205,7 @@ La collecte est réalisée en deux étapes :
 
    Cette seconde étape alimente l'infrastructure de données en répartissant les informations selon leur nature :
 
-   - les fichiers audio et annotations originales sont déposés dans le bucket **raw** du Data Lake **MinIO**,
+   - les fichiers audio et annotations originaux? sont déposés dans le bucket **raw** du Data Lake **MinIO**,
    - les métadonnées descriptives des fichiers sont enregistrées dans **PostgreSQL**,
    - les annotations musicales sont extraites dans **MongoDB** afin de faciliter leur exploitation par les traitements ultérieurs.
 
@@ -251,7 +251,7 @@ Les nouveaux objets produits sont enregistrés dans le bucket **processed**.
 
 Parallèlement, MongoDB conserve les métadonnées permettant de reconstituer précisément les traitements réalisés :
 
-- paramètres du pipeline,
+- paramètres de la pipeline,
 - audios traités,
 - échantillons générés.
 
@@ -273,7 +273,7 @@ Cette base facilite les recherches structurées et garantit la cohérence des do
 
 ### 5.4.2. MongoDB
 
-**MongoDB** conserve les informations évolutives produites par les différents pipelines :
+**MongoDB** conserve les informations évolutives produites par les différentes pipelines :
 
 - historique des traitements,
 - paramètres d'exécution,
@@ -328,7 +328,7 @@ Cette approche présente plusieurs avantages :
 - réduction des erreurs liées aux différences de configuration,
 - simplification de la maintenance.
 
-Pour reconstruire l'intégralité de l'environnement exécutez les commandes :
+Pour reconstruire l'intégralité de l'environnement, exécuter les commandes :
 
 ```bash
 # Création du fichier .env
@@ -344,7 +344,7 @@ L'ensemble des services est alors automatiquement déployé et interconnecté.
 
 La couche applicative fait l'objet d'une industrialisation complète grâce à une chaîne d'intégration et de déploiement continus implémentée avec **GitHub Actions**.
 
-La pipeline CI/CD s'éxécute à chaque push sur la branche **main** ou lors d'une Pull Request.
+La pipeline CI/CD s'éxécute à chaque push sur la branche **main** ou lors d'une Pull Request c'est-à-dire ?.
 
 ## 8.1. Validation du code
 
@@ -362,8 +362,8 @@ Cette étape garantit que chaque évolution respecte les exigences de qualité d
 
 Lorsque les validations sont satisfaites :
 
-- une image Docker est construite automatiquement ;
-- l'image est publiée sur **GitHub Container Registry (GHCR)** ;
+- une image Docker est construite automatiquement,
+- l'image est publiée sur **GitHub Container Registry (GHCR)**,
 - le dépôt **Hugging Face Spaces** est mis à jour automatiquement afin de redéployer l'application.
 
 Le déploiement de l'application ne nécessite ainsi aucune intervention manuelle.
@@ -382,7 +382,7 @@ Plusieurs axes d'amélioration sont déjà identifiés.
 
 ## 10.1. Calcul distribué
 
-Les pipelines ETL sont actuellement exécutés en Python.
+Les pipelines ETL sont actuellement exécutées en Python.
 
 L'infrastructure Spark déjà présente permettra, dans une version ultérieure, de distribuer les traitements de prétraitement audio afin d'améliorer les performances sur des volumes de données plus importants.
 

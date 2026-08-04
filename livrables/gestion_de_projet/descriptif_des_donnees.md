@@ -16,7 +16,7 @@
 
 - 360 extraits audio d'environ 30 secondes chacun :
   - 6 musiciens interprètent chacun 30 grilles d'accords.
-  - 2 versions par grilles d'accords : accompagnement et solo qui est une improvisation sur l'accompagnement.
+  - 2 versions par grille d'accords : accompagnement et solo qui est une improvisation sur l'accompagnement.
 - 30 grilles d'accords générées à partir de combinaisons de :
   - 5 styles : rock, auteur-compositeur-interprète, bossa nova, jazz et funk.
   - 3 progressions : blues à 12 mesures, Autumn Leaves et Canon de Pachelbel.
@@ -28,7 +28,7 @@
 - Les musiciens disposent de partitions et de pistes d'accompagnement conformes au style approprié, incluant une batterie et une ligne de basse.
 - 3 enregistrements audio accompagnent chaque extrait, avec le suffixe suivant :
   - hex : fichier WAV original 6 canaux du capteur hexaphonique
-  - hex_cln : fichiers WAV hexaphoniques après suppression des interférences
+  - hex_cln : fichier WAV hexaphonique après suppression des interférences
   - mic : enregistrement monophonique du microphone de référence
 
 **Contenu d'annotation** :
@@ -41,7 +41,7 @@
     - 1 annotation *beat_position*
     - 1 annotation *tempo*
   - **Accords :**
-    - 2 annotations d'accords : *instructed* (version numérique de la partition founie aux musiciens) et *performed* (annatation d'accords déduite des annotations de notes en utilisabt la segmentation et la fondamentale de la partition numérique).
+    - 2 annotations d'accords : *instructed* (version numérique de la partition founie aux musiciens) et *performed* (annotation d'accords déduite des annotations de notes en utilisant la segmentation et la fondamentale de la partition numérique).
 
 # 3. IDMT-SMT-Guitar
 
@@ -77,7 +77,6 @@
 - **3e sous-ensemble :**
   - 5 courts enregistrements de guitare monophoniques et polyphoniques
   - Enregistrés avec le même instrument, sans style ni expression particulier
-  - Fichiers sont au format XML
   - Profondeur de bits : 16 bits
   - Annotation au format XML
 
@@ -85,8 +84,12 @@
   - À des fins d'évaluation pour la reconnaissance d'accords et l'estimation de styles rythmiques
   - 64 courts morceaux musicaux regroupés par genre
   - Pour chaque morceau :
-    - 2 tempos différents
+    - 2 tempi différents
     - 3 guitares différentes
     - Format XML
   - Profondeur de bits : 16 bits
-  - Annotations concernant les positions d'attaque, les accords, la longueur du motif rythmique et la texture (monophonie/polyphonie) sont incluses dans différents formats de fichiers
+  - Annotations concernant les positions d'attaque, les accords, la longueur du motif rythmique et la texture (monophonie/polyphonie) sont incluses dans différents formats de fichier
+
+---
+
+**Auteur :** Damien DESSAUX
