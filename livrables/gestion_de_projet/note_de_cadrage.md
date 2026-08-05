@@ -19,11 +19,11 @@
   - [3.3. Cas d’usage principal](#33-cas-dusage-principal)
 - [4. Périmètre du projet](#4-périmètre-du-projet)
   - [4.1. Inclus dans le périmètre](#41-inclus-dans-le-périmètre)
-  - [4.2. Exclus dans le périmètre](#42-exclus-dans-le-périmètre)
+  - [4.2. Exclus du périmètre](#42-exclus-du-périmètre)
 - [5. Hypothèses de faisabilité](#5-hypothèses-de-faisabilité)
   - [5.1. Orientation technique](#51-orientation-technique)
   - [5.2. Technologies envisagées](#52-technologies-envisagées)
-    - [5.2.1. Préprocessing audio](#521-préprocessing-audio)
+    - [5.2.1. Preprocessing audio](#521-preprocessing-audio)
     - [5.2.2. Features extraction](#522-features-extraction)
     - [5.2.3. Modélisation](#523-modélisation)
   - [5.3. Données](#53-données)
@@ -38,7 +38,7 @@
   - [9.1. Jalons de pilotage](#91-jalons-de-pilotage)
   - [9.2. Budget prévisionnel](#92-budget-prévisionnel)
   - [9.3. Valorisation estimative phase 1](#93-valorisation-estimative-phase-1)
-  - [9.4. Cout du développement](#94-cout-du-développement)
+  - [9.4. Coût du développement](#94-coût-du-développement)
   - [9.5. Hypothèse financière](#95-hypothèse-financière)
 - [10. KPIs de pilotage](#10-kpis-de-pilotage)
 - [11. Critères de succès](#11-critères-de-succès)
@@ -85,8 +85,8 @@ Développer un prototype fonctionnel capable de :
 - recevoir un fichier audio .wav de guitare,
 - générer automatiquement un fichier MIDI exploitable,
 - produire une visualisation piano-roll,
-- produire une partition ou une tablature (optionnelle).
-- exposer le service via une interface web déployée sur Hugging Face.
+- produire une partition ou une tablature (optionnelle),
+- exposer le service via une interface web déployée sur Hugging Face Spaces.
 
 ## 2.2. Objectifs SMART
 
@@ -155,7 +155,7 @@ Le périmètre de la phase 1 comprend :
 - développement d’une API d’inférence,
 - déploiement du prototype sur Hugging Face Spaces.
 
-## 4.2. Exclus dans le périmètre
+## 4.2. Exclus du périmètre
 
 Les éléments suivants sont exclus de la phase 1 :
 
@@ -182,9 +182,9 @@ Le prototype reposera sur une approche supervisée de transcription audio utilis
 
 ## 5.2. Technologies envisagées
 
-### 5.2.1. Préprocessing audio
+### 5.2.1. Preprocessing audio
 
-Le pipeline de préparation des données audio comprendra :
+La pipeline de préparation des données audio comprendra :
 
 - harmonisation des formats audio,
 - conversion mono,
@@ -227,8 +227,8 @@ Aucune donnée propriétaire n’est disponible.
 
 Le projet s’appuiera sur des datasets publics spécialisés :
 
-- GuitarSet
-- IDMT-SMT-Guitar
+- [GuitarSet](https://guitarset.weebly.com/),
+- [IDMT-SMT-Guitar](https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html).
 
 Une analyse des licences sera réalisée avant utilisation.
 
@@ -275,10 +275,10 @@ L’infrastructure prévisionnelle repose principalement sur des composants grat
 | Risque | Impact | Probabilité | Plan de mitigation |
 | :- | :- | :- | :- |
 | Restrictions de licence sur les datasets | Élevé | Moyen | Validation juridique préalable |
-| Volume de données insuffisant | Élevé | Élevé | Data augmentation et transfert learning |
+| Volume de données insuffisant | Élevé | Élevé | Data augmentation et transfer learning |
 | Performances insuffisantes sur polyphonie | Élevé | Moyen | Benchmark de plusieurs architectures |
 | Temps d’inférence trop élevé | Moyen | Moyen | Optimisation modèle et quantization |
-| Variabilité de qualité audio | Moyen | Élevé | Préprocessing et normalisation audio |
+| Variabilité de qualité audio | Moyen | Élevé | Preprocessing et normalisation audio |
 
 # 9. Planning macro prévisionnel
 
@@ -288,7 +288,7 @@ L’infrastructure prévisionnelle repose principalement sur des composants grat
 | J+7 | Validation de la note de cadrage |
 | J+14 | Ingestion des datasets |
 | J+20 | Analyse exploratoire des données |
-| J+25 | Préprocessing audio et extraction des features |
+| J+25 | Preprocessing audio et extraction des features |
 | J+28 | Construction des datasets frame-wise |
 | J+42 | Benchmark des modèles candidats |
 | J+49 | Implémentation du pipeline ML complet |
@@ -302,7 +302,7 @@ L’infrastructure prévisionnelle repose principalement sur des composants grat
 | :- | :- |
 | GO Datasets | Données validées et exploitables |
 | GO Modèle | Baseline opérationnelle |
-| GO Prototype | Pipeline complet exécutable |
+| GO Prototype | Pipeline complète exécutable |
 | GO Démonstration | API et interface accessibles |
 
 ## 9.2. Budget prévisionnel
@@ -311,12 +311,12 @@ L’infrastructure prévisionnelle repose principalement sur des composants grat
 
 | Poste | Charge estimée |
 | :- | :- |
-| Data preparation | 15 jours |
+| Préparation data | 15 jours |
 | Développement ML | 15 jours |
 | API / Backend | 10 jours |
 | Déploiement / DevOps | 5 jours |
 
-## 9.4. Cout du développement
+## 9.4. Coût du développement
 
 | Poste | Estimation |
 | :- | :- |
@@ -373,7 +373,7 @@ Le comité de pilotage est sollicité afin de valider le lancement de la phase 1
 Cette phase couvre :
 
 - l’étude de faisabilité,
-- la construction du pipeline data,
+- la construction de la pipeline data,
 - l’entraînement du modèle,
 - le déploiement du prototype de démonstration.
 
