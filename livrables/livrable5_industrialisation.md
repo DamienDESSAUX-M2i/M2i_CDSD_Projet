@@ -38,7 +38,7 @@ L'industrialisation débute après la phase d'expérimentation des modèles. Une
 
 À chaque évolution du dépôt GitHub, une chaîne d'intégration continue valide automatiquement la qualité du projet avant de construire une image Docker unique. Cette image est publiée sur **GitHub Container Registry (GHCR)** puis utilisée pour mettre à jour automatiquement le **Hugging Face Space** hébergeant l'application.
 
-L'utilisateur interagit uniquement avec l'interface Streamlit. Celle-ci communique avec l'API REST afin de déclencher la transcription audio et de restituer les différents artefacts générés (MIDI, partition, piano roll).
+L'utilisateur interagit uniquement avec l'interface **Streamlit**. Celle-ci communique avec l'API REST afin de déclencher la transcription audio et de restituer les différents artefacts générés (MIDI, partition, piano roll).
 
 Cette architecture garantit un environnement identique entre le développement, l'intégration continue et la production.
 
@@ -130,8 +130,6 @@ Les exceptions sont centralisées grâce à des gestionnaires dédiés, permetta
 
 L'utilisation de FastAPI permet également de générer automatiquement une documentation OpenAPI interactive, facilitant l'intégration de l'API par d'autres applications.
 
-Cette API répond ainsi à la compétence **C5.2** du référentiel en mettant à disposition un service de prédiction standardisé, documenté et réutilisable.
-
 # 7. Application web de démonstration
 
 Bien qu'une API REST puisse être utilisée directement par des applications tierces, elle reste peu adaptée à des utilisateurs non techniques. Une interface web a donc été développée avec **Streamlit** afin de rendre le modèle immédiatement exploitable.
@@ -160,7 +158,7 @@ Cette architecture facilite les évolutions futures, puisque toute nouvelle inte
 
 Le projet s'appuie sur une chaîne **CI/CD** entièrement automatisée reposant sur **GitHub Actions**.
 
-Chaque **Push** ou **Pull Request** déclenche automatiquement une succession d'étapes garantissant la qualité du code avant son déploiement.
+Chaque **Push** sur la branch main et création ou update de **Pull Request** vers cette dernière déclenche automatiquement une succession d'étapes garantissant la qualité du code avant son déploiement.
 
 La phase d'intégration continue comprend :
 
@@ -222,7 +220,7 @@ L'application déployée est accessible publiquement :
 
 > Hugging Face Spaces : <https://huggingface.co/spaces/DamienDESSAUX/M2i_CDSD_Projet_Deployment>
 
-Elle exactement à l'image Docker construite et publiée automatiquement par la chaîne CI/CD.
+Elle correspond exactement à l'image Docker construite et publiée automatiquement par la chaîne CI/CD.
 
 # 11. Conclusion
 
