@@ -199,7 +199,7 @@ Le jeu de données **IDMT-SMT-Guitar** fournit :
 
 Il complète GuitarSet en apportant des exemples supplémentaires ainsi que plusieurs sous-ensembles présentant des caractéristiques différentes.
 
-L'utilisation simultanée de ces deux jeux de données améliore la diversité des données d'entraînement et limite les risques de surapprentissage.
+L'utilisation simultanée de ces deux jeux de données améliore la diversité des données d'entraînement et limite les risques de sur-apprentissage.
 
 ## 5.2. 4.2 Architecture de stockage
 
