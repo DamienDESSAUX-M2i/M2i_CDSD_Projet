@@ -42,10 +42,8 @@
   - [9.5. Hypothèse financière](#95-hypothèse-financière)
 - [10. KPIs de pilotage](#10-kpis-de-pilotage)
 - [11. Critères de succès](#11-critères-de-succès)
-- [12. Perspectives et roadmap](#12-perspectives-et-roadmap)
-  - [12.1. Phase 2 — Industrialisation (hors périmètre)](#121-phase-2--industrialisation-hors-périmètre)
-- [13. Décision attendue](#13-décision-attendue)
-  - [13.1. Demande de validation](#131-demande-de-validation)
+- [12. Phase 2 — Industrialisation (hors périmètre)](#12-phase-2--industrialisation-hors-périmètre)
+- [13. Demande de validation](#13-demande-de-validation)
 
 # 1. Contexte et enjeux métier
 
@@ -311,6 +309,7 @@ L’infrastructure prévisionnelle repose principalement sur des composants grat
 
 | Poste | Charge estimée |
 | :- | :- |
+| Gestion de projet | 5 jours |
 | Préparation data | 15 jours |
 | Développement ML | 15 jours |
 | API / Backend | 10 jours |
@@ -328,7 +327,7 @@ L’infrastructure prévisionnelle repose principalement sur des composants grat
 
 La phase 1 représente une phase de prototypage avec infrastructure majoritairement gratuite.
 
-La valorisation théorique du projet est estimée entre 18 k€ et 25 k€ selon les charges d’ingénierie mobilisées.
+La valorisation théorique du projet est estimée entre 25k€ et 30k€ selon les charges d’ingénierie mobilisées. Un TJM de 500€ sur 50 jours correspond à une valorisation de 25k€.
 
 Une phase 2 d’industrialisation fera l’objet d’un chiffrage distinct.
 
@@ -351,9 +350,7 @@ La phase 1 sera considérée comme validée si :
 - les performances minimales sont atteintes,
 - le démonstrateur permet un usage exploitable en contexte pédagogique.
 
-# 12. Perspectives et roadmap
-
-## 12.1. Phase 2 — Industrialisation (hors périmètre)
+# 12. Phase 2 — Industrialisation (hors périmètre)
 
 Les évolutions potentielles identifiées sont :
 
@@ -364,9 +361,7 @@ Les évolutions potentielles identifiées sont :
 - montée en charge cloud,
 - extension multi-instruments.
 
-# 13. Décision attendue
-
-## 13.1. Demande de validation
+# 13. Demande de validation
 
 Le comité de pilotage est sollicité afin de valider le lancement de la phase 1 du projet GuitarFlow.
 

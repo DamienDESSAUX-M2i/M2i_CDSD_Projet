@@ -10,6 +10,10 @@ Cliquer sur les liens pour naviguer vers les livrables.
 | :- | :- |
 | [Livrable 1](./livrables/livrable1_infrastructure_conceptualisee.pdf) | Infrastructure conceptualisée. |
 
+Aucun scrapper n'a été utilisé dans ce projet. Afin de valider la compétence **C1.3**, vous pouvez consulter mon [ECF1](https://github.com/DamienDESSAUX-M2i/DESSAUX_Damien_ECF1/blob/main/src/extractors/books_scrapper.py) pour une implémentation de la bibliothèque **Beautiful Soup**.
+
+Spark n'a pas été utilisé dans ce projet. Afin de valider les compétences **C1.2** et **C2.3**, vous pouvez consulter mon [ECF3](https://github.com/DamienDESSAUX-M2i/DESSAUX_Damien_ECF3/blob/main/notebooks/05_spark_mllib.py) pour une implémentation de **Spark MLlib**.
+
 ## BC02 - Analyse exploratoire, descriptive et inférentielle de données
 
 > Deux codes sources décrivant l'analyse de chacune des bases de données, incluant la construction de graphiques.
@@ -27,6 +31,8 @@ Cliquer sur les liens pour naviguer vers les livrables.
 | Lien | Description |
 | :- | :- |
 | [Livrable 3.1](./audio_midi/notebooks/31_cqt_baseline_trainer.ipynb) | Conception et évaluation de 4 modèles : OVR LogisticRegression, OVR LinearSVC, OVR HistGradientBoosting, OVR SGDClassifier. Optimisation du modèle OVR HistGradientBoosting. Etude de l'ajout d'une PCA. |
+
+Le projet est intrinsèquement supervisé. Cependant un algorithme non supervisé pourrait avoir plusieurs intérêts, comme l'explorer la structure des données ou encore détecter des anomalies. Par manque de temps je n'ai réalisée qu'un réduction de dimension dans le [livrable 3.1](./audio_midi/notebooks/31_cqt_baseline_trainer.ipynb). Afin de valider la compétence **C3.3**, vous pouvez consulter le notebook [C33-analyse_non_supervisee](./livrables/C33-analyse_non_supervisee.ipynb).
 
 ## BC04 - Analyse prédictive de données non-structurées par l'intelligence artificielle
 
