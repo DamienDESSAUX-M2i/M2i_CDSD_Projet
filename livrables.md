@@ -34,6 +34,8 @@ Spark n'a pas été utilisé dans ce projet. Afin de valider les compétences **
 
 Le projet est intrinsèquement supervisé. Cependant un algorithme non supervisé pourrait avoir plusieurs intérêts, comme l'explorer la structure des données ou encore détecter des anomalies. Par manque de temps je n'ai réalisée qu'un réduction de dimension dans le [livrable 3.1](./audio_midi/notebooks/31_cqt_baseline_trainer.ipynb). Afin de valider la compétence **C3.3**, vous pouvez consulter le notebook [C33-analyse_non_supervisee](./livrables/C33-analyse_non_supervisee.ipynb).
 
+Une analyse de l'influence des variables n'a pas été menée dans ce projet. Afin de valider la compétence **C3.4**, vous pouvez consulter mon [ECF3](https://github.com/DamienDESSAUX-M2i/DESSAUX_Damien_ECF3/blob/main/notebooks/03_modelisation.ipynb) pour une analyse de l'influence des variables sur le modèle.
+
 ## BC04 - Analyse prédictive de données non-structurées par l'intelligence artificielle
 
 > Un code source incluant la conception de l'algorithme et les métriques de performances sur des données de validation.
@@ -42,6 +44,8 @@ Le projet est intrinsèquement supervisé. Cependant un algorithme non supervis�
 | :- | :- |
 | [Livrable 4.1](./audio_midi/notebooks/41_cqt_mlp_trainer.ipynb) | MLP sur dataset frame-wise. |
 | [Livrable 4.2](./audio_midi/notebooks/42_cqt_rcnn_trainer.ipynb) | CNN + MLP et RCNN sur dataset frame-wise avec context window. |
+
+Dans ce projet, les techniques de data augmentation et de fine-tuning n'ont pas été utilisés. Afin de valider les compétences **C4.3** et **C4.4**, vous pouvez consulter le notebook [C43C44-data_augmentation_fine_tuning](./livrables/C43C44-data_augmentation_fine_tuning.ipynb).
 
 ## BC05 - Industrialisation d'un algorithme d'apprentissage automatique et automatisation des processus de décision
 
