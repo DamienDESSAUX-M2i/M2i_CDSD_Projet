@@ -10,9 +10,9 @@ Cliquer sur les liens pour naviguer vers les livrables.
 | :- | :- |
 | [Livrable 1](./livrables/livrable1_infrastructure_conceptualisee.pdf) | Infrastructure conceptualisée. |
 
-Aucun scrapper n'a été utilisé dans ce projet. Afin de valider la compétence **C1.3**, vous pouvez consulter mon [ECF1](https://github.com/DamienDESSAUX-M2i/DESSAUX_Damien_ECF1/blob/main/src/extractors/books_scrapper.py) pour une implémentation de la bibliothèque **Beautiful Soup**.
+Aucun scrapper n'a été utilisé dans ce projet. Afin de valider la compétence **C1.3**, vous pouvez consulter mon [ECF1](https://github.com/DamienDESSAUX-M2i/DESSAUX_Damien_ECF1/blob/main/src/extractors/books_scrapper.py) pour une implémentation d'un scrapper de la bibliothèque **Beautiful Soup**.
 
-Spark n'a pas été utilisé dans ce projet. Afin de valider les compétences **C1.2** et **C2.3**, vous pouvez consulter mon [ECF3](https://github.com/DamienDESSAUX-M2i/DESSAUX_Damien_ECF3/blob/main/notebooks/05_spark_mllib.py) pour une implémentation de **Spark MLlib**.
+Spark n'a pas été utilisé dans ce projet. Afin de valider les compétences **C1.2** et **C2.3**, vous pouvez consulter mon [ECF3](https://github.com/DamienDESSAUX-M2i/DESSAUX_Damien_ECF3/blob/main/notebooks/05_spark_mllib.py) pour une implémentation python utilisant le SDK d'**Apache Spark**.
 
 ## BC02 - Analyse exploratoire, descriptive et inférentielle de données
 
@@ -32,9 +32,9 @@ Spark n'a pas été utilisé dans ce projet. Afin de valider les compétences **
 | :- | :- |
 | [Livrable 3.1](./audio_midi/notebooks/31_cqt_baseline_trainer.ipynb) | Conception et évaluation de 4 modèles : OVR LogisticRegression, OVR LinearSVC, OVR HistGradientBoosting, OVR SGDClassifier. Optimisation du modèle OVR HistGradientBoosting. Etude de l'ajout d'une PCA. |
 
-Le projet est intrinsèquement supervisé. Cependant un algorithme non supervisé pourrait avoir plusieurs intérêts, comme l'explorer la structure des données ou encore détecter des anomalies. Par manque de temps je n'ai réalisée qu'un réduction de dimension dans le [livrable 3.1](./audio_midi/notebooks/31_cqt_baseline_trainer.ipynb). Afin de valider la compétence **C3.3**, vous pouvez consulter le notebook [C33-analyse_non_supervisee](./livrables/C33-analyse_non_supervisee.ipynb).
+Le projet est intrinsèquement supervisé. Cependant un algorithme non supervisé pourrait avoir plusieurs intérêts, comme l'exploration la structure des données ou encore la détection des anomalies. Par manque de temps je n'ai réalisée qu'un réduction de dimension dans le [livrable 3.1](./audio_midi/notebooks/31_cqt_baseline_trainer.ipynb). Afin de valider la compétence **C3.3**, vous pouvez consulter le notebook [C33-analyse_non_supervisee](./livrables/C33-analyse_non_supervisee.ipynb) présentant une segmentation client sur le jeu de données *Mall Customers Dataset*.
 
-Une analyse de l'influence des variables n'a pas été menée dans ce projet. Afin de valider la compétence **C3.4**, vous pouvez consulter mon [ECF3](https://github.com/DamienDESSAUX-M2i/DESSAUX_Damien_ECF3/blob/main/notebooks/03_modelisation.ipynb) pour une analyse de l'influence des variables sur le modèle.
+Une analyse de l'influence des variables n'a pas été menée dans ce projet. Afin de valider la compétence **C3.4**, vous pouvez consulter mon [ECF3](https://github.com/DamienDESSAUX-M2i/DESSAUX_Damien_ECF3/blob/main/notebooks/03_modelisation.ipynb) pour une analyse de l'influence des variables sur un modèle de détection de churn.
 
 ## BC04 - Analyse prédictive de données non-structurées par l'intelligence artificielle
 
@@ -45,7 +45,7 @@ Une analyse de l'influence des variables n'a pas été menée dans ce projet. Af
 | [Livrable 4.1](./audio_midi/notebooks/41_cqt_mlp_trainer.ipynb) | MLP sur dataset frame-wise. |
 | [Livrable 4.2](./audio_midi/notebooks/42_cqt_rcnn_trainer.ipynb) | CNN + MLP et RCNN sur dataset frame-wise avec context window. |
 
-Dans ce projet, les techniques de data augmentation et de fine-tuning n'ont pas été utilisés. Afin de valider les compétences **C4.3** et **C4.4**, vous pouvez consulter le notebook [C43C44-data_augmentation_fine_tuning](./livrables/C43C44-data_augmentation_fine_tuning.ipynb).
+Dans ce projet, les techniques de data augmentation et de transfert learning n'ont pas été utilisés. Afin de valider les compétences **C4.3** et **C4.4**, vous pouvez consulter le notebook [C43C44-data_augmentation_fine_tuning](./livrables/C43C44-data_augmentation_fine_tuning.ipynb) présentant une data-augmentation sur le jeu de données *CIFAR-10* et un transfert learning à partir du modèle *MobileNetV3Small*.
 
 ## BC05 - Industrialisation d'un algorithme d'apprentissage automatique et automatisation des processus de décision
 
