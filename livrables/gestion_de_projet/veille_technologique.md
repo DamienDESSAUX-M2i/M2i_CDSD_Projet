@@ -1,5 +1,6 @@
 <h1>Veille technologique</h1>
-<h2>Projet de transcription audio vers MIDI - GuitarFlow</h2>
+
+> GuitarFlow - Projet de transcription audio vers MIDI
 
 # 1. Table des matières
 
@@ -53,6 +54,7 @@ Utilisation : baseline CNN, mais sous-optimal pour transcription précise.
 - Réduit dimension et bruit.
 
 Limite critique :
+
 - Non linéaire mais non aligné avec les demi-tons musicaux
 - Perte de précision pour pitch exact
 
@@ -64,6 +66,7 @@ Bon pour classification globale, moins pour MIDI précis.
 - Capture l’enveloppe spectrale (timbre), pas les notes.
 
 Conséquence :
+
 - Très faible utilité directe pour transcription musicale.
 - Excellent pour reconnaissance de timbre, pas de hauteur.
 
@@ -75,11 +78,13 @@ Mauvais choix pour guitare → MIDI.
 - Chaque bin correspond directement à une note musicale.
 
 Points forts :
+
 - Très forte résolution dans les basses fréquences (cordes graves guitare).
 - Correspondance naturelle avec MIDI (A4 = 440 Hz → mapping direct).
 - Très utilisé en transcription automatique moderne.
 
 Limite :
+
 - Coût computationnel plus élevé.
 
 Meilleure représentation globale pour transcription polyphonique guitare → MIDI.
@@ -90,12 +95,14 @@ Meilleure représentation globale pour transcription polyphonique guitare → MI
 - Ignore les octaves.
 
 Points forts :
+
 - Très bon pour :
   - reconnaissance d’accords
   - tonalité
 - Stable musicalement.
 
 Limites critiques :
+
 - Impossible de reconstruire les hauteurs exactes
 - Perte totale d’information d’octave → incompatible MIDI précis
 
@@ -103,17 +110,19 @@ Bon pour harmonique global, pas pour transcription note-à-note.
 
 ## 2.2. Matrice de décision
 
-![Matrice de décision features](./veille_technologique.pdf)
+![Matrice de décision features (livrables/gestion_de_projet/veille_technologique.pdf)](./veille_technologique.pdf)
 
 ## 2.3. Décision retenue
 
 Pour la tâche spécifique guitare → MIDI, on cherche :
+
 - résolution logarithmique en fréquence,
 - séparation des notes simultanées,
 - alignement sur la grille MIDI (12-TET),
 - conservation des harmoniques.
 
 Hiérarchie de pertinence (du meilleur au pire)
+
 - CQT → meilleur choix global (alignement MIDI natif)
 - STFT → acceptable mais sous-optimal (résolution non musicale)
 - Mel spectrogram → bon pour deep learning général, pas pitch précis
@@ -134,13 +143,14 @@ Hiérarchie de pertinence (du meilleur au pire)
 
 ## 2.2. Matrice de décision
 
-![Matrice de décision features](./veille_technologique.pdf)
+![Matrice de décision features (livrables/gestion_de_projet/veille_technologique.pdf)](./veille_technologique.pdf)
 
 ## 2.3. Décision retenue
 
 L’architecture RCNN (Recurrent Convolutional Neural Network) est retenue comme architecture principale.
 
 Le RCNN présente le meilleur compromis entre :
+
 - performances de transcription,
 - robustesse polyphonique,
 - coût d’inférence,

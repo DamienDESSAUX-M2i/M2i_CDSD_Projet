@@ -60,7 +60,7 @@ La solution développée permet, à partir d'un fichier audio au format WAV, de 
 - une représentation Piano Roll (SVG et PNG),
 - une partition musicale (SVG et PDF).
 
-Pour plus de détails, se référer à la [note de cadrage](./livrables/gestion_de_projet/note_de_cadrage.pdf) et au [cahier des charges](./livrables/gestion_de_projet/cahier_des_charger.pdf).
+Pour plus de détails, se référer à la [note de cadrage (livrables/gestion_de_projet/note_de_cadrage.pdf)](./livrables/gestion_de_projet/note_de_cadrage.pdf) et au [cahier des charges (livrables/gestion_de_projet/cahier_des_charger.pdf)](./livrables/gestion_de_projet/cahier_des_charger.pdf).
 
 # 3. Objectifs du projet
 
@@ -102,17 +102,17 @@ Le fichier [`livrables.pdf`](./livrables.pdf) est constitué de liens pointant v
 
 La figure ci-dessous présente l'architecture globale du projet. Elle met en évidence les différentes étapes du projet, depuis le téléchargement des jeux de données **GuitarSet** et **IDMT-SMT-Guitar** jusqu'au déploiement automatisé de l'application sur **Hugging Face Spaces**.
 
-![Architecture globale](./livrables/soutenance/figures/BC01/global_architecture.png)
+![Architecture globale (livrables/soutenance/figures/BC01/global_architecture.png)](./livrables/soutenance/figures/BC01/global_architecture.png)
 
-Pour une présentation en détails de l'architecturen se référer au [`livrable 1`](./livrables/livrable1_infrastructure_conceptualisee.pdf).
+Pour une présentation en détails de l'architecturen se référer au [`livrable 1` (livrables/livrable1_infrastructure_conceptualisee.pdf)](./livrables/livrable1_infrastructure_conceptualisee.pdf).
 
 ## 5.2. Architecture de déploiement
 
 La figure ci-dessous présente l'architecture de déploiement. Elle met en évidence les étapes du processus de déploiement.
 
-![Architecture de déploiement](./livrables/soutenance/figures/BC05/cicd_deployment_architecture.png)
+![Architecture de déploiement (livrables/soutenance/figures/BC05/cicd_deployment_architecture.png)](./livrables/soutenance/figures/BC05/cicd_deployment_architecture.png)
 
-Pour une présentation en détails de l'architecturen se référer au [`livrable 5`](./livrables/livrable5_industrialisation.pdf).
+Pour une présentation en détails de l'architecturen se référer au [`livrable 5` (livrables/livrable5_industrialisation.pdf)](./livrables/livrable5_industrialisation.pdf).
 
 # 6. Organisation du dépôt
 
@@ -283,11 +283,11 @@ Elle suit quatre grandes étapes :
 3. prétraitement des fichiers audio,
 4. construction des jeux de données d'entraînement,
 
-Les différentes opérations sont pilotées depuis l'[interface en ligne de commande](./audio_midi/main.py).
+Les différentes opérations sont pilotées depuis l'[interface en ligne de commande (audio_midi/main.py)](./audio_midi/main.py).
 
 ## 11.1. Télécharger les jeux de données
 
-Les jeux de données utilisés sont **GuitarSet** et **IDMT-SMT-Guitar**. Pour plus de détails sur ces jeux de données, se référer à l'[inventaire de données](./livrables/gestion_de_projet/inventaire_des_sources_de_donnees.pdf) et au [descriptif des données](./livrables/gestion_de_projet/descriptif_des_donnees.pdf).
+Les jeux de données utilisés sont **GuitarSet** et **IDMT-SMT-Guitar**. Pour plus de détails sur ces jeux de données, se référer à l'[inventaire de données (livrables/gestion_de_projet/inventaire_des_sources_de_donnees.pdf)](./livrables/gestion_de_projet/inventaire_des_sources_de_donnees.pdf) et au [descriptif des données (livrables/gestion_de_projet/descriptif_des_donnees.pdf)](./livrables/gestion_de_projet/descriptif_des_donnees.pdf).
 
 Télécharger l'ensemble des datasets :
 
@@ -394,9 +394,9 @@ Trois études sont disponibles dans le dossier [`audio_midi/notebooks/`](./audio
 
 | Notebook | Objectif |
 | :- | :- |
-| [GuitarSet EDA](./audio_midi/notebooks/21_eda_guitarset.ipynb) | Analyse du dataset GuitarSet |
-| [IDMT-SMT-Guitar EDA](./audio_midi/notebooks/22_eda_idmt_smt_guitar.ipynb) | Analyse du dataset IDMT-SMT-Guitar |
-| [Dataset Frame-Wise EDA](./audio_midi/notebooks/23_eda_dataset_frame_wise.ipynb) | Analyse du jeu d'entraînement généré |
+| [GuitarSet EDA (audio_midi/notebooks/21_eda_guitarset.ipynb)](./audio_midi/notebooks/21_eda_guitarset.ipynb) | Analyse du dataset GuitarSet |
+| [IDMT-SMT-Guitar EDA (audio_midi/notebooks/22_eda_idmt_smt_guitar.ipynb)](./audio_midi/notebooks/22_eda_idmt_smt_guitar.ipynb) | Analyse du dataset IDMT-SMT-Guitar |
+| [Dataset Frame-Wise EDA (audio_midi/notebooks/23_eda_dataset_frame_wise.ipynb)](./audio_midi/notebooks/23_eda_dataset_frame_wise.ipynb) | Analyse du jeu d'entraînement généré |
 
 Ces notebooks présentent notamment :
 
@@ -417,9 +417,9 @@ Plusieurs familles de modèles ont été évaluées au cours du projet, notammen
 
 | Notebook | Modèle |
 | :- | :- |
-| [CQT Baseline](./audio_midi/notebooks/31_cqt_baseline_trainer.ipynb) | One-vs-Rest + HistGradientBoosting |
-| [CQT MLP](./audio_midi/notebooks/41_cqt_mlp_trainer.ipynb) | MLP |
-| [CQT Context Window](./audio_midi/notebooks/42_cqt_rcnn_trainer.ipynb) | CNN + MLP et RCNN |
+| [CQT Baseline (audio_midi/notebooks/31_cqt_baseline_trainer.ipynb)](./audio_midi/notebooks/31_cqt_baseline_trainer.ipynb) | One-vs-Rest + HistGradientBoosting |
+| [CQT MLP (audio_midi/notebooks/41_cqt_mlp_trainer.ipynb)](./audio_midi/notebooks/41_cqt_mlp_trainer.ipynb) | MLP |
+| [CQT Context Window (audio_midi/notebooks/42_cqt_rcnn_trainer.ipynb)](./audio_midi/notebooks/42_cqt_rcnn_trainer.ipynb) | CNN + MLP et RCNN |
 
 Toutes les expérimentations sont suivies avec **MLflow**, qui assure la traçabilité :
 
@@ -447,7 +447,7 @@ Les principales fonctionnalités sont :
 
 Une documentation OpenAPI est disponible à l'adresse <http://localhost:8000/docs> après lancement de l'infrastructure.
 
-Pour plus de détails sur l'architecture de l'API, consulter le [Livrable 5](./livrables/livrable5_industrialisation.pdf).
+Pour plus de détails sur l'architecture de l'API, consulter le [Livrable 5 (livrables/livrable5_industrialisation.pdf)](./livrables/livrable5_industrialisation.pdf).
 
 ## 14.2. Interface utilisateur
 
@@ -484,7 +484,7 @@ Le projet utilise **GitHub Actions** pour automatiser :
 - la publication sur GitHub Container Registry (GHCR),
 - le déploiement automatique sur Hugging Face Spaces.
 
-L'architecture de la chaîne CI/CD est détaillée dans le [Livrable 5](./livrables/livrable5_industrialisation.pdf).
+L'architecture de la chaîne CI/CD est détaillée dans le [Livrable 5 (livrables/livrable5_industrialisation.pdf)](./livrables/livrable5_industrialisation.pdf).
 
 ---
 

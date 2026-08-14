@@ -49,7 +49,7 @@ La conception d'un système de transcription nécessite la mise en place d'une i
 
 L'architecture globale du projet est conçue afin de couvrir l'ensemble des besoins, depuis la collecte des données jusqu'à l'exploitation du modèle au travers d'une application web.
 
-La [note de cadrage](./gestion_de_projet/note_de_cadrage.pdf) et le [cahier des charges](./gestion_de_projet/cahier_des_charger.pdf) présentent plus en détail le projet.
+La [note de cadrage (livrables/gestion_de_projet/note_de_cadrage.pdf)](gestion_de_projet/note_de_cadrage.pdf) et le [cahier des charges (livrables/gestion_de_projet/cahier_des_charger.pdf)](gestion_de_projet/cahier_des_charger.pdf) présentent plus en détail le projet.
 
 ## 2.2. Problématique
 
@@ -84,7 +84,7 @@ L'analyse des besoins a conduit à identifier quatre fonctions principales.
 
 Les données proviennent de sources hétérogènes possédant des formats différents (WAV, JAMS et XML). L'infrastructure doit permettre leur téléchargement automatique puis leur intégration dans un espace de stockage unique afin de constituer un **Data Lake**.
 
-L'[inventaire des sources de donnees](./gestion_de_projet/inventaire_des_sources_de_donnees.pdf) et le [descriptif des données](./gestion_de_projet/descriptif_des_donnees.pdf) présentent les différentes sources collectées.
+L'[inventaire des sources de donnees (livrables/gestion_de_projet/inventaire_des_sources_de_donnees.pdf)](gestion_de_projet/inventaire_des_sources_de_donnees.pdf) et le [descriptif des données (livrables/gestion_de_projet/descriptif_des_donnees.pdf)](gestion_de_projet/descriptif_des_donnees.pdf) présentent les différentes sources collectées.
 
 ## 3.2. Préparation des données
 
@@ -372,7 +372,7 @@ Cette automatisation garantit la cohérence entre le code source, l'image distri
 
 # 9. Schéma synthétique
 
-![architecture_globale](./soutenance/figures/BC01/global_architecture.png)
+![architecture_globale (livrables/soutenance/figures/BC01/global_architecture.png)](soutenance/figures/BC01/global_architecture.png)
 
 # 10. Évolutivité de la plateforme
 

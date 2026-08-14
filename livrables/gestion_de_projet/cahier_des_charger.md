@@ -244,8 +244,8 @@ Le projet devra inclure :
 
 Les datasets suivants pourront être utilisés :
 
-- [GuitarSet](https://guitarset.weebly.com/),
-- [IDMT-SMT-Guitar](https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html).
+- [GuitarSet (https://guitarset.weebly.com/)](https://guitarset.weebly.com/),
+- [IDMT-SMT-Guitar (https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html)](https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html).
 
 ## 8.2. Gouvernance des données
 

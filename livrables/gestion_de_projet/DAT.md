@@ -169,7 +169,7 @@ La couche applicative exploite uniquement le modèle retenu. Celui-ci est export
 
 La figure ci-dessous présente l'architecture générale de la plateforme.
 
-![Architecture globale](../soutenance/figures/BC01/global_architecture.png)
+![Architecture globale (livrables/soutenance/figures/BC01/global_architecture.png)](../soutenance/figures/BC01/global_architecture.png)
 
 # 5. Architecture de la plateforme Data
 

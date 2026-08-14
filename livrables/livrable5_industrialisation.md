@@ -32,7 +32,7 @@ L'ensemble de la chaîne de déploiement est entièrement automatisé grâce à 
 
 La figure suivante présente l'architecture de déploiement retenue pour la couche applicative.
 
-![Architecture de déploiement](./soutenance/figures/BC05/cicd_deployment_architecture.png)
+![Architecture de déploiement (livrables/soutenance/figures/BC05/cicd_deployment_architecture.png)](soutenance/figures/BC05/cicd_deployment_architecture.png)
 
 L'industrialisation débute après la phase d'expérimentation des modèles. Une fois le meilleur modèle **TensorFlow** sélectionné et exporté, celui-ci est intégré à l'API FastAPI.
 
@@ -68,7 +68,7 @@ Le conteneur embarque notamment :
 
 La construction de l'image repose sur un [**Dockerfile multi-stage**](../Dockerfile), permettant de limiter la taille finale de l'image tout en accélérant les temps de construction. Un utilisateur non privilégié est créé afin de renforcer la sécurité du conteneur conformément aux bonnes pratiques Docker.
 
-Enfin, le script [`start.sh`](../api/start.sh) assure le démarrage simultané de l'API **FastAPI** et de l'interface **Streamlit** dans un même conteneur. Ce choix simplifie le déploiement de l'application tout en conservant une séparation logique entre la couche de présentation et la couche de services.
+Enfin, le script [`start.sh` (api/start.sh)](../api/start.sh) assure le démarrage simultané de l'API **FastAPI** et de l'interface **Streamlit** dans un même conteneur. Ce choix simplifie le déploiement de l'application tout en conservant une séparation logique entre la couche de présentation et la couche de services.
 
 L'utilisation conjointe de **Docker**, **uv** et d'une gestion stricte des dépendances garantit ainsi un environnement standardisé, reproductible et portable.
 

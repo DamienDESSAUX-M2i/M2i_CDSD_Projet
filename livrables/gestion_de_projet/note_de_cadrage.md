@@ -225,8 +225,8 @@ Aucune donnée propriétaire n’est disponible.
 
 Le projet s’appuiera sur des datasets publics spécialisés :
 
-- [GuitarSet](https://guitarset.weebly.com/),
-- [IDMT-SMT-Guitar](https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html).
+- [GuitarSet (https://guitarset.weebly.com/)](https://guitarset.weebly.com/),
+- [IDMT-SMT-Guitar (https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html)](https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html).
 
 Une analyse des licences sera réalisée avant utilisation.
 
