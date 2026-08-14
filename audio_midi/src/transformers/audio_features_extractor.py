@@ -79,8 +79,9 @@ class AudioFeatureExtractor(AbstractTransformer):
     def compute_stft(self, audio_data: FloatAudioArray) -> FeatureMatrix:
         """Compute Short-Time Fourier Transform (STFT) magnitude in dB scale.
 
-        The STFT is computed using a Hann window with configurable FFT size and hop length.
-        Output is converted to log-amplitude scale for numerical stability.
+        The STFT is computed using a Hann window with configurable FFT size
+        and hop length. Output is converted to log-amplitude scale for numerical
+        stability.
 
         Args:
             audio_data: Input mono audio signal (1D float array).

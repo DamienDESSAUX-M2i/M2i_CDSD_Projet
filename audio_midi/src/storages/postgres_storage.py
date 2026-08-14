@@ -509,7 +509,11 @@ class PostgresStorage(AbstractStorage):
         """
 
         return self._execute_one(
-            query="DELETE FROM idmt_smt_guitar_metadata WHERE id_recording = %s RETURNING *;",
+            query="""
+                DELETE FROM idmt_smt_guitar_metadata
+                WHERE id_recording = %s
+                RETURNING *;
+            """,
             params=(id_recording,),
         )
 
@@ -565,7 +569,10 @@ class PostgresStorage(AbstractStorage):
         """
 
         return self._execute_one(
-            query="SELECT * FROM audio_files WHERE id_recording = %s AND audio_type = %s;",
+            query="""
+                SELECT * FROM audio_files
+                WHERE id_recording = %s AND audio_type = %s;
+            """,
             params=(id_recording, audio_type),
         )
 
@@ -663,7 +670,10 @@ class PostgresStorage(AbstractStorage):
         """
 
         return self._execute_one(
-            query="SELECT * FROM annotation_files WHERE id_recording = %s AND annotation_type = %s;",
+            query="""
+                SELECT * FROM annotation_files
+                WHERE id_recording = %s AND annotation_type = %s;
+            """,
             params=(id_recording, annotation_type),
         )
 

@@ -1,0 +1,3 @@
+from tests import DATA_FOLDER_PATH
+
+INTEGRATION_DATA_FOLDER_PATH = DATA_FOLDER_PATH / "integration"

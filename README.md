@@ -1,592 +1,491 @@
-<h1>Transcription audio de guitare en MIDI</h1>
+<h1>GuitarFlow - Transcription musicale automatique</h1>
 
-Transcription automatique d'un signal audio de guitare en fichier MIDI à l’aide de techniques de traitement du signal et de deep learning.
+> Transcription automatique d'un signal audio de guitare en représentation musicale (fichier MIDI et partition PDF) à l’aide de techniques de traitement du signal et d'apprentissage machine.
+>
+> Ce projet est réalisé dans le cadre du titre professionnel **RNCP 35288 – Concepteur Développeur en Science des Données**.
 
-## 1. Table des matières
+# 1. Table des matières
 
 - [1. Table des matières](#1-table-des-matières)
-- [2. Context](#2-context)
-- [3. Objectifs](#3-objectifs)
-  - [3.1. Limitations du format MIDI](#31-limitations-du-format-midi)
-  - [3.2. Données d'entrée](#32-données-dentrée)
-  - [3.3. Données de sortie](#33-données-de-sortie)
-- [4. État de l’art](#4-état-de-lart)
-- [5. Application par bloc](#5-application-par-bloc)
-  - [5.1. BC01 : Construction et alimentation d'une infrastructure de gestion de donnees](#51-bc01--construction-et-alimentation-dune-infrastructure-de-gestion-de-donnees)
-  - [5.2. BC02 : Analyse exploratoire, descriptive et inferentielle de donnees](#52-bc02--analyse-exploratoire-descriptive-et-inferentielle-de-donnees)
-  - [5.3. BC03 : Analyse predictive de donnees structurees par IA (Machine Learning)](#53-bc03--analyse-predictive-de-donnees-structurees-par-ia-machine-learning)
-  - [5.4. BC04 : Analyse predictive de donnees non-structurees par IA (Deep Learning)](#54-bc04--analyse-predictive-de-donnees-non-structurees-par-ia-deep-learning)
-  - [5.5. BC05 : Industrialisation d'un algorithme et automatisation des processus de decision](#55-bc05--industrialisation-dun-algorithme-et-automatisation-des-processus-de-decision)
-  - [5.6. BC06 : Direction de projets de gestion de donnees](#56-bc06--direction-de-projets-de-gestion-de-donnees)
-- [6. Sources de données](#6-sources-de-données)
-  - [6.1. GuitarSet](#61-guitarset)
-  - [6.2. IDMT-SMT-Guitar](#62-idmt-smt-guitar)
-- [7. Architecture](#7-architecture)
-- [8. Structure du projet](#8-structure-du-projet)
-- [9. Prérequis](#9-prérequis)
-- [10. Installation](#10-installation)
-  - [10.1. Repository](#101-repository)
-  - [10.2. Environnement virtuel](#102-environnement-virtuel)
-  - [10.3. Variables d'environnement](#103-variables-denvironnement)
-  - [10.4. Démarrer l'infrastructure](#104-démarrer-linfrastructure)
-  - [10.5. Structure des données](#105-structure-des-données)
-- [11. Utilisation](#11-utilisation)
-  - [11.1. Accès aux interfaces](#111-accès-aux-interfaces)
-  - [11.2. Exécution des pipelines](#112-exécution-des-pipelines)
-  - [11.3. Options disponibles](#113-options-disponibles)
-  - [11.4. Exemples d'utilisations des options](#114-exemples-dutilisations-des-options)
-  - [Temps d'exécution estimés](#temps-dexécution-estimés)
-  - [11.5. Commandes utiles](#115-commandes-utiles)
-- [12. Auteur](#12-auteur)
+- [2. Présentation](#2-présentation)
+- [3. Objectifs du projet](#3-objectifs-du-projet)
+- [4. Livrables pour le titre professionnel RNCP 35288](#4-livrables-pour-le-titre-professionnel-rncp-35288)
+- [5. Architectures](#5-architectures)
+  - [5.1. Architecture globale](#51-architecture-globale)
+  - [5.2. Architecture de déploiement](#52-architecture-de-déploiement)
+- [6. Organisation du dépôt](#6-organisation-du-dépôt)
+- [7. Technologies utilisées](#7-technologies-utilisées)
+- [Prérequis](#prérequis)
+- [8. Démarrage rapide](#8-démarrage-rapide)
+  - [8.1. Cloner le dépôt](#81-cloner-le-dépôt)
+  - [8.2. Télécharger les dépendances](#82-télécharger-les-dépendances)
+  - [8.3. Créer le fichier d'environnement](#83-créer-le-fichier-denvironnement)
+  - [8.4. Démarrer l'infrastructure](#84-démarrer-linfrastructure)
+- [9. Infrastructure Docker Compose](#9-infrastructure-docker-compose)
+- [10. Déroulement complet du projet](#10-déroulement-complet-du-projet)
+- [11. Construction des données](#11-construction-des-données)
+  - [11.1. Télécharger les jeux de données](#111-télécharger-les-jeux-de-données)
+  - [11.2. Ingérer les données](#112-ingérer-les-données)
+  - [11.3. Prétraiter les données](#113-prétraiter-les-données)
+  - [11.4. Construction des jeux d'entraînement](#114-construction-des-jeux-dentraînement)
+- [12. Analyse exploratoire des données](#12-analyse-exploratoire-des-données)
+- [13. Expérimentations Machine Learning](#13-expérimentations-machine-learning)
+- [14. Couche applicative](#14-couche-applicative)
+  - [14.1. API REST](#141-api-rest)
+  - [14.2. Interface utilisateur](#142-interface-utilisateur)
+  - [14.3. Déploiement](#143-déploiement)
+  - [14.4. Intégration et livraison continues (CI/CD)](#144-intégration-et-livraison-continues-cicd)
 
-## 2. Context
+# 2. Présentation
 
-La transcription automatique de musique (Automatic Music Transcription) consiste à convertir un signal audio en représentation symbolique (notes, temps, durées, vélocité).
+Ce projet a été réalisé dans le cadre d'un cas d'usage simulé, pour une entreprise fictive nommée *GuitarFlow*.
 
-Dans le cas de la guitare, le problème est complexe en raison :
-- de la richesse harmonique de l'instrument : Une note de guitare ne produit pas une seule fréquence, mais une fréquence fondamentale accompagnée de plusieurs harmoniques, des résonances de la caisse... Dans un spectrogramme, les harmoniques peuvent avoir une amplitude plus élevée que la fondamentale, ce qui peut conduire à une mauvaise estimation du pitch.
-- de la polyphonie : La guitare peut jouer plusieurs notes simultanément provoquant un chevauchement spectral des harmoniques, un masquage fréquentiel ou une superposition d’enveloppes temporelles. Contrairement à un instrument monophonique, la détection multi-pitch nécessite une classification multi-label et une séparation implicite des sources.
-- du sustain : Une note de guitare a une enveloppe ADSR complexe (attaque rapide, décroissance, sustain variable, release dépendant de l’interprétation) entrainant des difficultés à la détection précise des onsets, à l'estimation correcte de la fin de note et un risque de fragmentation d’une note longue en plusieurs notes courtes.
-- des techniques expressives : La guitare introduit des phénomènes non linéaires comme les dends (variation continue de pitch), vibrato (modulation périodique de fréquence), hammer-on / pull-off, slides ou palm mute. Ces effets produisent des variations continues de fréquence, des signaux non stationnaires, des ambiguïtés dans la quantification MIDI (qui est discret). Le MIDI impose des hauteurs discrètes, alors que la guitare peut produire des transitions continues.
-- des bruits et artefacts : Les enregistrements réels contiennent des bruits de fond, bruits de frottement des cordes, de la réverbération, de la saturation (guitare électrique). Ces éléments perturbent les représentations spectrales et les modèles entraînés sur données propres.
+Le but est de concevoir une solution capable de convertir automatiquement un enregistrement audio de guitare en une représentation musicale exploitable, afin de réduire le temps nécessaire à la retranscription manuelle et de faciliter la production de contenus pédagogiques et musicaux.
 
-Ce projet vise à développer un pipeline complet permettant de générer un fichier MIDI exploitable à partir d’un enregistrement audio brut.
+Pour répondre à ce besoin, le projet couvre l'ensemble du cycle de vie d'un projet de Data Science :
 
-## 3. Objectifs
+- collecte et ingestion des données,
+- stockage et gouvernance des données,
+- analyse exploratoire des jeux de données,
+- prétraitement des signaux audio,
+- construction des jeux de données d'entraînement,
+- expérimentation et comparaison de plusieurs modèles d'apprentissage automatique,
+- suivi des expérimentations avec **MLflow**,
+- industrialisation du modèle sélectionné,
+- déploiement d'une API REST et d'une interface web.
 
-Les objectifs visés sont :
-- Détecter les hauteurs (pitch detection)
-- Identifier les instants d’attaque (onset detection)
-- Estimer les durées des notes
-- Générer un fichier MIDI structuré
-- Évaluer les performances avec des métriques standards
+La solution développée permet, à partir d'un fichier audio au format WAV, de générer automatiquement plusieurs artefacts exploitables :
 
-### 3.1. Limitations du format MIDI
+- un fichier MIDI,
+- une représentation Piano Roll (SVG et PNG),
+- une partition musicale (SVG et PDF).
 
-- Les annotations MIDI peuvent présenter de légers décalages temporels, des erreurs humaines, une quantification différente du jeu réel. Cela complique l’apprentissage supervisé et l’évaluation des performances.
-- Mathématiquement, la transcription est un problème inverse, on cherche une représentation symbolique discrète à partir d’un signal continu complexe. Il n’existe pas de solution unique, plusieurs combinaisons de notes peuvent produire un spectre similaire et l’information harmonique peut être ambiguë. Le problème est donc non linéaire, multi-label et fortement dépendant du contexte temporel.
-- Le MIDI standard représente Note number (entier), Velocity, Start time et Duration. Mais ne capture pas naturellement les micro-intervalles, les bends continus précis les subtilités timbrales. Il existe donc une perte d’information intrinsèque lors du passage audio → MIDI.
+Pour plus de détails, se référer à la [note de cadrage](./livrables/gestion_de_projet/note_de_cadrage.pdf) et au [cahier des charges](./livrables/gestion_de_projet/cahier_des_charger.pdf).
 
-### 3.2. Données d'entrée
+# 3. Objectifs du projet
 
-- Fichier audio WAV
-- Guitare monophonique et polyphonique
-- Guitare acoustique et électrique
-- Accordage standard EADGBE
+Ce projet poursuit un double objectif.
 
-### 3.3. Données de sortie
+Le premier consiste à concevoir une plateforme de données reproductible permettant de collecter, stocker, transformer et préparer des données musicales pour l'apprentissage automatique. Cette plateforme doit garantir la qualité des jeux de données produits, assurer la traçabilité des traitements (data lineage) et faciliter l'expérimentation de plusieurs architectures de machine learning grâce au suivi des expériences avec **MLflow**.
 
-- Fichier MIDI représentant les notes jouées
+Le second objectif est d'industrialiser le modèle sélectionné afin de le rendre exploitable par des utilisateurs au travers d'une API REST et d'une interface web, dans un environnement standardisé, reproductible et entièrement automatisé.
 
-## 4. État de l’art
+Pour répondre à ces objectifs, l'architecture du projet est organisée en deux couches complémentaires :
 
-Les principales approches existantes :
-- Méthodes DSP classiques : STFT, autocorrélation, YIN
-- Approches Deep Learning : CNN, CRNN, Transformers
-- Outils commerciaux comme Melodyne
-- Modèle open-source Spotify Basic Pitch
+- une **plateforme Data**, dédiée à la collecte des données, aux pipelines ETL, au prétraitement des signaux audio, à la construction des jeux d'entraînement et aux expérimentations de modèles,
+- une **couche applicative**, chargée du déploiement du modèle sélectionné au sein d'une API REST développée avec **FastAPI** et d'une interface utilisateur développée avec **Streamlit**.
 
-Ce projet combine une représentation spectrale (CQT) avec un modèle CRNN.
+Cette couche applicative est conteneurisée avec **Docker**, validée automatiquement par une chaîne **GitHub Actions**, puis déployée sur **Hugging Face Spaces**, garantissant une mise en production reproductible et continue.
 
-## 5. Application par bloc
+# 4. Livrables pour le titre professionnel RNCP 35288
 
-### 5.1. BC01 : Construction et alimentation d'une infrastructure de gestion de donnees
+Ce dépôt regroupe les différents livrables demandés dans le cadre du titre professionnel **RNCP 35288 – Concepteur Développeur en Science des Données**.
 
-Stockage objet (MinIO S3) des enregistrements sonores (.wav), annotations (.xml, .jams) et features (spectrogrammes, CQT, MFCC, ...), Stockage document (MongoDB) des annotations Stockage SQL (PostgreSQL) des métadonnées entrées et sorties, Pipeline preprocessing (Resampling (22.05 kHz), Conversion mono, Normalisation, Découpage en frames), Pipeline preprocessing (Extraction features: spectrogrammes, CQT et MFCC ...)
+Le fichier [`livrables.pdf`](./livrables.pdf) est constitué de liens pointant vers les différents livrables afin de faciliter la navigation dans le dépôt. Chaque livrable renvoie directement vers les parties correspondantes du code source afin de faciliter l'évaluation.
 
-### 5.2. BC02 : Analyse exploratoire, descriptive et inferentielle de donnees
+| Élément | Emplacement |
+| :- | :- |
+| Documentation Projet (livrables 1, 5 et 6) | [`livrables/`](./livrables/) |
+| Documentation ETL | [`audio_midi/docs/`](./audio_midi/docs/) |
+| Code ETL | [`audio_midi/src/`](./audio_midi/src/) |
+| Notebooks (livrables 2, 3 et 4) | [`audio_midi/notebooks/`](./audio_midi/notebooks/) |
+| Code API REST | [`api/backend/`](./api/backend/) |
+| Code Interface web | [`api/frontend/`](./api/frontend/) |
+| Tests API REST | [`api/tests/`](./api/tests/) |
+| CI/CD | [`.github/workflow/cicd.yaml`](./.github/workflows/cicd.yaml) |
+| Docker Compose | [`docker-compose.yaml`](./docker-compose.yml) |
+| Dockerfile API REST | [`Dockerfile`](./Dockerfile) |
 
-Analyse exploratoire des données, visualisation spectrogrammes et pianorolls, Comparaison STFT vs CQT
+# 5. Architectures
 
-### 5.3. BC03 : Analyse predictive de donnees structurees par IA (Machine Learning)
+## 5.1. Architecture globale
 
-### 5.4. BC04 : Analyse predictive de donnees non-structurees par IA (Deep Learning)
+La figure ci-dessous présente l'architecture globale du projet. Elle met en évidence les différentes étapes du projet, depuis le téléchargement des jeux de données **GuitarSet** et **IDMT-SMT-Guitar** jusqu'au déploiement automatisé de l'application sur **Hugging Face Spaces**.
 
-### 5.5. BC05 : Industrialisation d'un algorithme et automatisation des processus de decision
+![Architecture globale](./livrables/soutenance/figures/BC01/global_architecture.png)
 
-### 5.6. BC06 : Direction de projets de gestion de donnees
+Pour une présentation en détails de l'architecturen se référer au [`livrable 1`](./livrables/livrable1_infrastructure_conceptualisee.pdf).
 
-## 6. Sources de données
+## 5.2. Architecture de déploiement
 
-### 6.1. GuitarSet
+La figure ci-dessous présente l'architecture de déploiement. Elle met en évidence les étapes du processus de déploiement.
 
-**Lien du site associé au dataset** : https://guitarset.weebly.com/
+![Architecture de déploiement](./livrables/soutenance/figures/BC05/cicd_deployment_architecture.png)
 
-**Contenu audio** :
-- 360 extraits audio d'environ 30 secondes chacun :
-  - 6 musiciens interprètent chacun 30 grilles d'accords.
-  - 2 versions par grilles d'accords : accompagnement et solo qui est une improvisation sur l'accompagnement.
-- 30 grilles d'accords générées à partir de combinaisons de :
-  - 5 styles : rock, auteur-compositeur-interprète, bossa nova, jazz et funk.
-  - 3 progressions : blues à 12 mesures, Autumn Leaves et Canon de Pachelbel.
-  - Deux tempi : lent et rapide.
+Pour une présentation en détails de l'architecturen se référer au [`livrable 5`](./livrables/livrable5_industrialisation.pdf).
 
-**Configuration de la collection audio** :
-- L'audio est enregistré à l'aide d'un capteur hexaphonique qui génère un signal pour chaque corde séparément et un microphone à condensateur Neumann U-87.
-- Les musiciens disposent de partitions et de pistes d'accompagnement conformes au style approprié, incluant une batterie et une ligne de basse.
-- 3 enregistrements audio accompagnent chaque extrait, avec le suffixe suivant :
-  - hex : fichier WAV original 6 canaux du capteur hexaphonique
-  - hex_cln : fichiers WAV hexaphoniques après suppression des interférences
-  - mic : enregistrement monophonique du microphone de référence
+# 6. Organisation du dépôt
 
-**Contenu d'annotation** :
-- Chacun des 360 extraits est accompagné d'un fichier .jams contenant 16 annotations :
-  - **Hauteur :**
-    - 6 annotations *pitch_contour* (1 par corde)
-    - 6 annotations *midi_note* (1 par corde)
-  - **Temps et tempo :**
-    - 1 annotation *beat_position*
-    - 1 annotation *tempo*
-  - **Accords :**
-    - 2 annotations d'accords : *instructed* (version numérique de la partition founie aux musiciens) et *performed* (annatation d'accords déduite des annotations de notes en utilisabt la segmentation et la fondamentale de la partition numérique). 
+Le dépôt est structuré afin de séparer clairement les différentes phases du projet : construction des données, expérimentation des modèles et industrialisation de la solution.
 
-### 6.2. IDMT-SMT-Guitar
-
-**Lien du site associé au dataset** : https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html
-
-**Vue d'ensemble :**
-- 7 guitares (accordage standard)
-- Plusieurs réglages micros
-- Plusieurs épaisseurs de cordes
-- Dispositif d'enregistrement : interfaces audio appropriées connectées directement à la sortie de la guitare ou microphone à condensateur
-- Format : RIFF WAVE mono
-- Fréquence d'échantillonnage : 44 100 Hz
-
-**4 sous-ensembles :**
-- **1er sous-ensemble :**
-  - Différentes techniques de jeu :
-    - styles de jeu aux doigts : *finger-style*, *muted*, *picked*
-    - styles d'expression : *normal*, *bending*, *slide*, *vibrato*, *harmonics*, *dead-notes*
-  - Profondeur de bits : 24 bits
-  - Enregistré à l'aide de 3 guitares différentes
-  - Environ 4 700 événements de notes, avec une structure monophonique et polyphonique
-  - Annotation au format XML
-
-- **2e sous-ensemble :**
-  - 400 notes monophoniques et polyphoniques
-  - Chacune jouée avec deux guitares différentes
-  - Aucun style d'expression n'a été appliqué
-  - Profondeur de bits : 16 bits
-  - Annotation au format XML
-
-- **3e sous-ensemble :**
-  - 5 courts enregistrements de guitare monophoniques et polyphoniques
-  - Enregistrés avec le même instrument, sans style ni expression particulier
-  - Fichiers sont au format XML
-  - Profondeur de bits : 16 bits
-  - Annotation au format XML
-
-- **4e sous-ensemble :**
-  - À des fins d'évaluation pour la reconnaissance d'accords et l'estimation de styles rythmiques
-  - 64 courts morceaux musicaux regroupés par genre
-  - Pour chaque morceau :
-    - 2 tempos différents
-    - 3 guitares différentes
-    - Format XML
-  - Profondeur de bits : 16 bits
-  - Annotations concernant les positions d'attaque, les accords, la longueur du motif rythmique et la texture (monophonie/polyphonie) sont incluses dans différents formats de fichiers
-
-## 7. Architecture
-
-L'architecture du projet est décrite par le schéma ci-dessous.
-
-```
-                                  ┌───────────────────────────────┐
-                                  │ SOURCES                       │
-                                  │                               │
-                                  │ • GuitarSET                   │
-                                  │ • IDMT-SMT-Guitar             │
-                                  └───────────────┬───────────────┘
-                                                  │
-                                  ┌───────────────┴───────────────┐
-                                  │ Ingestion Pipeline (Python)   │
-                                  └───────────────┬───────────────┘
-                                                  │
-                ┌─────────────────────────────────┼──────────────────────────────────┐
-                │                                 │                                  │
-                ▼                                 ▼                                  ▼
-┌───────────────────────────────┐ ┌───────────────────────────────┐ ┌───────────────────────────────┐
-│ MinIO                         │ │ MongoDB                       │ │ PostgreSQL                    │
-│ (Object Storage)              │ │ (Document Storage)            │ │ (SGBD)                        │
-│                               │ │                               │ │                               │
-│ Bucket: raw                   │ │ Collections:                  │ │ • Métadonnées input           │
-│ • Annotations (.jams / .xml)  │ │ • chords                      │ │                               │
-│ • Audios (.wav)               │ │ • note_midi                   │ │                               │
-│                               │ │ • beat_position               │ │                               │
-│                               │ │ • pitch_contour               │ │                               │
-└───────────────────────────────┘ └───────────────┬───────────────┘ └───────────────────────────────┘
-                │                                 │
-                └─────────────────────────────────┤
-                                                  │
-                                                  ▼
-                                  ┌───────────────────────────────┐
-                                  │ Preprocessor Pipeline (Python)│
-                                  │ Feature Extraction            │
-                                  └───────────────┬───────────────┘
-                                                  │
-               ┌──────────────────────────────────┤
-               │                                  │ 
-               ▼                                  ▼ 
-┌───────────────────────────────┐ ┌───────────────────────────────┐
-│ MinIO                         │ │ MongoDB                       │
-│ (Object Storage)              │ │ (Document Storage)            │
-│                               │ │                               │
-│ Bucket: processing            │ │ Collections:                  │
-│ • Audios (22 kHz / Mono)      │ │ • QTC                         │
-│                               │ │ • MFCC                        │
-│                               │ │ • Spectrogramme               │
-└───────────────────────────────┘ └───────────────┬───────────────┘
-                                                  │
-                                                  ▼
-                                  ┌───────────────────────────────┐
-                                  │ ML Pipeline (Python)          │
-                                  └───────────────┬───────────────┘
-                                                  │
-               ┌──────────────────────────────────┼─────────────────────────────────┐
-               │                                  │                                 │
-               ▼                                  ▼                                 ▼
-┌───────────────────────────────┐ ┌───────────────────────────────┐ ┌───────────────────────────────┐
-│ MinIO                         │ │ MongoDB                       │ │ PostgreSQL                    │
-│ (Object Storage)              │ │ (Document Storage)            │ │ (SGBD)                        │
-│                               │ │                               │ │                               │
-│ Bucket: output                │ │ Collections:                  │ │ • Métadonnées output          │
-│ • MIDI                        │ │ • ML output                   │ │ • Métriques                   │
-└───────────────────────────────┘ └───────────────────────────────┘ └───────────────────────────────┘
+```text
+.
+├── .github/                # Pipeline CI/CD
+│
+├── api/                    # Couche applicative
+│   ├── backend/            # API REST FastAPI
+│   ├── frontend/           # Interface Streamlit
+│   ├── tests/              # Tests unitaires et d'intégration
+│   └── start.sh            # Démarrage simultané de FastAPI et Streamlit
+│
+├── audio_midi/             # Plateforme Data
+│   ├── documentation/      # Documentation technique des pipelines
+│   ├── notebooks/          # EDA, construction des datasets et expérimentations ML
+│   ├── output/             # Résultats produits par les notebooks
+│   ├── settings/           # Paramètres des pipelines
+│   ├── src/
+│   │   ├── downloaders/
+│   │   ├── extractors/
+│   │   ├── loaders/
+│   │   ├── models/
+│   │   ├── pipelines/
+│   │   ├── storages/
+│   │   ├── transformers/
+│   │   └── utils/
+│   └── main.py             # Interface en ligne de commande (CLI)
+│
+├── livrables/              # Livrables RNCP 35288
+├── minio/                  # Initialisation de MinIO
+├── mongo/                  # Scripts d'initialisation MongoDB
+├── postgres/               # Scripts d'initialisation PostgreSQL
+├── spark/                  # Environnement Spark (préparation de la V2)
+│
+├── docker-compose.yml
+├── Dockerfile
+├── pyproject.toml
+└── uv.lock
 ```
 
-## 8. Structure du projet
+# 7. Technologies utilisées
 
-La structure du projet est décrite par le schéma ci-dessous.
+| Domaine | Technologies |
+| :- | :- |
+| API | **FastAPI** |
+| Front | **Streamlit** |
+| ML | **Scikit-learn** et **TensorFlow** |
+| Expérimentations | **MLflow** |
+| Data Lake | **MinIO** |
+| Métadonnées | **MongoDB** |
+| Base relationnelle | **PostgreSQL** |
+| Big Data | **Apache Spark** (préparation de la V2) |
+| CI/CD | **GitHub Actions** |
+| Registry | **GHCR** |
+| Déploiement | **Hugging Face Spaces** |
+| Conteneurisation | **Docker** |
+| Gestion Python | **uv** |
 
-
-```
-M2i_CDSD_Projet/
-├── .env                          # Variables d’environnement (non versionnées)
-├── .gitignore                    # Fichiers/dossiers ignorés par Git
-├── docker-compose.yml            # Orchestration des services (PostgreSQL, MongoDB, MinIO)
-├── pyproject.toml                # Configuration du projet Python (PEP 621)
-├── README.md                     # Documentation principale du projet
-│
-├── app/                          # Code applicatif principal
-│   ├── .dockerignore             # Fichiers ignorés lors du build Docker
-│   ├── Dockerfile                # Image Docker de l’application
-│   ├── main.py                   # Point d’entrée de l’application
-│   ├── requirements.txt          # Dépendances Python
-│   │
-│   ├── config/                   # Fichiers de configuration centralisés
-│   │   ├── dataset_enum.py
-│   │   ├── dataset_settings.py
-│   │   ├── ingestion_pipelines_settings.py
-│   │   ├── minio_settings.py
-│   │   ├── mongodb_settings.py
-│   │   ├── postgresql_settings.py
-│   │   └── __init__.py
-│   │
-│   ├── notebooks/                # Notebooks d’exploration et d’analyse
-│   │   └── 01_analyse_exploratoire.ipynb
-│   │
-│   ├── src/                      # Code source structuré par responsabilités
-│   │   ├── __init__.py
-│   │   │
-│   │   ├── extractors/           # Extraction des données (audio et annotation)
-│   │   │   ├── abstract_extractor.py
-│   │   │   ├── api_extractor.py
-│   │   │   ├── csv_extractor.py
-│   │   │   ├── excel_extractor.py
-│   │   │   ├── jams_extractor.py
-│   │   │   ├── json_extractor.py
-│   │   │   ├── wav_extractor.py
-│   │   │   ├── xml_extractor.py
-│   │   │   └── __init__.py
-│   │   │
-│   │   ├── loaders/              # Chargement des données vers différentes cibles
-│   │   │   ├── abstract_loader.py
-│   │   │   ├── csv_loader.py
-│   │   │   ├── excel_loader.py
-│   │   │   ├── jams_loader.py
-│   │   │   ├── json_loader.py
-│   │   │   ├── wav_loader.py
-│   │   │   ├── xml_loader.py
-│   │   │   └── __init__.py
-│   │   │
-│   │   ├── models/               # Modèles de données (structures métiers)
-│   │   │   ├── jams_models.py
-│   │   │   ├── xml_models.py
-│   │   │   └── __init__.py
-│   │   │
-│   │   ├── pipelines/            # Orchestration des flux ETL
-│   │   │   ├── abstract_pipeline.py
-│   │   │   ├── guitar_set_ingestion_pipeline.py
-│   │   │   ├── idmt_smt_guitar_ingestion_pipeline.py
-│   │   │   ├── preprocessing_pipeline.py
-│   │   │   └── __init__.py
-│   │   │
-│   │   ├── storages/             # Connecteurs vers systèmes de stockage
-│   │   │   ├── minio_storage.py
-│   │   │   ├── mongo_storage.py
-│   │   │   ├── postgresql_storage.py
-│   │   │   └── __init__.py
-│   │   │
-│   │   ├── transformers/         # Transformation et enrichissement des données
-│   │   │   ├── element_tree_wrapper.py
-│   │   │   └── __init__.py
-│   │   │
-│   │   └── utils/                # Outils transverses (logging)
-│   │       ├── logger.py
-│   │       └── __init__.py
-│   │
-│   └── tests/                    # Tests unitaires et fonctionnels
-│
-├── docs/                         # Documentation complémentaire
-│   └── rncp35288.md
-│
-├── logs/                         # Fichiers de logs générés par l’application
-│
-├── minio/                        # Service MinIO
-│   └── volume/                   # Données persistées
-│
-├── mongo/                        # Service MongoDB
-│   ├── initdb/                   # Scripts d’initialisation de la base
-│   │   └── 01_collections.js
-│   └── volume/                   # Données persistées
-│
-├── pgadmin/                      # Interface d’administration PostgreSQL
-│   ├── storage/
-│   └── volume/
-│
-└── postgres/                     # Service PostgreSQL
-    ├── initdb/                   # Scripts d’initialisation de la base
-    │   └── 01_tables.sql
-    └── volume/                   # Données persistées
-
-```
-
-## 9. Prérequis
+# Prérequis
 
 - Git
 - Docker et Docker Compose
-- Python 3.13+ (pour exécution locale)
+- Python 3.13 (pour exécution locale)
+- uv
 
-## 10. Installation
+# 8. Démarrage rapide
 
-### 10.1. Repository
+L'ensemble de la plateforme peut être lancé localement à l'aide de **Docker Compose**.
 
-Cloner le projet depuis GitHub.
+## 8.1. Cloner le dépôt
 
 ```bash
 git clone https://github.com/DamienDESSAUX-M2i/M2i_CDSD_Projet.git
+
+cd M2i_CDSD_Projet
 ```
 
-### 10.2. Environnement virtuel
+## 8.2. Télécharger les dépendances
 
-Créer un environement virtuel et installer les dépendances.
+Le projet utilise le gestionnaire de dépendances **uv**. Pour l'installation d'**uv**, se référer à la documentation [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/).
 
 ```bash
-# Créer l'environnement virtuel
-python -m venv venv
-
-# Activer l'environnement
-## Linux/Mac:
-source venv/bin/activate
-## Windows:
-venv\Scripts\activate
-
-# Installer les dépendances
-pip install -r requirements.txt
+uv sync --group audio_midi --group api
 ```
 
-Si vous utilisez uv, initialisez le projet avec `uv sync`.
-
-### 10.3. Variables d'environnement
-
-Créer, à la racine du projet, un fichier environement `./env` comprenant les variables d'environnement suivantes :
+## 8.3. Créer le fichier d'environnement
 
 ```bash
-# ===
-# Global
-# ===
-
-LOG_NAME="app"
-GUITARSET_PATH="./app/data/raw/guitarset"
-IDMT_SMT_GUITAR_PATH=".app/data/raw/idmt-smt-guitar/IDMT_SMT_GUITAR_V2"
-
-# ===
-# MinIO
-# ===
-
-MINIO_ENDPOINT="minio:9000"
-MINIO_USER="admin"
-MINIO_PASSWORD="admin0000"
-MINIO_SECURE="False"
-# bucket names
-BUCKET_RAW="raw"
-BUCKET_PROCESSED="processed"
-BUCKET_OUTPUT="output"
-
-# ===
-# Mongo
-# ===
-
-MONGO_USER="admin"
-MONGO_PASSWORD="admin0000"
-MONGO_HOST="mongo"
-MONGO_PORT="27017"
-MONGO_DBNAME="audio_midi"
-# mongo-express
-ME_USER="admin"
-ME_PASSWORD="admin0000"
-
-# ===
-# Postgres
-# ===
-
-POSTGRES_USER="admin"
-POSTGRES_PASSWORD="admin0000"
-POSTGRES_HOST="postgres"
-POSTGRES_PORT="5432"
-POSTGRES_DBNAME="audio_midi"
-# pgadmin
-PGADMIN_EMAIL="admin@admin.com"
-PGADMIN_PASSWORD="admin0000"
-
+cp .env.example .env
 ```
 
-### 10.4. Démarrer l'infrastructure
+Le fichier [`.env.example`](./.env.example) contient l'ensemble des variables nécessaires au fonctionnement de la plateforme.
 
-Démarrer l'infrastructure Docker.
+## 8.4. Démarrer l'infrastructure
 
-| Service | Image |
+```bash
+docker compose up -d
+```
+
+Après quelques instants, les différents services sont disponibles.
+
+| Service | URL |
 | :- | :- |
-| `minio` | `quay.io/minio/minio` |
-| `minio-init` | `minio/mc` |
-| `mongo` | `mongo` |
-| `mongo-express` | `mongo-express` |
-| `postgres` | `postgres` |
-| `pgadmin` | `dpage/pgadmin4` |
+| API FastAPI | <http://localhost:8000> |
+| Documentation OpenAPI | <http://localhost:8000/docs> |
+| Interface Streamlit | <http://localhost:7860> |
+| MLflow | <http://localhost:5000> |
+| PgAdmin | <http://localhost:8080> |
+| Mongo Express | <http://localhost:8081> |
+| MinIO Console | <http://localhost:9001> |
 
-```bash
-# Démarrer tous les services
-docker-compose up -d
+# 9. Infrastructure Docker Compose
 
-# Vérifier l'état des services
-docker-compose ps
-```
+Le fichier [`docker-compose.yml`](./docker-compose.yml) déploie l'ensemble de la plateforme utilisée durant le projet.
 
-Le service `minio-init` s'arrête après l'initialisation du service `minio`.
-
-### 10.5. Structure des données
-
-Les données doivent absolument respecter la structure suivante :
-
-```txt
-data\
-├───guitarset
-│   ├───annotation
-│   ├───audio_hex-pickup_debleeded
-│   ├───audio_hex-pickup_original
-│   ├───audio_mono-mic
-│   └───audio_mono-pickup_mix
-└───idmt-smt-guitar
-    └───idmt-smt-guitar
-        └───IDMT_SMT_GUITAR_V2
-            ├───dataset1
-            ├───dataset2
-            ├───dataset3
-            └───dataset4
-```
-
-## 11. Utilisation
-
-### 11.1. Accès aux interfaces
-
-| Service | URL | Identifiants |
-|---------|-----|--------------|
-| **MinIO Console** | http://localhost:9001 | admin / admin0000 |
-| **Mongo Express** | http://localhost:8081 | admin / admin0000 |
-| **pgAdmin** | http://localhost:8080 | admin@admin.com / admin0000 |
-
-### 11.2. Exécution des pipelines
-
-```bash
-# Download pipeline
-python app/main.py --download_datasets
-
-# Ingestion pipeline
-python app/main.py --ingest_datasets
-
-# Preprocessor pipeline
-python app/main.py --preprocessor
-
-# ML pipeline
-python app/main.py --ml
-```
-
-### 11.3. Options disponibles
-
-| Option | Description |
-|--------|-------------|
-| `--download_datasets` | Lance la pipeline de téléchargement des datasets |
-| `--no_guitar_set` | Désective le téléchargement du dataset `GuitarSet` |
-| `--no_idmt_smt_guitar` | Désective le téléchargement du dataset `IDMT-SMT-Guitar` |
-| `--ingest_datasets` | Lance la pipeline d'ingestion des datasets |
-| `--ingest_guitar_set` | Lance la pipeline d'ingestion pour le dataset `GuitarSet` |
-| `--ingest_idmt_smt_guitar` | Lance la pipeline d'ingestion pour le dataset `IDMT-SMT-Guitar` |
-| `--limit` | Type: int | None, Défaut: None, Limite le nombre données ingérées |
-| `--no_dataset1` | Désactive l'ingestion du sous ensemble numéro 1 du dataset `IDMT-SMT-Guitar` |
-| `--no_dataset2` | Désactive l'ingestion du sous ensemble numéro 2 du dataset `IDMT-SMT-Guitar` |
-| `--no_dataset3` | Désactive l'ingestion du sous ensemble numéro 3 du dataset `IDMT-SMT-Guitar` |
-| `--no_dataset4` | Désactive l'ingestion du sous ensemble numéro 4 du dataset `IDMT-SMT-Guitar` |
-| `--preprocessor` | Lance la pipeline de prétraitement |
-| `--ml` | Lance la pipeline de machine learning |
-
-### 11.4. Exemples d'utilisations des options
-
-```bash
-# Téléchargement du dataset GuitaSet uniquement
-python app/main.py --download_datasets --no_idmt_smt_guitar
-
-# Ingestion des 10 premières données du dataset GuitarSet
-python app/main.py --ingest_guitar_set --limit 10
-
-# Ingestion des 10 premières données des sous ensembles de données numéros 1 et 3 du dataset IDMT-SMT-Guitar
-python app/main.py --ingest_idmt_smt_guitar --limit 10 --no-dataset2 --no-dataset4
-```
-
-### Temps d'exécution estimés
-
-| Pipeline | Temps |
+| Service | Rôle |
 | :- | :- |
-| Télécharment GuitarSet | 20 minutes |
-| Télécharment IDMT-SMT-Guitar | 5 minutes |
-| Ingestion GuitarSet |  minutes |
-| Ingestion IDMT-SMT-Guitar |  minutes |
-| Prétraitement GuitarSet |  minutes |
-| Prétraitement IDMT-SMT-Guitar |  minutes |
-| Construction Dataset frame-wise |  minutes |
-| Entrainement modèle |  minutes |
+| **MinIO** | Data Lake contenant les données brutes, prétraitées et les artefacts MLflow |
+| **MongoDB** | Base documentaire stockant les annotations et les métadonnées des pipelines, des audios pré-traités, des échantillons et des jeux d'entraienement |
+| **Mongo Express** | Administration de MongoDB |
+| **PostgreSQL** | Métadonnées des fichiers audio et des annotations |
+| **PgAdmin** | Administration PostgreSQL |
+| **PostgreSQL MLflow** | Base relationnelle utilisée par MLflow |
+| **MLflow** | Suivi des expérimentations de Machine Learning |
+| **Spark** | Infrastructure distribuée prévue pour les futures versions des pipelines ETL |
+| **API FastAPI** | Service de transcription automatique |
+| **Interface Streamlit** | Interface utilisateur de démonstration |
 
-### 11.5. Commandes utiles
+# 10. Déroulement complet du projet
 
-```bash
-# Création alias MinIO
-docker-compose exec minio mc alias set local http://localhost:9000 admin admin000
-# Liste des objets du bucket raw
-docker-compose exec minio mc ls local/raw
+Le projet suis les étapes suivantes :
 
-# Accès MongoDB
-docker-compose exec mongo mongosh -u admin -p admin0000
-
-# Accès PostgreSQL
-docker-compose exec postgres psql -U admin -d audio_midi
-
-# Arrêter l'infrastructure
-docker-compose down
+```text
+01. Télécharger les données
+        ↓
+02. Ingérer les données
+        ↓
+03. Analyser les données
+        ↓
+04. Prétraiter les données
+        ↓
+05. Construire les jeux d'entraînement
+        ↓
+06. Analyser les jeux d'entraînement
+        ↓
+07. Expérimenter les modèles d'apprentissage machine
+        ↓
+08. Copier le meilleur modèle dans l'API
+        ↓
+09. Dockeriser la couche applicative
+        ↓
+10. CI/CD
+        ↓
+10. Déploiement Hugging Face
 ```
 
-## 12. Auteur
+# 11. Construction des données
 
-DESSAUX Damien
+La préparation des données est réalisée indépendamment de l'API.
+
+Elle suit quatre grandes étapes :
+
+1. téléchargement des jeux de données,
+2. ingestion des données dans le Data Lake,
+3. prétraitement des fichiers audio,
+4. construction des jeux de données d'entraînement,
+
+Les différentes opérations sont pilotées depuis l'[interface en ligne de commande](./audio_midi/main.py).
+
+## 11.1. Télécharger les jeux de données
+
+Les jeux de données utilisés sont **GuitarSet** et **IDMT-SMT-Guitar**. Pour plus de détails sur ces jeux de données, se référer à l'[inventaire de données](./livrables/gestion_de_projet/inventaire_des_sources_de_donnees.pdf) et au [descriptif des données](./livrables/gestion_de_projet/descriptif_des_donnees.pdf).
+
+Télécharger l'ensemble des datasets :
+
+```bash
+uv run audio_midi/main.py --download_datasets
+```
+
+Télécharger uniquement **GuitarSet** :
+
+```bash
+uv run audio_midi/main.py --download_datasets  --no_guitar_set
+```
+
+Télécharger uniquement **IDMT-SMT-Guitar** :
+
+```bash
+uv run audio_midi/main.py  --download_datasets  --no_idmt_smt_guitar
+```
+
+Les données téléchargées sont stockées localement avant leur ingestion dans la plateforme.
+
+## 11.2. Ingérer les données
+
+Les pipelines d'ingestion réalise notamment :
+
+- le stockage des fichiers bruts dans **MinIO**,
+- l'extraction des annotations dans **MongoDB**,
+- l'extraction des métadonnées dans **PostgreSQL**.
+
+Ingérer **GuitarSet** :
+
+```bash
+uv run main.py --ingest_guitar_set
+```
+
+Ingérer **IDMT-SMT-Guitar** :
+
+```bash
+uv run main.py --ingest_idmt_smt_guitar
+```
+
+IDMT-SMT-Guitar regroupe quatre jeux de données nommés dataset1, dataset2, dataset3 et dataset4. Il est possible de désactiver l'ingestion d'un ou plusieurs jeux de données :
+
+```bash
+uv run main.py --ingest_idmt_smt_guitar --no_dataset1 --no_dataset4
+```
+
+Limiter l'ingestion :
+
+Pour accélérer les démonstrations, il est possible de limiter le nombre de fichiers traités.
+
+```bash
+uv run main.py --ingest_guitar_set --limit 20
+```
+
+## 11.3. Prétraiter les données
+
+Le pipeline de prétraitement réalise notamment :
+
+- le nettoyage des signaux audio,
+- la normalisation des amplitudes,
+- l'extraction des caractéristiques acoustiques,
+- l'alignement avec les annotations,
+- la construction des échantillons destinés à l'entraînement.
+
+L'ensemble des données produites est stocké dans le bucket `processed` de **MinIO** tandis que les métadonnées des traitements sont enregistrées dans **MongoDB**.
+
+Prétraiter les données :
+
+```bash
+python main.py --preprocess_datasets
+```
+
+Prétraiter un jeu de données spécifique :
+
+```bash
+# GuitarSet uniquement
+python main.py --preprocess_datasets --ingest_guitar_set
+
+# IDMT-SMT-Guitar uniquement
+python main.py --preprocess_datasets --ingest_idmt_smt_guitar
+
+# dataset2 et dataset3 de IDMT-SQM-Guitar uniquement
+python main.py --preprocess_datasets --ingest_idmt_smt_guitar --no_dataset1 --no_dataset4
+```
+
+Limiter le nombre d'audio :
+
+```bash
+python main.py --preprocess_datasets --limit 20
+```
+
+## 11.4. Construction des jeux d'entraînement
+
+La création des jeux de données d'entraînement est réalisée au travers de notebooks présents dans [`audio_midi/notebooks/`](./audio_midi/notebooks/).
+
+Ces notebooks assemblent les samples issus du bucket `processed` de **MinIO**, enregistrent les métadonnées des datasets dans **MongoDB** et mènent les expérimentation des modèles de machine learning.
+
+# 12. Analyse exploratoire des données
+
+Avant la phase de modélisation, plusieurs analyses exploratoires ont été réalisées afin de comprendre les caractéristiques des données, de vérifier leur qualité et de guider les choix de prétraitement.
+
+Trois études sont disponibles dans le dossier [`audio_midi/notebooks/`](./audio_midi/notebooks/) :
+
+| Notebook | Objectif |
+| :- | :- |
+| [GuitarSet EDA](./audio_midi/notebooks/21_eda_guitarset.ipynb) | Analyse du dataset GuitarSet |
+| [IDMT-SMT-Guitar EDA](./audio_midi/notebooks/22_eda_idmt_smt_guitar.ipynb) | Analyse du dataset IDMT-SMT-Guitar |
+| [Dataset Frame-Wise EDA](./audio_midi/notebooks/23_eda_dataset_frame_wise.ipynb) | Analyse du jeu d'entraînement généré |
+
+Ces notebooks présentent notamment :
+
+- statistiques descriptives,
+- analyses univariées,
+- analyses multivariées,
+- visualisations avec **Matplotlib** et **Seaborn**,
+- contrôle de la qualité des données,
+- vérification des distributions,
+- analyse des déséquilibres éventuels,
+- interprétation des résultats en vue de la modélisation.
+
+# 13. Expérimentations Machine Learning
+
+Les expérimentations sont également réalisées dans les notebooks Jupyter.
+
+Plusieurs familles de modèles ont été évaluées au cours du projet, notamment :
+
+| Notebook | Modèle |
+| :- | :- |
+| [CQT Baseline](./audio_midi/notebooks/31_cqt_baseline_trainer.ipynb) | One-vs-Rest + HistGradientBoosting |
+| [CQT MLP](./audio_midi/notebooks/41_cqt_mlp_trainer.ipynb) | MLP |
+| [CQT Context Window](./audio_midi/notebooks/42_cqt_rcnn_trainer.ipynb) | CNN + MLP et RCNN |
+
+Toutes les expérimentations sont suivies avec **MLflow**, qui assure la traçabilité :
+
+- des paramètres d'entraînement,
+- des métriques,
+- des artefacts produits,
+- des modèles sauvegardés.
+
+Les métadonnées MLflow sont stockées dans **PostgreSQL**, tandis que les artefacts (modèles, figures, fichiers associés) sont conservés dans le bucket `mlflow` de **MinIO**.
+
+Le modèle sélectionné est ensuite exporté manuellement au format **TensorFlow** `.keras` et intégré à la couche applicative pour son déploiement.
+
+# 14. Couche applicative
+
+## 14.1. API REST
+
+L'application expose une API REST développée avec **FastAPI** permettant d'exécuter le pipeline complet de transcription musicale.
+
+Les principales fonctionnalités sont :
+
+- vérification de l'état de l'application (`/health`),
+- consultation des informations du modèle (`/model`),
+- transcription d'un fichier audio WAV (`/predict`),
+- téléchargement des artefacts générés (MIDI, piano-roll, partition).
+
+Une documentation OpenAPI est disponible à l'adresse <http://localhost:8000/docs> après lancement de l'infrastructure.
+
+Pour plus de détails sur l'architecture de l'API, consulter le [Livrable 5](./livrables/livrable5_industrialisation.pdf).
+
+## 14.2. Interface utilisateur
+
+Une interface **Streamlit** permet d'utiliser le modèle sans connaissance technique.
+
+Elle permet :
+
+- d'importer un fichier WAV,
+- de lancer la transcription,
+- de visualiser les résultats,
+- de télécharger les fichiers générés.
+
+Après le lancement de l'infrastructure :
+
+Interface : <http://localhost:7860>
+API : <http://localhost:8000>
+
+## 14.3. Déploiement
+
+La couche applicative est entièrement conteneurisée avec **Docker** et peut être exécutée en développement local via docker compose, ou automatiquement sur Hugging Face Spaces.
+
+Application déployée : <https://huggingface.co/spaces/DamienDESSAUX/M2i_CDSD_Projet_Deployment>
+
+La stratégie de déploiement, la conteneurisation et l'environnement standardisé sont décrits dans le [Livrable 5](./livrables/livrable5_industrialisation.pdf).
+
+## 14.4. Intégration et livraison continues (CI/CD)
+
+Le projet utilise **GitHub Actions** pour automatiser :
+
+- les tests unitaires et d'intégration,
+- l'analyse statique (Ruff, MyPy),
+- la mesure de la couverture de tests,
+- la construction de l'image Docker,
+- la publication sur GitHub Container Registry (GHCR),
+- le déploiement automatique sur Hugging Face Spaces.
+
+L'architecture de la chaîne CI/CD est détaillée dans le [Livrable 5](./livrables/livrable5_industrialisation.pdf).
 
 ---
 
-Projet de soutenance du titre professionnel *Concepteur Développeur en Science des Données* (Jedha - RNCP35288).
+**Auteur :** Damien DESSAUX
