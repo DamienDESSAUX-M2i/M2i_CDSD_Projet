@@ -61,3 +61,35 @@
 % =========================
 
 \useitemizeitemtemplate{\textendash}
+
+% =========================
+% ALGO
+% =========================
+
+\usepackage{listings}
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{210,210,210}
+\definecolor{codecomment}{RGB}{100,100,100}
+
+\lstdefinestyle{terminal}{
+	backgroundcolor=\color{codebg},
+	basicstyle=\ttfamily\small,
+	frame=single,
+	rulecolor=\color{codeframe},
+	framerule=0.5pt,
+	framesep=6pt,
+	xleftmargin=4pt,
+	xrightmargin=4pt,
+	columns=fullflexible,
+	keepspaces=true,
+	showstringspaces=false,
+	breaklines=true
+}
+
+%\lstset{
+%	basicstyle=\ttfamily\small,
+%	breaklines=true,
+%	frame=single,
+%	columns=fullflexible
+%}

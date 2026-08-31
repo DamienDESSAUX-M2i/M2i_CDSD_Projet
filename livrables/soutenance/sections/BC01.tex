@@ -1,99 +1,245 @@
 \section{BC01 - Construction et alimentation d'une infrastructure de gestion de données}
 
-% ===
-% Infrastructure
-% ===
-
 \begin{frame}
-    \centering
-    \huge
-    BC01 - Construction et alimentation d'une infrastructure de gestion de données
+	\centering
+	\huge
+	BC01 - Construction et alimentation d'une infrastructure de gestion de données
 \end{frame}
+
+% ===
+% Infrastructure conceptualisée
+% ===
 
 \begin{frame}{Infrastructure conceptualisée}
-    \textbf{Architecture générale du système}
-
-    \begin{itemize}
-        \item Infrastructure entièrement containerisée via Docker Compose
-        \item Architecture orientée Machine Learning Platform
-        \item Séparation stockage / traitement / expérimentation
-    \end{itemize}
-
-    \vspace{0.4cm}
-
-    \textbf{Composants principaux}
-
-    \begin{itemize}
-        \item \textbf{Stockage objet :} MinIO (audio, datasets, artefacts ML)
-        \item \textbf{Bases de données :} MongoDB + PostgreSQL
-        \item \textbf{Orchestration / ML :} MLflow (tracking expérimental)
-        \item \textbf{Traitement distribué :} Apache Spark (cluster master/worker)
-    \end{itemize}
-
-    \vspace{0.4cm}
-
-    \textbf{Objectif :} assurer reproductibilité, scalabilité et traçabilité des données
-\end{frame}
-
-\begin{frame}{Infrastructure conceptualisée}
-    \begin{figure}[h]
-        \centering
-        \includegraphics[width=0.73\textwidth]{figures/BC01/architecture_globale.png}
-        % \caption{Architecture globale}
-        \label{fig:architecture_globale}
-    \end{figure}
-\end{frame}
-
-% ===
-% Collecte
-% ===
-
-\begin{frame}{Collecte des données}
-    \textbf{Sources de données}
-
-    \begin{itemize}
-        \item GuitarSet : enregistrements audio de guitare + annotations MIDI.
-        \item IDMT-SMT-Guitar : 4 datasets audio annoté orienté transcription musicale.
-    \end{itemize}
-
-    \vspace{0.4cm}
-
-    \textbf{Nature des données collectées}
-
-    \begin{itemize}
-        \item Fichiers audio (WAV).
-        \item Fichiers d'annotation (JAMS, XML, CSV, TXT).
-        \item Métadonnées associées aux fichiers d'annotations.
-    \end{itemize}
-
-    \vspace{0.4cm}
-
-    \textbf{Stockage locale}
-
-    \begin{itemize}
-        \item Téléchargement locale des archives (ZIP).
-        \item Extraction locale des archives.
-    \end{itemize}
+	\begin{columns}[T]
+		\column{0.69\textwidth}
+		\begin{figure}[T]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC01/global_architecture.png}
+			% \caption{Architecture globale}
+			\label{fig:architecture_globale}
+		\end{figure}
+		
+		\column{0.3\textwidth}
+		\vspace{0.2cm}
+		
+		\small
+		\textbf{Composants principaux}
+		\begin{itemize}
+			\item Data Lake : MinIO
+			\item Bases de données : MongoDB \& PostgreSQL
+			\item Traitement : Python / Spark
+			\item Expérimentation : MLflow
+			\item Infrastructure: Docker-Compose
+		\end{itemize}
+		
+		\vspace{0.2cm}
+		
+		\begin{block}{\small Choix d'architecture}
+			\small
+			Séparation des données, métadonnées et traitements afin de garantir \textbf{traçabilité}, \textbf{évolutivité} et \textbf{reproductibilité}.
+		\end{block}
+	\end{columns}
 \end{frame}
 
 % ===
-% Ingestion
+% Collecte et Ingestion des données
 % ===
 
-\begin{frame}{Ingestion des données}
-    \textbf{Pipeline d'ingestion}
+\begin{frame}{Collecte et ingestion des données}
+	\begin{center}
+		\begin{tikzpicture}[
+			node distance=0.6cm,
+			box/.style={
+				draw,
+				rounded corners,
+				minimum width=0.6cm,
+				minimum height=0.6cm,
+				align=center
+			},
+			arrow/.style={
+				->,
+				>=stealth,
+				thick
+			}
+			]
+			
+			\node[box] (guitarset) {GuitarSet};
+			\node[box, below=0.6cm of guitarset] (idmt) {IDMT-SMT-Guitar};
+			\node[box, right=0.6cm of idmt] (download) {Pipeline de\\téléchargement};
+			\node[box, right=0.6cm of download] (local) {Stockage\\local};
+			\node[box, right=0.6cm of local] (ingestion) {Pipeline\\d'ingestion};
+			\node[box, right=0.6cm of ingestion] (annotation) {MongoDB / \textit{note\_midi}};
+			\node[box, right=0.6cm of ingestion, above=0.6cm of annotation] (raw) {MinIO  / \texttt{raw}};
+			\node[box, right=0.6cm of ingestion, below=0.6cm of annotation] (metadata) {PostgreSQL / \textit{métadonnées}};
+			
+			\draw[arrow] (guitarset) -- (download);
+			\draw[arrow] (idmt) -- (download);
+			\draw[arrow] (download) -- (local);
+			\draw[arrow] (local) -- (ingestion);
+			\draw[arrow] (ingestion) -- (raw);
+			\draw[arrow] (ingestion) -- (annotation);
+			\draw[arrow] (ingestion) -- (metadata);
+		\end{tikzpicture}
+	\end{center}
+	
+	\begin{columns}[T]
+		\column{0.3\textwidth}
+		
+		\textbf{Nature des données}
+		
+		\begin{itemize}
+			\item Fichiers audio (WAV).
+			\item Fichiers d'annotation (JAMS et XML).
+			\item Métadonnées associées.
+		\end{itemize}
+		
+		\column{0.3\textwidth}
+		
+	    \textbf{Collecte}
+		
+		\begin{itemize}
+			\item Téléchargement locale des archives (ZIP).
+			\item Extraction locale des archives.
+		\end{itemize}
+		
+		\column{0.39\textwidth}
+		
+		\textbf{Ingestion}
+		
+		\begin{itemize}
+			\item Upload des datasets vers MinIO.
+			\item Extraction des annotations MIDI dans MongoDB.
+			\item Extraction des métadonnées dans PostgreSQL.
+		\end{itemize}
+	\end{columns}
+\end{frame}
 
-    \begin{itemize}
-        \item Upload des datasets vers MinIO (bucket \textit{raw})
-        \item Extraction des annotations MIDI dans MongoDB (collection \textit{note\_midi})
-        \item Extraction des métadonnées dans PostgreSQL
-    \end{itemize}
+% ===
+% Organisation et transformation des données
+% ===
 
-    \vspace{0.4cm}
+\begin{frame}{Organisation et transformation des données}
+	\begin{center}
+		\begin{tikzpicture}[
+			node distance=0.6cm,
+			box/.style={
+				draw,
+				rounded corners,
+				minimum width=1cm,
+				minimum height=0.6cm,
+				align=center
+			},
+			arrow/.style={
+				->,
+				>=stealth,
+				thick
+			}
+			]
+			
+			\node[box] (raw) {Audios brutes\\MinIO / \texttt{raw}};
+			\node[box, below=0.6cm of raw] (annotation) {Annotations\\MongoDB /\\\textit{note\_midi}};
+			
+			\node[box, right=0.6cm of annotation] (etl) {Pipeline de\\prétraitement\\\textit{Python}};
+			
+			\node[box, right=0.6cm of etl] (metadata1) {Métadonnées\\MongoDB /\\\textit{pipeline\_metadata},\\\textit{audio\_metadata},\\\textit{sample\_metadata}};
+			\node[box, right=0.6cm of etl, above=0.6cm of metadata1] (processed) {Echantillons frame-wise\\MinIO / \textit{processed}};
+			
+			\node[box, right=0.6cm of metadata1] (datasetbuilder) {Dataset\\Builder\\\textit{Python}};
+			
+			\node[box, right=0.6cm of datasetbuilder] (metadata2) {Métadonnées\\MongoDB /\\\textit{pipeline\_metadata},\\\textit{dataset\_metadata}};
+			\node[box, right=0.6cm of datasetbuilder, above=0.6cm of metadata2] (datasetml) {Datasets ML};
+			
+			\draw[arrow] (raw) -- (etl);
+			\draw[arrow] (annotation) -- (etl);
+			\draw[arrow] (etl) -- (processed);
+			\draw[arrow] (etl) -- (metadata1);
+			\draw[arrow] (processed) -- (datasetbuilder);
+			\draw[arrow] (metadata1) -- (datasetbuilder);
+			\draw[arrow] (datasetbuilder) -- (metadata2);
+			\draw[arrow] (datasetbuilder) -- (datasetml);
+		\end{tikzpicture}
+	\end{center}
+	
+	\begin{columns}[T]
+		\column{0.48\textwidth}
+		\textbf{Transformation}
+		\begin{itemize}
+			\item Nettoyage du signal.
+			\item Normalisation audio.
+			\item Extraction des features.
+			\item Alignement audio / annotations.
+		\end{itemize}
+		
+		\column{0.48\textwidth}
+		\textbf{Production}
+		\begin{itemize}
+			\item Fichiers audio normalisés.
+			\item Echantillons frame-wise.
+			\item Datasets de Machine Learning.
+		\end{itemize}
+	\end{columns}
+\end{frame}
 
-    \textbf{Sortie du bloc}
+\begin{frame}{Préparation à la montée en charge}
+	\textbf{État actuel}
+	\begin{itemize}
+		\item Volume compatible avec Python.
+		\item Pipelines exécutées localement.
+		\item Infrastructure Spark déjà provisionnée.
+	\end{itemize}
+	
+	\vspace{0.2cm}
+	
+	\textbf{Évolution prévue}
+	\begin{itemize}
+		\item Parallélisation des traitements.
+		\item Augmentation du volume de données.
+		\item Migration des pipelines vers Spark.
+	\end{itemize}
+	
+	\vspace{0.2cm}
+	
+	\begin{block}{Choix d'architecture}
+		Préparer la distribution des traitements en vue d'une phase d'industrialisation.
+	\end{block}
+\end{frame}
 
-    \begin{itemize}
-        \item Données prêtes pour analyse exploratoire (Bloc 2)
-    \end{itemize}
+\begin{frame}[fragile]{Reproductibilité de l'infrastructure}
+	\textbf{Reconstruction de l'infrastructure}
+	\begin{lstlisting}[style=terminal,language=bash]
+$ cp .env.exemple .env
+$ docker-compose up -d
+\end{lstlisting}
+	
+	\vspace{0.2cm}
+	
+	\begin{columns}[T]
+		\column{0.48\textwidth}
+		
+		\textbf{Reconstruction}
+		\begin{itemize}
+			\item Services conteneurisés.
+			\item Réseaux isolés.
+			\item Volumes persistants.
+			\item Configuration externalisée.
+		\end{itemize}
+		
+		\column{0.48\textwidth}
+		
+		\textbf{Traçabilité des données}
+		\begin{itemize}
+			\item Données brutes conservées.
+			\item URI centralisées dans PostgreSQL ou MongoDB.
+			\item Traitements historisés.
+			\item Datasets et expérimentations traçables.
+		\end{itemize}
+	\end{columns}
+	
+	\vspace{0.2cm}
+	
+	\begin{block}{Résultat}
+		Une infrastructure \textbf{reconstructible} et prête à évoluer.
+	\end{block}
+	
 \end{frame}
