@@ -7,47 +7,231 @@
 \end{frame}
 
 % ===
-% Présentation
+% Présentation des ddatasets
 % ===
 
 \begin{frame}{Présentation des datasets}
-    \textbf{Objectif de l'analyse}
-    \begin{itemize}
-        \item Étudier la structure et la qualité des données audio de guitare
-        \item Évaluer leur pertinence pour une tâche de transcription automatique vers MIDI
-    \end{itemize}
-
-    \vspace{0.4cm}
-
-    \textbf{Datasets utilisés}
-
-    \begin{itemize}
-        \item \textbf{GuitarSet \cite{xi2018guitarset}}
-        \begin{itemize}
-            \item Enregistrements de guitare solo (audio + annotations)
-            \item Données alignées temporellement (value, time, duration)
-            \item Large couverture de styles de jeu
-        \end{itemize}
-
-        \item \textbf{IDMT-SMT-Guitar \cite{kehling2023idmt}}
-        \begin{itemize}
-            \item Dataset orienté reconnaissance musicale
-            \item Contient audio et annotations MIDI associées
-            \item Variété de conditions d'enregistrement
-        \end{itemize}
-    \end{itemize}
-
-    \vspace{0.3cm}
-
-    \textbf{Enjeu métier}
-    \begin{itemize}
-        \item Vérifier la compatibilité des données avec un pipeline de transcription audio $\rightarrow$ MIDI
-    \end{itemize}
+	\small
+	\begin{columns}[T]
+		% ===
+		% GUITARSET
+		% ===
+		\column{0.48\textwidth}
+		
+		\textbf{GuitarSet \cite{xi2018guitarset}} \quad \href{https://guitarset.weebly.com/}{\beamergotobutton{Dataset}}
+		\begin{itemize}
+			\item 360 extraits d'environs 30 s chacun.
+			\item 6 guitaristes, 5 styles, 3 progressions, 2 tempi.
+			\item Guitare acoustique et accordage standard.
+			\item Captation hexaphonique et micro room.
+			\item Audio WAV mono ou stéréo, 44100 Hz.
+			\item Annotations temporelles au format \textbf{JAMS} (notes, pitch, cordes, accords, beats et tempo).
+			\item Licence Creative Commons Attribution 4.0 International.
+		\end{itemize}
+		
+		% ===
+		% IDMT
+		% ===
+		\column{0.48\textwidth}
+		
+		\textbf{IDMT-SMT-Guitar \cite{kehling2023idmt}} \quad \href{https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html}{\beamergotobutton{Dataset}}
+		\begin{itemize}
+			\item 7 guitares en accordage standard.
+			\item Différents micros et configurations.
+			\item Audio WAV mono, 44100 Hz.
+			\item Annotations au format \textbf{XML} (notes pitch, technique de jeu, accords et tempo).
+			\item Licence Creative Commons Attribution \textbf{Non Commercial No Derivatives} 4.0 International.
+		\end{itemize}
+	\end{columns}
+	
+	\vspace{0.2cm}
+	
+	\begin{block}{Complémentarité pour le projet}
+		\textbf{GuitarSet} : richesse des annotations et contexte musical
+		\newline
+		\textbf{IDMT-SMT-Guitar} : diversité instrumentale et techniques de jeu
+	\end{block}
 \end{frame}
 
 % ===
 % Analyse GuitarSet
 % ===
+
+\begin{frame}{Analyse du dataset GuitarSet - Métadonnées}
+	\begin{table}
+		\centering
+		\small
+		\begin{tabular}{l l l c l l l c}
+			\hline
+			guitarist\_id & title & style & tempo & scale & mode & playing\_version & duration \\
+			\hline
+			0 & 00\_BN1-129-Eb\_comp & BN1 & 129 & Eb & major & comp & 22.32 \\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	\begin{columns}[T]
+		\column{0.6\textwidth}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[height=4cm]{figures/BC02/metadata_categorical_variables_distributions.png}
+		\end{figure}
+		
+		\small
+		Bien que les styles musicaux soient équirépartis, le dataset présente un léger déséquilibre des classes sur les gammes et les modes.
+		
+		\column{0.39\textwidth}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[height=4cm]{figures/BC02/metadata_categorical_variables_correlation_matrix.png}
+		\end{figure}
+		
+		\small
+		Chaque style est associé à un mode.
+		Chaque gamme semble préférentiellement associée à un style
+		musical ou à un mode.
+	\end{columns}
+\end{frame}
+
+\begin{frame}{Analyse du dataset GuitarSet - Métadonnées}
+	\vspace{-0.4cm}
+	
+	\begin{columns}[T]
+		\column{0.49\textwidth}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC02/metadata_numerical_variables_distributions.png}
+		\end{figure}
+		
+		\small
+		Les conditions sont favorable à une analyse de corrélation : absence d'outliers, distribution relativement symétrique, dispersions non pathologiques et kurtosis raisonnables.
+		
+		\column{0.49\textwidth}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC02/metadata_numerical_variables_correlation_matrix.png}
+		\end{figure}
+		
+		\small
+		Il semble que plus le tempo d'un morceau est rapide, plus il est court et réciproquement. Cette relation est raisonnablement linéaire.
+	\end{columns}
+\end{frame}
+
+\begin{frame}{Analyse du dataset GuitarSet - Métadonnées}
+	\vspace{-0.4cm}
+	
+	\begin{columns}[T]
+		\column{0.42\textwidth}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[height=3.6cm]{figures/BC02/metadata_categorical_and_numerical_variables_correlation_matrix.png}
+		\end{figure}
+		
+		\small
+		Les styles musicaux semblent préférentiellement associés à des tempi et des durées.
+		
+		\column{0.57\textwidth}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[height=3.6cm]{figures/BC02/metadata_categorical_and_numerical_variables_boxplots.png}
+		\end{figure}
+		
+		\small
+		Les styles présentent des profils rythmiques distincts et influencent la durée des extraits. Les étendues des tempi et des durées varie selon la gamme.
+	\end{columns}
+	
+	\begin{block}{\small Conclusion}
+		\small
+		L'analyse des métadonnées montre des corrélations entre \textbf{style}, \textbf{gamme}, \textbf{tempo} et \textbf{durée}. Ces dépendances caractérisent la distribution du dataset et peuvent influencer l'apprentissage du modèle.
+	\end{block}
+\end{frame}
+
+\begin{frame}{Analyse du dataset GuitarSet - Annotations}
+	\begin{table}
+		\centering
+		\small
+		\begin{tabular}{l c c c c}
+			\hline
+			title & data\_source & time & duration & value \\
+			\hline
+			00\_BN1-129-Eb\_comp & 0 & 7.457274 & 0.464399 & 44.018917 \\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	\begin{columns}[T]
+		\column{0.44\textwidth}
+		
+		\vspace{0.2cm}
+		
+		\small
+		\textbf{Hauteur de notes par corde}
+		\begin{table}
+			\centering
+			\tiny
+			\begin{tabular}{l c c c c}
+				\hline
+				string & min & theoretical\_min & max & theoretical\_max \\
+				\hline
+				E2 & 39.79 & 40 & 54.01 & 59 \\
+				A2 & 44.68 & 45 & 58.06 & 64 \\
+				D3 & 49.75 & 50 & 69.10 & 69 \\
+				G3 & 54.63 & 55 & 73.09 & 74 \\
+				B3 & 58.60 & 59 & 78.39 & 78 \\
+				E4 & 63.58 & 64 & 80.98 & 83 \\
+				\hline
+			\end{tabular}
+		\end{table}
+		
+		\small
+		Pas d'anomalie détectée : les intervalles des hauteurs de notes réelles et théoriques coïncident.
+		
+		\column{0.52\textwidth}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[height=3.6cm]{figures/BC02/annotation_data_source_analysis.png}
+		\end{figure}
+		
+		\small
+		Les annotations semblent cohérentes avec la physique de l'instrument.
+		La sous représentation des notes graves devrait être balancée par leurs durées. En revanche, la sous représentation des notes aiguës couplée à leur durée courte laisse présager des difficultés de transcription pour ces notes.
+	\end{columns}
+\end{frame}
+
+\begin{frame}{Analyse du dataset GuitarSet - Annotations}
+	\vspace{-0.4cm}
+	
+	\begin{columns}[T]
+		\column{0.49\textwidth}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC02/annotation_numerical_variables_distributions.png}
+		\end{figure}
+		
+		\column{0.49\textwidth}
+		
+		\small
+		Activations sans biais.
+		Distribution des durées fortement asymétrique avec de nombreuses valeurs extrêmes plausibles.
+		Hauteurs de notes propres, homogènes et bien bornés : bonne représentation du registre de la guitare.
+		
+		\begin{figure}
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC02/annotation_numerical_variables_correlations.png}
+		\end{figure}
+		
+		\small
+		La hauteur de la note jouée semble dépendre de la corde pincée. La corrélation n'est pas parfaite dû au chevauchement des notes. Bien que le coefficient de corrélation entre \textbf{duration} et \textbf{value} soit faible, on observe que plus la note est aiguë, moins elle dure.
+	\end{columns}
+\end{frame}
 
 \begin{frame}{Analyse du dataset GuitarSet}
     \textbf{Objectif de l'analyse}
@@ -75,13 +259,6 @@
         \item Bonne base pour apprentissage supervisé
         \item Complément nécessaire avec IDMT-SMT-Guitar
     \end{itemize}
-\end{frame}
-
-% ===
-% Analyse IDMT-SMT-Guitar
-% ===
-
-\begin{frame}{Analyse du dataset IDMT-SMT-Guitar}
 \end{frame}
 
 % ===

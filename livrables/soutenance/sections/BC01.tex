@@ -13,7 +13,9 @@
 \begin{frame}{Infrastructure conceptualisée}
 	\begin{columns}[T]
 		\column{0.69\textwidth}
-		\begin{figure}[T]
+		\vspace{-0.3cm}
+		
+		\begin{figure}[c]
 			\centering
 			\includegraphics[width=\textwidth]{figures/BC01/global_architecture.png}
 			% \caption{Architecture globale}
@@ -65,13 +67,13 @@
 			]
 			
 			\node[box] (guitarset) {GuitarSet};
-			\node[box, below=0.6cm of guitarset] (idmt) {IDMT-SMT-Guitar};
+			\node[box, below=0.3cm of guitarset] (idmt) {IDMT-SMT-Guitar};
 			\node[box, right=0.6cm of idmt] (download) {Pipeline de\\téléchargement};
 			\node[box, right=0.6cm of download] (local) {Stockage\\local};
 			\node[box, right=0.6cm of local] (ingestion) {Pipeline\\d'ingestion};
 			\node[box, right=0.6cm of ingestion] (annotation) {MongoDB / \textit{note\_midi}};
-			\node[box, right=0.6cm of ingestion, above=0.6cm of annotation] (raw) {MinIO  / \texttt{raw}};
-			\node[box, right=0.6cm of ingestion, below=0.6cm of annotation] (metadata) {PostgreSQL / \textit{métadonnées}};
+			\node[box, right=0.6cm of ingestion, above=0.3cm of annotation] (raw) {MinIO  / \texttt{raw}};
+			\node[box, right=0.6cm of ingestion, below=0.3cm of annotation] (metadata) {PostgreSQL / \textit{métadonnées}};
 			
 			\draw[arrow] (guitarset) -- (download);
 			\draw[arrow] (idmt) -- (download);
@@ -138,17 +140,17 @@
 			]
 			
 			\node[box] (raw) {Audios brutes\\MinIO / \texttt{raw}};
-			\node[box, below=0.6cm of raw] (annotation) {Annotations\\MongoDB /\\\textit{note\_midi}};
+			\node[box, below=0.3cm of raw] (annotation) {Annotations\\MongoDB /\\\textit{note\_midi}};
 			
-			\node[box, right=0.6cm of annotation] (etl) {Pipeline de\\prétraitement\\\textit{Python}};
+			\node[box, right=0.6cm of raw] (etl) {Pipeline de\\prétraitement\\\textit{Python}};
 			
-			\node[box, right=0.6cm of etl] (metadata1) {Métadonnées\\MongoDB /\\\textit{pipeline\_metadata},\\\textit{audio\_metadata},\\\textit{sample\_metadata}};
-			\node[box, right=0.6cm of etl, above=0.6cm of metadata1] (processed) {Echantillons frame-wise\\MinIO / \textit{processed}};
+			\node[box, right=0.6cm of etl] (processed) {Fichiers audio normalisés,\\Échantillons frame-wise\\MinIO / \textit{processed}};
+			\node[box, right=0.6cm of etl, below=0.3cm of processed] (metadata1) {Métadonnées\\MongoDB /\\\textit{pipeline\_metadata},\\\textit{audio\_metadata},\\\textit{sample\_metadata}};
 			
-			\node[box, right=0.6cm of metadata1] (datasetbuilder) {Dataset\\Builder\\\textit{Python}};
+			\node[box, right=0.6cm of processed] (datasetbuilder) {Dataset\\Builder\\\textit{Python}};
 			
-			\node[box, right=0.6cm of datasetbuilder] (metadata2) {Métadonnées\\MongoDB /\\\textit{pipeline\_metadata},\\\textit{dataset\_metadata}};
-			\node[box, right=0.6cm of datasetbuilder, above=0.6cm of metadata2] (datasetml) {Datasets ML};
+			\node[box, right=0.6cm of datasetbuilder] (datasetml) {Datasets ML};
+			\node[box, right=0.6cm of datasetbuilder, below=0.3cm of datasetml] (metadata2) {Métadonnées\\MongoDB /\\\textit{pipeline\_metadata},\\\textit{dataset\_metadata}};
 			
 			\draw[arrow] (raw) -- (etl);
 			\draw[arrow] (annotation) -- (etl);
@@ -161,24 +163,12 @@
 		\end{tikzpicture}
 	\end{center}
 	
-	\begin{columns}[T]
-		\column{0.48\textwidth}
-		\textbf{Transformation}
-		\begin{itemize}
-			\item Nettoyage du signal.
-			\item Normalisation audio.
-			\item Extraction des features.
-			\item Alignement audio / annotations.
-		\end{itemize}
-		
-		\column{0.48\textwidth}
-		\textbf{Production}
-		\begin{itemize}
-			\item Fichiers audio normalisés.
-			\item Echantillons frame-wise.
-			\item Datasets de Machine Learning.
-		\end{itemize}
-	\end{columns}
+	\textbf{Transformation}
+	\begin{itemize}
+		\item Nettoyage et normalisation du signal : conversion mono, correction du décalage en courant continu, rééchantillonnage, filtrage des hautes et basses fréquences, suppression du bruit, suppression des silences en début et fin du signal, normalisation de l'amplitude, conversion en float32.
+		\item Extraction des features : transformée en Q Constant (CQT).
+		\item Alignement des features et des annotations : échantillons frame-wise (.parquet).
+	\end{itemize}
 \end{frame}
 
 \begin{frame}{Préparation à la montée en charge}
@@ -214,27 +204,13 @@ $ docker-compose up -d
 	
 	\vspace{0.2cm}
 	
-	\begin{columns}[T]
-		\column{0.48\textwidth}
-		
-		\textbf{Reconstruction}
-		\begin{itemize}
-			\item Services conteneurisés.
-			\item Réseaux isolés.
-			\item Volumes persistants.
-			\item Configuration externalisée.
-		\end{itemize}
-		
-		\column{0.48\textwidth}
-		
-		\textbf{Traçabilité des données}
-		\begin{itemize}
-			\item Données brutes conservées.
-			\item URI centralisées dans PostgreSQL ou MongoDB.
-			\item Traitements historisés.
-			\item Datasets et expérimentations traçables.
-		\end{itemize}
-	\end{columns}
+	\textbf{Reconstruction}
+	\begin{itemize}
+		\item Services conteneurisés.
+		\item Réseaux isolés.
+		\item Volumes persistants.
+		\item Configuration externalisée.
+	\end{itemize}
 	
 	\vspace{0.2cm}
 	
