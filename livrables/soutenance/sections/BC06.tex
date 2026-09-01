@@ -169,6 +169,8 @@
 	
 	Le projet s’inscrit dans une logique de prototypage à faible coût, orientée preuve de concept.
 	
+	Hypothèse budgétaire : valorisation de la charge projet à 500 € / jour, soit 25 000 € pour 50 jours.
+	
 	\vspace{0.3cm}
 	
 	\textbf{Principes d’architecture retenus}
@@ -180,7 +182,7 @@
 		\item Absence d’infrastructure cloud industrielle en phase 1
 	\end{itemize}
 	
-	\vspace{0.3cm}
+	\vspace{0.2cm}
 	
 	\textbf{Conséquences techniques}
 	
@@ -191,7 +193,7 @@
 		\item Choix de modèles compatibles CPU
 	\end{itemize}
 	
-	\vspace{0.3cm}
+	\vspace{0.2cm}
 	
 	\textbf{Contraintes réglementaires et licences}
 	
@@ -200,7 +202,7 @@
 		\item IDMT-SMT-Guitar : licence non commerciale limitant l’usage à un POC
 	\end{itemize}
 	
-	\vspace{0.3cm}
+	\vspace{0.2cm}
 	
 	\begin{block}{Impact projet}
 		Le POC privilégie la reproductibilité et la maîtrise des coûts plutôt que la scalabilité industrielle.
@@ -224,7 +226,7 @@
 	
 	\textbf{Livrables techniques}\\
 	\begin{itemize}
-		\item Pipelined de téléchargement et d’ingestion des données
+		\item Pipelines de téléchargement et d’ingestion des données
 		\item Pipeline de prétraitement audio et extraction de caractéristiques
 		\item Pipeline de construction du dataset frame-wise
 		\item Pipeline d’entraînement et d’évaluation des modèles
@@ -265,7 +267,7 @@
 	\vspace{0.3cm}
 	
 	\begin{block}{Synthèse}
-		Bien que les résultats sont en deçà de espérances, le POC démontre globalement la faisabilité technique de la transcription audio $\rightarrow$ MIDI.
+		Bien que les résultats sont en deçà des espérances, le POC démontre globalement la faisabilité technique de la transcription audio $\rightarrow$ MIDI.
 	\end{block}
 \end{frame}
 
@@ -320,15 +322,15 @@
 		
 		\begin{itemize}
 			\item Datasets stockés en brut dans MinIO.
-			\item PostgreSQL utilisé comme \textbf{source de vérité}.
+			\item PostgreSQL utilisé comme source de vérité.
 		\end{itemize}
 		
 		\textbf{Traçabilité des traitements}
 		
 		\begin{itemize}
 			\item Métadonnées stockées dans MongoDB.
-			\item Versionnement des prétraitements appliqués.
-			\item Versionnement des datasets générés.
+			\item Versionnement des prétraitements et des datasets.
+			\item Tracking des exprimentations.
 			%\item Association :
 			%\begin{itemize}
 			%	\item modèle $\leftrightarrow$ dataset,
@@ -340,7 +342,7 @@
 		\textbf{Qualité logicielle}
 		
 		\begin{itemize}
-			\item GitHub / Docker / Ruff + Mypy / Tests / Mlflow
+			\item GitHub / Docker / Ruff + Mypy / Tests
 		\end{itemize}
 		
 		%\begin{itemize}

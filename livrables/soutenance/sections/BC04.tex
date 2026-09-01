@@ -6,11 +6,137 @@
     BC04 - Analyse prédictive de données non-structurées par l'intelligence artificielle
 \end{frame}
 
-\begin{frame}{Architecture du modèle}
+\begin{frame}{Métriques}
+	\textbf{Métriques ML}
+	\begin{itemize}
+		\item \textbf{F1-micro} : Quelle est la qualité globale de la transcription ?
+		\item \textbf{F1-macro} : Permet d'évaluer la capacité du modèle à généraliser sur l'ensemble du registre.
+		\item \textbf{Subset Accuracy} : Combien de frames sont parfaitement transcrites ?
+	\end{itemize}
+	
+	\vspace{0.2cm}
+	
+	\textbf{Métrique musicales}
+	\begin{itemize}
+		\item \textbf{Hamming Loss} : Taux d'erreur moyen par note et par frame.
+		\item \textbf{Pitch Tolerance Accuracy} : Notion de proximité musicale.
+		\item \textbf{Jitter} : Stabilité de la transcription.
+	\end{itemize}
 \end{frame}
 
-\begin{frame}{Choix des hyperparamètres}
-\end{frame}
-
-\begin{frame}{Pipeline d'entraînement}
+\begin{frame}{Architecture du modèle MLP}
+	
+	\begin{columns}[T,onlytextwidth]
+		
+		% =====================================================
+		% COLONNE GAUCHE : ARCHITECTURE
+		% =====================================================
+		\begin{column}{0.55\textwidth}
+			
+			\textbf{Architecture}
+			
+			\vspace{0.15cm}
+			
+			\begin{tikzpicture}[
+				node distance=0.25cm,
+				layer/.style={
+					draw,
+					rounded corners,
+					align=center,
+					minimum height=0.65cm,
+					text width=4.2cm,
+					font=\small
+				},
+				arrow/.style={
+					-{Latex[length=2mm]},
+					thick
+				}
+				]
+				
+				\node[layer] (input)
+				{Vecteur de caractéristiques\\
+					\scriptsize CQT / représentation audio};
+				
+				\node[layer, below=of input] (hidden1)
+				{Couche entièrement connectée\\
+					ELU + Batch Normalization};
+				
+				\node[layer, below=of hidden1] (hidden2)
+				{Couche entièrement connectée\\
+					ELU + Batch Normalization};
+				
+				\node[layer, below=of hidden2] (output)
+				{Sortie multi-label\\
+					Sigmoïde $\rightarrow$ probabilité de présence des notes};
+				
+				\draw[arrow] (input) -- (hidden1);
+				\draw[arrow] (hidden1) -- (hidden2);
+				\draw[arrow] (hidden2) -- (output);
+				
+				% Régularisation
+				\node[
+				right=0.15cm of hidden2,
+				font=\scriptsize,
+				align=left
+				] {\textit{Régularisation L2}};
+				
+			\end{tikzpicture}
+			
+		\end{column}
+		
+		% =====================================================
+		% COLONNE DROITE : APPRENTISSAGE
+		% =====================================================
+		\begin{column}{0.43\textwidth}
+			
+			\textbf{Apprentissage}
+			
+			\vspace{0.15cm}
+			
+			\begin{block}{Problème}
+				Classification \textbf{multi-label} :
+				plusieurs notes peuvent être actives
+				simultanément sur une même trame.
+			\end{block}
+			
+			\vspace{0.1cm}
+			
+			\begin{block}{Fonction de coût}
+				\centering
+				\textbf{Binary Cross-Entropy}
+			\end{block}
+			
+			\vspace{0.1cm}
+			
+			\begin{block}{Évaluation}
+				\begin{itemize}
+					\item Precision
+					\item Recall
+					\item F1-score micro
+				\end{itemize}
+			\end{block}
+			
+			\vspace{0.1cm}
+			
+			\textbf{Variantes étudiées}
+			
+			\scriptsize
+			\begin{tabular}{ll}
+				\textbf{AdamW} & Architecture de référence \\
+				\textbf{SGD + Nesterov} & Optimiseur alternatif \\
+				\textbf{Squared} & Couches cachées de même largeur \\
+				\textbf{Deep} & Augmentation de la profondeur
+			\end{tabular}
+			
+		\end{column}
+		
+	\end{columns}
+	
+	\vspace{0.15cm}
+	
+	\begin{alertblock}{Objectif expérimental}
+		Étudier l'influence de l'architecture et de l'algorithme
+		d'optimisation sur la transcription polyphonique.
+	\end{alertblock}
+	
 \end{frame}

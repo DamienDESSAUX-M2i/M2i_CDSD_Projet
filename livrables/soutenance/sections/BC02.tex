@@ -25,7 +25,7 @@
 			\item Guitare acoustique et accordage standard.
 			\item Captation hexaphonique et micro room.
 			\item Audio WAV mono ou stéréo, 44100 Hz.
-			\item Annotations temporelles au format \textbf{JAMS} (notes, pitch, cordes, accords, beats et tempo).
+			\item Annotations temporelles au format JAMS.
 			\item Licence Creative Commons Attribution 4.0 International.
 		\end{itemize}
 		
@@ -39,17 +39,16 @@
 			\item 7 guitares en accordage standard.
 			\item Différents micros et configurations.
 			\item Audio WAV mono, 44100 Hz.
-			\item Annotations au format \textbf{XML} (notes pitch, technique de jeu, accords et tempo).
+			\item Annotations au format XML.
+			\item Techniques de jeu.
 			\item Licence Creative Commons Attribution \textbf{Non Commercial No Derivatives} 4.0 International.
 		\end{itemize}
 	\end{columns}
 	
 	\vspace{0.2cm}
 	
-	\begin{block}{Complémentarité pour le projet}
-		\textbf{GuitarSet} : richesse des annotations et contexte musical
-		\newline
-		\textbf{IDMT-SMT-Guitar} : diversité instrumentale et techniques de jeu
+	\begin{block}{Conclusion}
+		Les deux datasets sont complémentaires. GuitarSet contient des annotations et contextes musicaux riches et IDMT-SMT-Guitar apporte une diversité instrumentale et des techniques de jeu.
 	\end{block}
 \end{frame}
 
@@ -107,7 +106,7 @@
 		\end{figure}
 		
 		\small
-		Les conditions sont favorable à une analyse de corrélation : absence d'outliers, distribution relativement symétrique, dispersions non pathologiques et kurtosis raisonnables.
+		Les conditions sont favorables à une analyse de corrélation : absence d'outliers, distribution relativement symétrique, dispersions non pathologiques et kurtosis raisonnables.
 		
 		\column{0.49\textwidth}
 		
@@ -143,7 +142,7 @@
 		\end{figure}
 		
 		\small
-		Les styles présentent des profils rythmiques distincts et influencent la durée des extraits. Les étendues des tempi et des durées varie selon la gamme.
+		Les styles présentent des profils rythmiques distincts et influencent la durée des extraits. Les étendues des tempi et des durées varient selon la gamme.
 	\end{columns}
 	
 	\begin{block}{\small Conclusion}
@@ -205,85 +204,53 @@
 	\end{columns}
 \end{frame}
 
-\begin{frame}{Analyse du dataset GuitarSet - Annotations}
-	\begin{columns}[T]
-		\column{0.49\textwidth}
-		\vspace{-0.4cm}
-		
-		\begin{figure}
-			\centering
-			\includegraphics[width=\textwidth]{figures/BC02/annotation_numerical_variables_distributions.png}
-		\end{figure}
-		
-		\column{0.49\textwidth}
-		
-		\small
-		Activations sans biais.
-		Distribution des durées fortement asymétrique avec de nombreuses valeurs extrêmes plausibles.
-		La distribution des hauteurs de notes offre une bonne représentation du registre de la guitare.
-		
-		\begin{figure}
-			\centering
-			\includegraphics[width=\textwidth]{figures/BC02/annotation_numerical_variables_correlations.png}
-		\end{figure}
-		
-		\small
-		Hauteur de note et corde pincée sont fortement corrélées. Corrélation non parfaite dû au chevauchement des notes. On observe que plus la note est aiguë, moins elle dure.
-	\end{columns}
-\end{frame}
+%\begin{frame}{Analyse du dataset GuitarSet - Annotations}
+%	\begin{columns}[T]
+%		\column{0.49\textwidth}
+%		\vspace{-0.4cm}
+%		
+%		\begin{figure}
+%			\centering
+%			\includegraphics[width=\textwidth]{figures/BC02/annotation_numerical_variables_distributions.png}
+%		\end{figure}
+%		
+%		\column{0.49\textwidth}
+%		
+%		\small
+%		Activations sans biais.
+%		Distribution des durées fortement asymétrique avec de nombreuses valeurs extrêmes plausibles.
+%		La distribution des hauteurs de notes offre une bonne représentation du registre de la guitare.
+%		
+%		\begin{figure}
+%			\centering
+%			\includegraphics[width=\textwidth]{figures/BC02/annotation_numerical_variables_correlations.png}
+%		\end{figure}
+%		
+%		\small
+%		Hauteur de note et corde pincée sont fortement corrélées. Corrélation non parfaite dû au chevauchement des notes. On observe que plus la note est aiguë, moins elle dure.
+%	\end{columns}
+%\end{frame}
 
-\begin{frame}{Analyse du dataset GuitarSet - Polyphonie}
-	\small
-	\textbf{Activations simultanées}
-	En considérant que des activations ayant au plus 20ms d'écart sont des notes activées simultanées, on peut estimer la polyphonie du dataset.
-	\begin{itemize}
-		\item En moyenne, 1,67 ($\pm 1,11$) notes activées simultanément.
-		\item Au moins 25\% d'intervalle ou d'accords.
-		\item Au maximum, 6 notes actives simultanément, ce qui correspond à la physique de l'instrument. 
-	\end{itemize}
+\begin{frame}{Analyse du dataset GuitarSet - Polyphonie et qualité audio}
+	
 	
 	\vspace{0.2cm}
 	
-	\small
-	\textbf{Chevauchement des notes}
-	\begin{columns}[T]
-		\column{0.49\textwidth}
-		\begin{figure}
-			\centering
-			\includegraphics[width=\textwidth]{figures/BC02/piano_roll.png}
-		\end{figure}
-		
-		\column{0.49\textwidth}
-		
-		\begin{figure}
-			\centering
-			\includegraphics[width=\textwidth]{figures/BC02/overlapping.png}
-		\end{figure}
-	\end{columns}
 	
-	\small
-	Pour le titre 00\_BN1-129-Eb\_comp, on observe de nombreux chevauchements de notes. En moyenne, 2.54 chevauchement de notes.
-\end{frame}
-
-\begin{frame}{Analyse du dataset GuitarSet - Audio}
-	\small
-	\textbf{Transformée Q constante}
 	\begin{columns}[T]
 		\column{0.49\textwidth}
-		\begin{figure}
-			\centering
-			\includegraphics[height=2cm]{figures/BC02/waveform.png}
-		\end{figure}
-		
-		\begin{figure}
-		\centering
-		\includegraphics[height=2cm]{figures/BC02/cqt.png}
-		\end{figure}
 		
 		\small
-		La CQT est une représentation temps-fréquence adaptée à la musique. Elle fournit une représentation régulièrement utilisée en entrée des modèles d'apprentissage.
+		\textbf{Activations simultanées}\\
+		En considérant que des activations ayant au plus 20ms d'écart sont des notes activées simultanées, on peut estimer la polyphonie du dataset.
+		\begin{itemize}
+			\item En moyenne, 1,67 ($\pm 1,11$) notes activées simultanément.
+			\item Au moins 25\% d'intervalle ou d'accords.
+			\item Au maximum, 6 notes actives simultanément, ce qui correspond à la physique de l'instrument. 
+		\end{itemize}
 		
 		\column{0.49\textwidth}
+		
 		
 		\small
 		\textbf{Qualité Audio}
@@ -294,21 +261,81 @@
 		
 		\small
 		Les audios sont propres, peu de silence et pas d'écrêtage.
-		
-		\vspace{0.2cm}
-		
-		\begin{block}{\small Conclusion}
-			\small
-			Dataset riche mais partiellement contraint. Bonne base pour apprentissage supervisé. IDMT-SMT-Guitar constitue un complément intéressant.
-		\end{block}
 	\end{columns}
+	
+	\begin{block}{\small Conclusion}
+		\small
+		Dataset riche mais partiellement contraint. Bonne base pour apprentissage supervisé. IDMT-SMT-Guitar constitue un complément intéressant.
+	\end{block}
+	
+%	\small
+%	\textbf{Chevauchement des notes}
+%	\begin{columns}[T]
+%		\column{0.49\textwidth}
+%		\begin{figure}
+%			\centering
+%			\includegraphics[width=\textwidth]{figures/BC02/piano_roll.png}
+%		\end{figure}
+%		
+%		\column{0.49\textwidth}
+%		
+%		\begin{figure}
+%			\centering
+%			\includegraphics[width=\textwidth]{figures/BC02/overlapping.png}
+%		\end{figure}
+%	\end{columns}
+%	
+%	\small
+%	Pour le titre 00\_BN1-129-Eb\_comp, on observe de nombreux chevauchements de notes. En moyenne, 2.54 chevauchement de notes.
 \end{frame}
+
+%\begin{frame}{Analyse du dataset GuitarSet - Audio}
+%	\small
+%	\textbf{Transformée Q constante}
+%	\begin{columns}[T]
+%		\column{0.49\textwidth}
+%		\begin{figure}
+%			\centering
+%			\includegraphics[height=2cm]{figures/BC02/waveform.png}
+%		\end{figure}
+%		
+%		\begin{figure}
+%		\centering
+%		\includegraphics[height=2cm]{figures/BC02/cqt.png}
+%		\end{figure}
+%		
+%		\small
+%		La CQT est une représentation temps-fréquence adaptée à la musique. Elle fournit une représentation régulièrement utilisée en entrée des modèles d'apprentissage.
+%		
+%		\column{0.49\textwidth}
+%		
+%		\small
+%		\textbf{Qualité Audio}
+%		\begin{figure}
+%			\centering
+%			\includegraphics[width=\textwidth]{figures/BC02/audio_silence_clipping.png}
+%		\end{figure}
+%		
+%		\small
+%		Les audios sont propres, peu de silence et pas d'écrêtage.
+%		
+%		\vspace{0.2cm}
+%		
+%		\begin{block}{\small Conclusion}
+%			\small
+%			Dataset riche mais partiellement contraint. Bonne base pour apprentissage supervisé. IDMT-SMT-Guitar constitue un complément intéressant.
+%		\end{block}
+%	\end{columns}
+%\end{frame}
 
 % ===
 % Analyse Dataset Frame-Wise
 % ===
 
-\begin{frame}{Analyse d'un dataset Frame-Wise}
+\begin{frame}{Analyse d'un dataset Frame-Wise - Features}
+	\small
+	A partir des datasets GuitarSet et IDMT-SMT-Guitar, on construis un dataset frame-wise grâce à une transformée Q-Constante (CQT).
+	
 	\begin{columns}[T]
 		\column{0.49\textwidth}
 		\begin{figure}
@@ -322,22 +349,22 @@
 		\column{0.49\textwidth}
 		
 		\small
-		L'analyse des corrélations entre bins permet d'envisager une PCA.
+		
 		\begin{figure}
 			\centering
 			\includegraphics[width=\textwidth]{figures/BC02/pca.png}
 		\end{figure}
 		
 		\small
-		6 valeurs propres supérieures à 1. Elles expliques au moins 92\% de la variance.
+		L'analyse des corrélations entre features permet d'envisager une PCA. 6 valeurs propres supérieures à 1. Elles expliquent au moins 92\% de la variance.
 	\end{columns}
 \end{frame}
 
-\begin{frame}{Analyse d'un dataset Frame-Wise}
+\begin{frame}{Analyse d'un dataset Frame-Wise - Target}
+	\vspace{-0.2cm}
+	
 	\begin{columns}[T]
 		\column{0.49\textwidth}
-		
-		\vspace{-0.2cm}
 		
 		\begin{figure}
 			\centering
@@ -345,18 +372,16 @@
 		\end{figure}
 		
 		\small
-		Le déséquilibre des classes est un réel problème, le modèle risque de ne pas détecter d'activation. La distribution des activations de notes est hétérogènes, les notes aigus seront plus difficiles à détecter.
+		Le déséquilibre des classes est un réel problème, le modèle risque de ne pas détecter d'activation. La distribution des activations de notes est hétérogène, les notes aiguës seront plus difficiles à détecter.
 		
 		\column{0.49\textwidth}
 		
-		\small
-		\textbf{Cible}
 		\begin{figure}
 			\centering
 			\includegraphics[height=3cm]{figures/BC02/distibution_simultaneous_activations.png}
 		\end{figure}
 		
 		\small
-		63 frames contiennent plus de 6 activations simultanée, non aligné avec la physique de l'instrument. En moyenne, il y a 1.81 ($\pm$ 1.55) notes actives par frame. Environ 40\% des frames contiennent aux moins deux notes simultanées.
+		63 frames contiennent plus de 6 activations simultanées, non aligné avec la physique de l'instrument.
 	\end{columns}
 \end{frame}
