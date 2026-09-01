@@ -206,10 +206,9 @@
 \end{frame}
 
 \begin{frame}{Analyse du dataset GuitarSet - Annotations}
-	\vspace{-0.4cm}
-	
 	\begin{columns}[T]
 		\column{0.49\textwidth}
+		\vspace{-0.4cm}
 		
 		\begin{figure}
 			\centering
@@ -221,7 +220,7 @@
 		\small
 		Activations sans biais.
 		Distribution des durées fortement asymétrique avec de nombreuses valeurs extrêmes plausibles.
-		Hauteurs de notes propres, homogènes et bien bornés : bonne représentation du registre de la guitare.
+		La distribution des hauteurs de notes offre une bonne représentation du registre de la guitare.
 		
 		\begin{figure}
 			\centering
@@ -229,36 +228,80 @@
 		\end{figure}
 		
 		\small
-		La hauteur de la note jouée semble dépendre de la corde pincée. La corrélation n'est pas parfaite dû au chevauchement des notes. Bien que le coefficient de corrélation entre \textbf{duration} et \textbf{value} soit faible, on observe que plus la note est aiguë, moins elle dure.
+		Hauteur de note et corde pincée sont fortement corrélées. Corrélation non parfaite dû au chevauchement des notes. On observe que plus la note est aiguë, moins elle dure.
 	\end{columns}
 \end{frame}
 
-\begin{frame}{Analyse du dataset GuitarSet}
-    \textbf{Objectif de l'analyse}
-    \begin{itemize}
-        \item Comprendre la structure et la richesse du dataset
-        \item Évaluer sa pertinence pour la transcription audio $\rightarrow$ MIDI
-    \end{itemize}
+\begin{frame}{Analyse du dataset GuitarSet - Polyphonie}
+	\small
+	\textbf{Activations simultanées}
+	En considérant que des activations ayant au plus 20ms d'écart sont des notes activées simultanées, on peut estimer la polyphonie du dataset.
+	\begin{itemize}
+		\item En moyenne, 1,67 ($\pm 1,11$) notes activées simultanément.
+		\item Au moins 25\% d'intervalle ou d'accords.
+		\item Au maximum, 6 notes actives simultanément, ce qui correspond à la physique de l'instrument. 
+	\end{itemize}
+	
+	\vspace{0.2cm}
+	
+	\small
+	\textbf{Chevauchement des notes}
+	\begin{columns}[T]
+		\column{0.49\textwidth}
+		\begin{figure}
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC02/piano_roll.png}
+		\end{figure}
+		
+		\column{0.49\textwidth}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC02/overlapping.png}
+		\end{figure}
+	\end{columns}
+	
+	\small
+	Pour le titre 00\_BN1-129-Eb\_comp, on observe de nombreux chevauchements de notes. En moyenne, 2.54 chevauchement de notes.
+\end{frame}
 
-    \vspace{0.3cm}
-
-    \textbf{Axes d'analyse}
-
-    \begin{itemize}
-        \item Structure des données (audio / annotations / alignement)
-        \item Analyse musicale descriptive (pitch, densité, accords)
-        \item Analyse du signal audio (spectrogrammes, dynamique)
-        \item Qualité des annotations temporelles
-    \end{itemize}
-
-    \vspace{0.3cm}
-
-    \textbf{Conclusion intermédiaire}
-    \begin{itemize}
-        \item Dataset riche mais partiellement contraint
-        \item Bonne base pour apprentissage supervisé
-        \item Complément nécessaire avec IDMT-SMT-Guitar
-    \end{itemize}
+\begin{frame}{Analyse du dataset GuitarSet - Audio}
+	\small
+	\textbf{Transformée Q constante}
+	\begin{columns}[T]
+		\column{0.49\textwidth}
+		\begin{figure}
+			\centering
+			\includegraphics[height=2cm]{figures/BC02/waveform.png}
+		\end{figure}
+		
+		\begin{figure}
+		\centering
+		\includegraphics[height=2cm]{figures/BC02/cqt.png}
+		\end{figure}
+		
+		\small
+		La CQT est une représentation temps-fréquence adaptée à la musique. Elle fournit une représentation régulièrement utilisée en entrée des modèles d'apprentissage.
+		
+		\column{0.49\textwidth}
+		
+		\small
+		\textbf{Qualité Audio}
+		\begin{figure}
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC02/audio_silence_clipping.png}
+		\end{figure}
+		
+		\small
+		Les audios sont propres, peu de silence et pas d'écrêtage.
+		
+		\vspace{0.2cm}
+		
+		\begin{block}{\small Conclusion}
+			\small
+			Dataset riche mais partiellement contraint. Bonne base pour apprentissage supervisé. IDMT-SMT-Guitar constitue un complément intéressant.
+		\end{block}
+	\end{columns}
 \end{frame}
 
 % ===
@@ -266,4 +309,54 @@
 % ===
 
 \begin{frame}{Analyse d'un dataset Frame-Wise}
+	\begin{columns}[T]
+		\column{0.49\textwidth}
+		\begin{figure}
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC02/global_distribution_cqt.png}
+		\end{figure}
+		
+		\small
+		Le dataset contient énormément de bins temps-fréquence sans énergie, cela implique un fort déséquilibre des données. Le modèle risque de ne pas détecter l'activation des notes. Il faudra privilégier une standardisation robuste : $x' = \dfrac{x - \text{médiane}}{IQR}$.
+		
+		\column{0.49\textwidth}
+		
+		\small
+		L'analyse des corrélations entre bins permet d'envisager une PCA.
+		\begin{figure}
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC02/pca.png}
+		\end{figure}
+		
+		\small
+		6 valeurs propres supérieures à 1. Elles expliques au moins 92\% de la variance.
+	\end{columns}
+\end{frame}
+
+\begin{frame}{Analyse d'un dataset Frame-Wise}
+	\begin{columns}[T]
+		\column{0.49\textwidth}
+		
+		\vspace{-0.2cm}
+		
+		\begin{figure}
+			\centering
+			\includegraphics[height=5cm]{figures/BC02/activation_pitch_analysis.png}
+		\end{figure}
+		
+		\small
+		Le déséquilibre des classes est un réel problème, le modèle risque de ne pas détecter d'activation. La distribution des activations de notes est hétérogènes, les notes aigus seront plus difficiles à détecter.
+		
+		\column{0.49\textwidth}
+		
+		\small
+		\textbf{Cible}
+		\begin{figure}
+			\centering
+			\includegraphics[height=3cm]{figures/BC02/distibution_simultaneous_activations.png}
+		\end{figure}
+		
+		\small
+		63 frames contiennent plus de 6 activations simultanée, non aligné avec la physique de l'instrument. En moyenne, il y a 1.81 ($\pm$ 1.55) notes actives par frame. Environ 40\% des frames contiennent aux moins deux notes simultanées.
+	\end{columns}
 \end{frame}

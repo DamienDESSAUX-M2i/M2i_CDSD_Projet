@@ -6,8 +6,219 @@
     BC03 - Analyse prédictive de données structurées par l'intelligence artificielle
 \end{frame}
 
-\begin{frame}{Modèle supervisé}
+\begin{frame}[fragile]{Définition des modèles}
+	\begin{columns}[T]
+		\column{0.48\textwidth}
+		
+		\textbf{Définition des modèles}
+		\begin{itemize}
+			\item Plusieurs modèles de Machine Learning ont été implémentés selon une stratégie One-vs-Rest (OvR).
+			\item Tous les modèles sont intégrés dans une pipeline comprenant : une normalisation \textbf{RobustScaler} et le classifieur OvR.
+			\item Les classes sont pondérées afin de limiter l'impact du déséquilibre entre classes.
+			\item Classificateurs testés : Logistic Regression, Linear SVM, Random Forest, HistGradientBoosting et SGD.
+		\end{itemize}
+		
+		\column{0.48\textwidth}
+		
+		\begin{lstlisting}[style=terminal,language=python]
+def get_ovr_hgb_model():
+  scaler = RobustScaler()
+  model = OneVsRestClassifier(
+    HistGradientBoostingClassifier(
+      learning_rate=0.1,
+      max_depth=8,
+      max_iter=200,
+      class_weight="balanced",
+      random_state=RANDOM_STATE,
+    )
+  )
+  return Pipeline(
+    steps=[
+      ("scaler", scaler),
+      ("model", model),
+    ]
+  )
+\end{lstlisting}
+	\end{columns}
 \end{frame}
 
-\begin{frame}{Modèle non-supervisé}
+\begin{frame}{Métriques}
+	\textbf{Métriques ML}
+	\begin{itemize}
+		\item \textbf{F1-micro} : Cette métrique réponds à la question "Quelle est la qualité globale de la transcription ?".
+		\item \textbf{F1-macro} : Cette métrique donne le même poids aux notes fréquentes et rares. Elle permet d'évaluer la capacité du modèle à généraliser sur l'ensemble du registre.
+		\item \textbf{Subset Accuracy} : Cette métrique réponds à la question "Combien de frames sont parfaitement transcrites ?".
+	\end{itemize}
+	
+	\vspace{0.2cm}
+	
+	\textbf{Métrique musicales}
+	\begin{itemize}
+		\item \textbf{Hamming Loss} : Mesure le taux d'erreur moyen par note et par frame.
+		\item \textbf{Pitch Tolerance Accuracy} : Cette métrique introduit une notion de proximité musicale.
+		\item \textbf{Jitter} : Cette métrique mesure la stabilité de la transcription.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\begin{columns}[T]
+		\column{0.32\textwidth}
+		
+		\small CV F1\_micro
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC03/baseline/cv_f1_mean.png}
+		\end{figure}
+		
+		\small Pitch accuracy tolerance 1/2 ton
+		\begin{figure}[c]
+		\centering
+		\includegraphics[width=\textwidth]{figures/BC03/baseline/pitch_acc_tol_1.png}
+		\end{figure}
+		
+		\column{0.32\textwidth}
+		
+		\small F1\_macro
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC03/baseline/f1_macro.png}
+		\end{figure}
+		
+		\small Hamming Loss
+		\begin{figure}[c]
+		\centering
+		\includegraphics[width=\textwidth]{figures/BC03/baseline/hamming_loss.png}
+		\end{figure}
+		
+		\column{0.32\textwidth}
+		
+		\small Subset accuracy
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC03/baseline/subset_accuracy.png}
+		\end{figure}
+		
+		\small Jitter
+		\begin{figure}[c]
+		\centering
+		\includegraphics[width=\textwidth]{figures/BC03/baseline/jitter.png}
+		\end{figure}
+	\end{columns}
+	
+	\begin{block}{Conclusion}
+		Le meilleur modèle est OvR + HistGradientBoosting.
+	\end{block}
+\end{frame}
+
+\begin{frame}
+	\begin{columns}[T]
+		\column{0.3\textwidth}
+		
+		\small Matrice de confusion
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=3cm]{figures/BC03/baseline/confusion_matrix.png}
+		\end{figure}
+		
+		\small Courbe Precision / Recall
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=3cm]{figures/BC03/baseline/precision_recall_curve.png}
+		\end{figure}
+		
+		\column{0.38\textwidth}
+		
+		\small F1-micro par pitch
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC03/baseline/f1_per_pitch.png}
+		\end{figure}
+		
+		\small Courbe d'apprentissage
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC03/baseline/learning_curve.png}
+		\end{figure}
+		
+		\column{0.3\textwidth}
+		
+		\begin{block}{\small Conclusion}
+			\small
+			Globalement le modèle est correct pour une baseline mais insuffisant pour une transcription audio vers midi, il souffre d'un recall trop bas. La détection des notes aiguës est particulièrement difficile.
+		\end{block}
+	\end{columns}
+\end{frame}
+
+\begin{frame}{PCA}
+	\begin{columns}[T]
+		\column{0.48\textwidth}
+		
+		\small CV F1-micro
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=3cm]{figures/BC03/pca/cv_f1_mean.png}
+		\end{figure}
+		
+		\column{0.48\textwidth}
+		\small F1-macro
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=3cm]{figures/BC03/pca/f1_macro.png}
+		\end{figure}
+	\end{columns}
+	
+	\vspace{0.2cm}
+	
+	\begin{block}{\small Conclusion}
+	\small
+	L'ajout d'une PCA dégrade les performance du modèle OvR + LogisticRegression.
+	La structure des données semble essentielle à l'apprentissage du modèle. Les combinaisons linéaires des features dégradent l'apprentissage.
+	\end{block}
+\end{frame}
+
+\begin{frame}{Optimisation - RandomizedSearchCV}
+	\begin{columns}[T]
+		\column{0.3\textwidth}
+		
+		\small Baseline
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=2.8cm]{figures/BC03/baseline/confusion_matrix.png}
+		\end{figure}
+		
+		\small Modèle optimisé
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=2.8cm]{figures/BC03/optimisation/confusion_matrix.png}
+		\end{figure}
+		
+		\column{0.38\textwidth}
+		
+		\small Baseline
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC03/baseline/f1_per_pitch.png}
+		\end{figure}
+		
+		\small Modèle optimisé
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC03/optimisation/f1_per_pitch.png}
+		\end{figure}
+		
+		\column{0.3\textwidth}
+		
+		\begin{block}{\small Conclusion}
+			\small
+			L'optimisation est réussie, le modèle optimisé affiche de meilleures performances dans toutes les métriques. Cependant, il ne parvient pas à corriger suffisamment le recall du modèle initial, on se tournera donc vers des modèles plus complexes type MLP pour la suite des expérimentations.
+		\end{block}
+	\end{columns}
+	
+	\vspace{0.2cm}
+	
+	\begin{block}{\small Conclusion}
+		\small
+		L'ajout d'une PCA dégrade les performance du modèle OvR + LogisticRegression.
+		La structure des données semble essentielle à l'apprentissage du modèle. Les combinaisons linéaires des features dégradent l'apprentissage.
+	\end{block}
 \end{frame}
