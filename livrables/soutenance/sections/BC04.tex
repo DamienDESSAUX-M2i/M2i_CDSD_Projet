@@ -25,26 +25,22 @@
 \end{frame}
 
 \begin{frame}{Architecture du modèle MLP}
-	
 	\begin{columns}[T,onlytextwidth]
-		
-		% =====================================================
-		% COLONNE GAUCHE : ARCHITECTURE
-		% =====================================================
-		\begin{column}{0.55\textwidth}
+		\begin{column}{0.49\textwidth}
 			
 			\textbf{Architecture}
 			
-			\vspace{0.15cm}
+			\vspace{0.2cm}
 			
+			\centering
 			\begin{tikzpicture}[
-				node distance=0.25cm,
+				node distance=0.3cm,
 				layer/.style={
 					draw,
 					rounded corners,
 					align=center,
-					minimum height=0.65cm,
-					text width=4.2cm,
+					minimum height=0.6cm,
+					text width=6cm,
 					font=\small
 				},
 				arrow/.style={
@@ -54,89 +50,385 @@
 				]
 				
 				\node[layer] (input)
-				{Vecteur de caractéristiques\\
-					\scriptsize CQT / représentation audio};
+				{Entrée du modèle :\\
+					Vecteur CQT (représentation audio)};
 				
-				\node[layer, below=of input] (hidden1)
-				{Couche entièrement connectée\\
-					ELU + Batch Normalization};
+				\node[layer, below=of input] (hidden)
+				{Couches cachées :\\
+					Dense / Initialisation He / Régularisation L2 / Activation ELU / Batch Normalization / Dropout};
 				
-				\node[layer, below=of hidden1] (hidden2)
-				{Couche entièrement connectée\\
-					ELU + Batch Normalization};
+				\node[layer, below=of hidden] (output)
+				{Sortie du modèle :\\
+					Multi-label / Sigmoïde (probabilité activation note)};
 				
-				\node[layer, below=of hidden2] (output)
-				{Sortie multi-label\\
-					Sigmoïde $\rightarrow$ probabilité de présence des notes};
-				
-				\draw[arrow] (input) -- (hidden1);
-				\draw[arrow] (hidden1) -- (hidden2);
-				\draw[arrow] (hidden2) -- (output);
-				
-				% Régularisation
-				\node[
-				right=0.15cm of hidden2,
-				font=\scriptsize,
-				align=left
-				] {\textit{Régularisation L2}};
-				
+				\draw[arrow] (input) -- (hidden);
+				\draw[arrow] (hidden) -- (output);
 			\end{tikzpicture}
-			
 		\end{column}
 		
-		% =====================================================
-		% COLONNE DROITE : APPRENTISSAGE
-		% =====================================================
-		\begin{column}{0.43\textwidth}
+		\begin{column}{0.49\textwidth}
 			
 			\textbf{Apprentissage}
 			
-			\vspace{0.15cm}
-			
-			\begin{block}{Problème}
-				Classification \textbf{multi-label} :
-				plusieurs notes peuvent être actives
-				simultanément sur une même trame.
-			\end{block}
-			
 			\vspace{0.1cm}
 			
-			\begin{block}{Fonction de coût}
-				\centering
-				\textbf{Binary Cross-Entropy}
-			\end{block}
+			\begin{itemize}
+				\item \textbf{Fonction de coût} : Binary Cross-Entropy
+				\item \textbf{Évaluation} : Precision, Recall, F1-score micro
+			\end{itemize}
 			
-			\vspace{0.1cm}
-			
-			\begin{block}{Évaluation}
-				\begin{itemize}
-					\item Precision
-					\item Recall
-					\item F1-score micro
-				\end{itemize}
-			\end{block}
-			
-			\vspace{0.1cm}
+			\vspace{0.2cm}
 			
 			\textbf{Variantes étudiées}
 			
-			\scriptsize
-			\begin{tabular}{ll}
-				\textbf{AdamW} & Architecture de référence \\
-				\textbf{SGD + Nesterov} & Optimiseur alternatif \\
-				\textbf{Squared} & Couches cachées de même largeur \\
-				\textbf{Deep} & Augmentation de la profondeur
-			\end{tabular}
+			\vspace{0.1cm}
 			
+			\begin{itemize}
+				\item \textbf{AdamW} : Architecture de référence
+				\item \textbf{SGD + Nesterov} : Optimiseur alternatif
+				\item \textbf{Squared} : Couches cachées de même largeur
+				\item \textbf{Deep} : Augmentation de la profondeur
+			\end{itemize}
 		\end{column}
-		
 	\end{columns}
 	
-	\vspace{0.15cm}
+	\vspace{0.2cm}
 	
-	\begin{alertblock}{Objectif expérimental}
-		Étudier l'influence de l'architecture et de l'algorithme
-		d'optimisation sur la transcription polyphonique.
-	\end{alertblock}
+	\begin{block}{Objectif expérimental}
+		Étudier l'influence de l'architecture et de l'algorithme d'optimisation sur la transcription polyphonique.
+	\end{block}
+\end{frame}
+
+\begin{frame}
+	\begin{columns}[T]
+		\column{0.32\textwidth}
+		
+		\small F1-micro
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/mlp/f1_micro.png}
+		\end{figure}
+		
+		\small Pitch accuracy tolerance 1/2 ton
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/mlp/pitch_acc_tol_1.png}
+		\end{figure}
+		
+		\column{0.32\textwidth}
+		
+		\small F1-macro
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/mlp/f1_macro.png}
+		\end{figure}
+		
+		\small Hamming Loss
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/mlp/hamming_loss.png}
+		\end{figure}
+		
+		\column{0.32\textwidth}
+		
+		\small Subset accuracy
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/mlp/subset_accuracy.png}
+		\end{figure}
+		
+		\small Jitter
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/mlp/jitter.png}
+		\end{figure}
+	\end{columns}
 	
+	\begin{block}{Conclusion}
+		Le modèle MLP avec optimiseur AdamW montre les meilleures performances.
+	\end{block}
+\end{frame}
+
+\begin{frame}{Analyse du modèle MLP avec optimiseur AdamW}
+	\begin{columns}[T]
+		\column{0.3\textwidth}
+		
+		\small Matrice de confusion
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=3cm]{figures/BC04/mlp/confusion_matrix.png}
+		\end{figure}
+		
+		\small Courbe Precision / Recall
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=2.6cm]{figures/BC04/mlp/precision_recall_curve.png}
+		\end{figure}
+		
+		\column{0.38\textwidth}
+		
+		\small F1-micro par hauteur de note
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/mlp/f1_per_pitch.png}
+		\end{figure}
+		
+		\small Historique d'apprentissage
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/mlp/training_history.png}
+		\end{figure}
+		
+		\column{0.3\textwidth}
+		
+		\begin{block}{\small Conclusion}
+			\small
+			Le modèle MLP avec optimiseur AdamW montre de meilleurs performances que le modèle OvR + HistGradientBoosting. Il gagne en Recall mais perd en Precision tout en augmentant le F1-score.
+		\end{block}
+		
+		\vspace{0.2cm}
+		
+		Pour améliorer les performance du modèle, on propose d'ajouter une fenêtre de contexte et des couches de convolutions (CNN).
+	\end{columns}
+\end{frame}
+
+\begin{frame}{Architecture CNN + MLP}
+	\textbf{Architecture}
+	
+	\vspace{0.2cm}
+	
+	\centering
+	\begin{tikzpicture}[
+		node distance=0.35cm,
+		layer/.style={
+			draw,
+			rounded corners,
+			minimum height=0.65cm,
+			minimum width=2.1cm,
+			align=center,
+			font=\small
+		},
+		arrow/.style={
+			-{Latex[length=2mm]},
+			thick
+		}
+		]
+		
+		\node[layer] (input)
+		{CQT\\spectrogramme};
+		
+		\node[layer, right=of input] (cnn)
+		{CNN\\extraction locale};
+		
+		\node[layer, right=of cnn] (gap)
+		{Global\\Average Pooling};
+		
+		\node[layer, right=of gap] (mlp)
+		{MLP\\classification};
+		
+		\node[layer, right=of mlp] (output)
+		{Sigmoïde\\notes MIDI};
+		
+		\draw[arrow] (input) -- (cnn);
+		\draw[arrow] (cnn) -- (gap);
+		\draw[arrow] (gap) -- (mlp);
+		\draw[arrow] (mlp) -- (output);
+		
+	\end{tikzpicture}
+	
+	\vspace{0.3cm}
+	
+	\begin{columns}[T,onlytextwidth]
+		\begin{column}{0.48\textwidth}
+			\textbf{Apport par rapport au MLP}
+			\begin{itemize}
+				\item Exploitation de la structure temps--fréquence de la CQT.
+				\item Convolutions à différentes échelles.
+				\item Pooling pour réduire la dimension.
+				\item Global Average Pooling avant le MLP.
+			\end{itemize}
+		\end{column}
+		
+		\begin{column}{0.48\textwidth}
+			\textbf{Variantes expérimentées}
+			\begin{itemize}
+				\item \textbf{Light} : coût de calcul réduit
+				\item \textbf{Balanced} : compromis capacité / coût
+				\item \textbf{Frequency} : contexte harmonique élargi
+			\end{itemize}
+		\end{column}
+	\end{columns}
+	
+	\vspace{0.2cm}
+	
+	\begin{block}{Objectif expérimental}
+		Étudier l'influence de l'exploitation des motifs locaux temps-fréquence.
+	\end{block}
+\end{frame}
+
+\begin{frame}{Architecture RCNN : CNN + BiLSTM + MLP}
+	\textbf{Architecture}
+	
+	\vspace{0.2cm}
+	
+	\centering
+	\begin{tikzpicture}[
+		node distance=0.28cm,
+		layer/.style={
+			draw,
+			rounded corners,
+			minimum height=0.65cm,
+			minimum width=1.85cm,
+			align=center,
+			font=\small
+		},
+		arrow/.style={
+			-{Latex[length=2mm]},
+			thick
+		}
+		]
+		
+		\node[layer] (input)
+		{CQT\\spectrogramme};
+		
+		\node[layer, right=of input] (cnn)
+		{CNN\\motifs locaux};
+		
+		\node[layer, right=of cnn] (td)
+		{TimeDistributed\\séquence};
+		
+		\node[layer, right=of td] (lstm)
+		{BiLSTM\\contexte temporel};
+		
+		\node[layer, right=of lstm] (mlp)
+		{MLP\\classification};
+		
+		\node[layer, right=of mlp] (output)
+		{Sigmoïde\\notes MIDI};
+		
+		\draw[arrow] (input) -- (cnn);
+		\draw[arrow] (cnn) -- (td);
+		\draw[arrow] (td) -- (lstm);
+		\draw[arrow] (lstm) -- (mlp);
+		\draw[arrow] (mlp) -- (output);
+	\end{tikzpicture}
+	
+	\vspace{0.2cm}
+	
+	\begin{columns}[T,onlytextwidth]
+		\begin{column}{0.48\textwidth}
+			\textbf{Apport par rapport au CNN + MLP}
+			\begin{itemize}
+				\item Conservation de la dimension temporelle.
+				\item Transformation des cartes CNN en séquence.
+				\item BiLSTM : exploitation du contexte passé et futur.
+				\item Meilleure modélisation des dépendances temporelles entre notes.
+			\end{itemize}
+		\end{column}
+		
+		\begin{column}{0.48\textwidth}
+			\textbf{Variantes expérimentées}
+			\begin{itemize}
+				\item \textbf{Light} : coût de calcul réduit
+				\item \textbf{Balanced} : compromis capacité / coût
+				\item \textbf{Frequency} : contexte harmonique élargi
+			\end{itemize}
+		\end{column}
+	\end{columns}
+	
+	\vspace{0.2cm}
+	
+	\begin{block}{Objectif expérimental}
+		Etudier l'influence de l'ajoute de la dynamique temporelle.
+	\end{block}
+\end{frame}
+
+\begin{frame}
+	\begin{columns}[T]
+		\column{0.32\textwidth}
+		
+		\small F1-micro
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/rcnn/f1_micro.png}
+		\end{figure}
+		
+		\small Pitch accuracy tolerance 1/2 ton
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/rcnn/pitch_acc_tol_1.png}
+		\end{figure}
+		
+		\column{0.32\textwidth}
+		
+		\small F1-macro
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/rcnn/f1_macro.png}
+		\end{figure}
+		
+		\small Hamming Loss
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/rcnn/hamming_loss.png}
+		\end{figure}
+		
+		\column{0.32\textwidth}
+		
+		\small Subset accuracy
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/rcnn/subset_accuracy.png}
+		\end{figure}
+		
+		\small Jitter
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/rcnn/jitter.png}
+		\end{figure}
+	\end{columns}
+	
+	\begin{block}{\small Conclusion}
+		\small Deux modèles se distinguent par leurs performances : CNN + MLP balanced et RCNN frequency.
+	\end{block}
+\end{frame}
+
+\begin{frame}{Analyse du modèle RCNN frequency}
+	\begin{columns}[T]
+		\column{0.3\textwidth}
+		
+		\small Matrice de confusion
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=3cm]{figures/BC04/rcnn/confusion_matrix.png}
+		\end{figure}
+		
+		\small Courbe Precision / Recall
+		\begin{figure}[c]
+			\centering
+			\includegraphics[height=2.6cm]{figures/BC04/rcnn/precision_recall_curve.png}
+		\end{figure}
+		
+		\column{0.38\textwidth}
+		
+		\small F1-micro par hauteur de note
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/rcnn/f1_per_pitch.png}
+		\end{figure}
+		
+		\small Historique d'apprentissage
+		\begin{figure}[c]
+			\centering
+			\includegraphics[width=\textwidth]{figures/BC04/rcnn/training_history.png}
+		\end{figure}
+		
+		\column{0.3\textwidth}
+		
+		\begin{block}{\small Conclusion}
+			\small L'ajout d'une fenêtre de contexte a permis d'améliorer le recall sans sacrifier la précision.
+			
+			Le modèle RCNN frequency est retenu pour la suite du projet : sa capacité à modéliser les dépendances temporelles laisse envisager un potentiel de généralisation supérieur au modèles CNN + MLP, qui pourrait s'exprimer avec un volume de données plus important.
+		\end{block}
+	\end{columns}
 \end{frame}

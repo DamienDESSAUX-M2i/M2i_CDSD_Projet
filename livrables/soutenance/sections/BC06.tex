@@ -37,7 +37,7 @@
     	\item exposer le modèle via une API web déployée sur Hugging Face.
     \end{itemize}
     
-    \vspace{0.3cm}
+    \vspace{0.2cm}
     
     \begin{minipage}[t]{0.48\textwidth}
     	\textbf{Fonctionnalités incluses}
@@ -76,7 +76,7 @@
     	\item Permettre l'évaluation et la comparaison de plusieurs approches de transcription.
     \end{itemize}
     
-    \vspace{0.3cm}
+    \vspace{0.2cm}
     
     \textbf{Exigences non fonctionnelles}\\
     \begin{itemize}
@@ -165,33 +165,54 @@
 \end{frame}
 
 \begin{frame}{Contraintes budgétaires et choix d’architecture}
+	\small
+	
 	\textbf{Contrainte principale}
 	
 	Le projet s’inscrit dans une logique de prototypage à faible coût, orientée preuve de concept.
 	
 	Hypothèse budgétaire : valorisation de la charge projet à 500 € / jour, soit 25 000 € pour 50 jours.
 	
-	\vspace{0.3cm}
-	
-	\textbf{Principes d’architecture retenus}
-	
-	\begin{itemize}
-		\item Priorité aux solutions open source
-		\item Exécution locale ou infrastructure légère
-		\item Limitation des coûts de calcul et d’entraînement
-		\item Absence d’infrastructure cloud industrielle en phase 1
-	\end{itemize}
-	
 	\vspace{0.2cm}
 	
-	\textbf{Conséquences techniques}
+	\begin{minipage}[t]{0.48\textwidth}
+		\textbf{Principes d’architecture retenus}
+		\begin{itemize}
+			\item Priorité aux solutions open source
+			\item Exécution locale ou infrastructure légère
+			\item Limitation des coûts de calcul et d’entraînement
+			\item Absence d’infrastructure cloud industrielle en phase 1
+		\end{itemize}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[t]{0.48\textwidth}
+		\textbf{Conséquences techniques}
+		\begin{itemize}
+			\item Utilisation de Docker Compose pour orchestration locale
+			\item Stockage local / MinIO plutôt que cloud managé
+			\item Choix de modèles compatibles CPU
+		\end{itemize}
+	\end{minipage}
 	
-	\begin{itemize}
-		\item Utilisation de Docker Compose pour orchestration locale
-		\item Stockage local / MinIO plutôt que cloud managé
-		\item Entraînement optimisé sur jeux de données limités
-		\item Choix de modèles compatibles CPU
-	\end{itemize}
+%	\textbf{Principes d’architecture retenus}
+%	
+%	\begin{itemize}
+%		\item Priorité aux solutions open source
+%		\item Exécution locale ou infrastructure légère
+%		\item Limitation des coûts de calcul et d’entraînement
+%		\item Absence d’infrastructure cloud industrielle en phase 1
+%	\end{itemize}
+%	
+%	\vspace{0.2cm}
+%	
+%	\textbf{Conséquences techniques}
+%	
+%	\begin{itemize}
+%		\item Utilisation de Docker Compose pour orchestration locale
+%		\item Stockage local / MinIO plutôt que cloud managé
+%		\item Entraînement optimisé sur jeux de données limités
+%		\item Choix de modèles compatibles CPU
+%	\end{itemize}
 	
 	\vspace{0.2cm}
 	
@@ -202,10 +223,8 @@
 		\item IDMT-SMT-Guitar : licence non commerciale limitant l’usage à un POC
 	\end{itemize}
 	
-	\vspace{0.2cm}
-	
-	\begin{block}{Impact projet}
-		Le POC privilégie la reproductibilité et la maîtrise des coûts plutôt que la scalabilité industrielle.
+	\begin{block}{\small Impact projet}
+		\small Le POC privilégie la reproductibilité et la maîtrise des coûts plutôt que la scalabilité industrielle.
 	\end{block}
 \end{frame}
 
@@ -342,7 +361,7 @@
 		\textbf{Qualité logicielle}
 		
 		\begin{itemize}
-			\item GitHub / Docker / Ruff + Mypy / Tests
+			\item GitHub / Docker / uv / Ruff + Mypy / Tests
 		\end{itemize}
 		
 		%\begin{itemize}
@@ -356,12 +375,10 @@
 		\begin{block}{Résultat}
 			Chaque modèle peut être relié aux données sources, aux prétraitements appliqués et aux dataset frame-wise sur lequel il s'est entraîné.
 		\end{block}
-		
-		%----------------------------------------------------
+
 		\column{0.48\textwidth}
 		
 		\centering
-		
 		\begin{tikzpicture}[
 			node distance=0.5cm,
 			box/.style={
@@ -413,7 +430,7 @@
 			\draw[dashed] (mlflow) -- (model);
 		\end{tikzpicture}
 		
-		\vspace{0.3cm}
+		\vspace{0.2cm}
 		
 		\scriptsize
 		Traçabilité complète des données, traitements et modèles.

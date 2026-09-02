@@ -36,9 +36,9 @@
 	\end{columns}
 \end{frame}
 
-\begin{frame}{Standardisation de l'environnement}
+\begin{frame}[fragile]{Standardisation de l'environnement}
 	\begin{columns}[T]
-		\column{0.48\textwidth}
+		\column{0.36\textwidth}
 		
 		\textbf{Environnement reproductible}
 		\begin{itemize}
@@ -54,109 +54,168 @@
 		\begin{itemize}
 			\item Dockerfile multi-stage
 			\item utilisateur non privilégié
-			\item séparation des responsabilités
 		\end{itemize}
 		
-		\column{0.48\textwidth}
+		\begin{block}{Résultat}
+		L'utilisation conjointe de Docker et uv garantit un environnement standardisé, reproductible et portable.
+		\end{block}
 		
-		\begin{center}
-			
-			\begin{tikzpicture}[
-				box/.style={
-					draw,
-					rounded corners,
-					minimum width=1cm,
-					minimum height=0.6cm,
-					align=center
-				},
-				arrow/.style={
-					->,
-					>=stealth,
-					thick
-				}
-				]
-				
-				\node[box] (dev) {Développement};
-				\node[box, below=0.6cm of dev] (ci) {GitHub Actions};
-				\node[box, below=0.6cm of ci] (prod) {Hugging Face};
-				
-				\node[box, right=1cm of ci] (docker) {\textbf{Image Docker}\\unique};
-				
-				\draw[arrow] (dev) -- (docker);
-				\draw[arrow] (ci) -- (docker);
-				\draw[arrow] (docker) -- (prod);
-			\end{tikzpicture}
-			
-			\vspace{0.2cm}
-			
-			\begin{block}{Résultat}
-			L'utilisation conjointe de Docker et uv garantit un environnement standardisé, reproductible et portable.
-			\end{block}
-		\end{center}
+		\column{0.6\textwidth}
+		
+		\begin{lstlisting}[style=tinyterminal,language=python]
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
+WORKDIR /app
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_NO_CACHE=1
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --group api
+COPY api/backend ./backend
+COPY api/frontend ./frontend
+COPY api/.streamlit ./.streamlit
+COPY api/start.sh ./start.sh
+
+FROM python:3.13-slim-bookworm AS runtime
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libsndfile1 libcairo2 && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PATH="/app/.venv/bin:${PATH}"
+COPY --from=builder /app/.venv ./.venv
+COPY --from=builder /app/backend ./backend
+COPY --from=builder /app/frontend ./frontend
+COPY --from=builder /app/.streamlit ./.streamlit
+COPY --from=builder /app/start.sh ./start.sh
+RUN chmod +x start.sh
+RUN mkdir -p /tmp
+RUN useradd --create-home --shell /usr/sbin/nologin appuser && chown -R appuser:appuser /app && chmod 777 /tmp
+USER appuser
+EXPOSE 7860
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')" || exit 1
+CMD ["./start.sh"]
+\end{lstlisting}
 	\end{columns}
 \end{frame}
 
-\begin{frame}{Déploiement du modèle d'apprentissage}
-	\begin{center}
-		\begin{tikzpicture}[
-			node distance=0.6cm,
-			box/.style={
-				draw,
-				rounded corners,
-				minimum width=1cm,
-				minimum height=0.6cm,
-				align=center
-			},
-			arrow/.style={
-				->,
-				>=stealth,
-				thick
-			}
-			]
-			
-			\node[box] (train) {Entraînement\\et expérimentation};
-			\node[box, right=0.6cm of train] (mlflow) {MLflow\\Tracking};
-			\node[box, right=0.6cm of mlflow] (model) {Modèle retenu\\\texttt{.keras}};
-			\node[box, right=0.6cm of model] (api) {FastAPI\\Inférence};
-			
-			\draw[arrow] (train) -- (mlflow);
-			\draw[arrow] (mlflow) -- (model);
-			\draw[arrow] (model) -- (api);
-		\end{tikzpicture}
-	\end{center}
-	
-	\vspace{0.2cm}
-	
-	\begin{columns}[T]
-		\column{0.48\textwidth}
-		
-		\textbf{Phase expérimentation}
-		\begin{itemize}
-			\item entraînement,
-			\item comparaison,
-			\item suivi des métriques,
-			\item sélection du modèle.
-		\end{itemize}
-		
-		\column{0.48\textwidth}
-		
-		\textbf{Phase production}
-		\begin{itemize}
-			\item modèle exporté et intégré à l'API,
-			\item chargement du modèle au démarrage,
-			\item modèle partagé entre requêtes.
-		\end{itemize}
-	\end{columns}
-\end{frame}
+%\begin{frame}{Standardisation de l'environnement}
+%	\begin{columns}[T]
+%		\column{0.48\textwidth}
+%		
+%		\textbf{Environnement reproductible}
+%		\begin{itemize}
+%			\item Docker
+%			\item \texttt{pyproject.toml}
+%			\item \texttt{uv.lock}
+%			\item dépendances versionnées
+%		\end{itemize}
+%		
+%		\vspace{0.2cm}
+%		
+%		\textbf{Optimisation}
+%		\begin{itemize}
+%			\item Dockerfile multi-stage
+%			\item utilisateur non privilégié
+%			\item séparation des responsabilités
+%		\end{itemize}
+%		
+%		\column{0.48\textwidth}
+%		
+%		\begin{center}
+%			
+%			\begin{tikzpicture}[
+%				box/.style={
+%					draw,
+%					rounded corners,
+%					minimum width=1cm,
+%					minimum height=0.6cm,
+%					align=center
+%				},
+%				arrow/.style={
+%					->,
+%					>=stealth,
+%					thick
+%				}
+%				]
+%				
+%				\node[box] (dev) {Développement};
+%				\node[box, below=0.6cm of dev] (ci) {GitHub Actions};
+%				\node[box, below=0.6cm of ci] (prod) {Hugging Face};
+%				
+%				\node[box, right=1cm of ci] (docker) {\textbf{Image Docker}\\unique};
+%				
+%				\draw[arrow] (dev) -- (docker);
+%				\draw[arrow] (ci) -- (docker);
+%				\draw[arrow] (docker) -- (prod);
+%			\end{tikzpicture}
+%			
+%			\vspace{0.2cm}
+%			
+%			\begin{block}{Résultat}
+%			L'utilisation conjointe de Docker et uv garantit un environnement standardisé, reproductible et portable.
+%			\end{block}
+%		\end{center}
+%	\end{columns}
+%\end{frame}
+
+%\begin{frame}{Déploiement du modèle d'apprentissage}
+%	\begin{center}
+%		\begin{tikzpicture}[
+%			node distance=0.6cm,
+%			box/.style={
+%				draw,
+%				rounded corners,
+%				minimum width=1cm,
+%				minimum height=0.6cm,
+%				align=center
+%			},
+%			arrow/.style={
+%				->,
+%				>=stealth,
+%				thick
+%			}
+%			]
+%			
+%			\node[box] (train) {Entraînement\\et expérimentation};
+%			\node[box, right=0.6cm of train] (mlflow) {MLflow\\Tracking};
+%			\node[box, right=0.6cm of mlflow] (model) {Modèle retenu\\\texttt{.keras}};
+%			\node[box, right=0.6cm of model] (api) {FastAPI\\Inférence};
+%			
+%			\draw[arrow] (train) -- (mlflow);
+%			\draw[arrow] (mlflow) -- (model);
+%			\draw[arrow] (model) -- (api);
+%		\end{tikzpicture}
+%	\end{center}
+%	
+%	\vspace{0.2cm}
+%	
+%	\begin{columns}[T]
+%		\column{0.48\textwidth}
+%		
+%		\textbf{Phase expérimentation}
+%		\begin{itemize}
+%			\item entraînement,
+%			\item comparaison,
+%			\item suivi des métriques,
+%			\item sélection du modèle.
+%		\end{itemize}
+%		
+%		\column{0.48\textwidth}
+%		
+%		\textbf{Phase production}
+%		\begin{itemize}
+%			\item modèle exporté et intégré à l'API,
+%			\item chargement du modèle au démarrage,
+%			\item modèle partagé entre requêtes.
+%		\end{itemize}
+%	\end{columns}
+%\end{frame}
 
 \begin{frame}{Exposition du modèle par une API REST}
 	\begin{columns}[T]
-		\column{0.48\textwidth}
+		\column{0.62\textwidth}
 		
 		\textbf{API REST}
 		\begin{itemize}
 			\item Développée avec FastAPI.
 			\item Architecture logicielle reposant sur une séparation des responsabilités.
+			\item Modèle chargé au lancement de l'API et partagé entre les requêtes.
 			\item Réponse normalisées au travers d'un modèle générique.
 			\item Exceptions centralisées.
 			\item Documentation automatiquement avec OpenAPI.
@@ -172,7 +231,7 @@
 			\item \texttt{/artifact/\{id\}/...}
 		\end{itemize}
 		
-		\column{0.48\textwidth}
+		\column{0.36\textwidth}
 		
 		\begin{center}
 			\begin{tikzpicture}[

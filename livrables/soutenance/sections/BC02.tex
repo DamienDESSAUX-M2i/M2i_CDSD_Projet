@@ -361,27 +361,31 @@
 \end{frame}
 
 \begin{frame}{Analyse d'un dataset Frame-Wise - Target}
-	\vspace{-0.2cm}
+	\vspace{-0.4cm}
 	
 	\begin{columns}[T]
-		\column{0.49\textwidth}
+		\column{0.6\textwidth}
 		
 		\begin{figure}
 			\centering
-			\includegraphics[height=5cm]{figures/BC02/activation_pitch_analysis.png}
+			\includegraphics[width=\textwidth]{figures/BC02/activation_pitch_analysis.png}
 		\end{figure}
+		
+		\column{0.38\textwidth}
+		
+		\vspace{0.4cm}
 		
 		\small
 		Le déséquilibre des classes est un réel problème, le modèle risque de ne pas détecter d'activation. La distribution des activations de notes est hétérogène, les notes aiguës seront plus difficiles à détecter.
 		
-		\column{0.49\textwidth}
-		
-		\begin{figure}
-			\centering
-			\includegraphics[height=3cm]{figures/BC02/distibution_simultaneous_activations.png}
-		\end{figure}
-		
-		\small
-		63 frames contiennent plus de 6 activations simultanées, non aligné avec la physique de l'instrument.
+%		\column{0.49\textwidth}
+%		
+%		\begin{figure}
+%			\centering
+%			\includegraphics[height=3cm]{figures/BC02/distibution_simultaneous_activations.png}
+%		\end{figure}
+%		
+%		\small
+%		63 frames contiennent plus de 6 activations simultanées, non aligné avec la physique de l'instrument.
 	\end{columns}
 \end{frame}
