@@ -219,3 +219,44 @@
 %	\end{block}
 %	
 %\end{frame}
+
+\begin{frame}{Projection de l'architecture vers AWS}
+	\small
+	
+	\begin{columns}[T]
+		\begin{column}{0.48\textwidth}
+			\textbf{Objectif : } Conserver les principes de l'architecture du POC tout en préparant une première mise en production cloud.
+			
+			\vspace{0.2cm}
+			
+			\textbf{Dimensionnement cible}
+			\begin{itemize}
+				\item \textbf{1\,000 audios/jour}
+				\item Durée moyenne : \textbf{1 min}
+				\item Taille moyenne : \textbf{10 Mo/audio}
+				\item Volume entrant : \textbf{300 Go/mois}
+				\item Inférence : \textbf{4 vCPU / 16 Go RAM}
+			\end{itemize}
+		\end{column}
+		
+		\begin{column}{0.48\textwidth}
+			\textbf{Architecture AWS envisagée}
+			\begin{itemize}
+				\item \textbf{S3} : stockage des données et artefacts
+				\item \textbf{ECS Fargate} : API et ETL
+				\item \textbf{RDS PostgreSQL} : données structurées
+				\item \textbf{MongoDB Atlas} : métadonnées
+				\item \textbf{MLflow} : suivi des expériences
+				\item \textbf{ECR} : images Docker
+				\item \textbf{CloudWatch} : logs et monitoring
+			\end{itemize}
+		\end{column}
+	\end{columns}
+	
+	\begin{block}{Estimation budgétaire}
+	\centering
+	Entre \textbf{350} et \textbf{700 €/mois}\hfill
+	\textbf{600 €/mois retenus}\hfill
+	Enveloppe maximale : \textbf{1\,000 €/mois}
+	\end{block}
+\end{frame}

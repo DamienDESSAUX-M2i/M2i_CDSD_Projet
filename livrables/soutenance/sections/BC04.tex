@@ -6,22 +6,39 @@
     BC04 - Analyse prédictive de données non-structurées par l'intelligence artificielle
 \end{frame}
 
-\begin{frame}{Métriques}
+\begin{frame}{Métriques et critères d'évaluation}
 	\textbf{Métriques ML}
 	\begin{itemize}
-		\item \textbf{F1-micro} : Quelle est la qualité globale de la transcription ?
-		\item \textbf{F1-macro} : Permet d'évaluer la capacité du modèle à généraliser sur l'ensemble du registre.
-		\item \textbf{Subset Accuracy} : Combien de frames sont parfaitement transcrites ?
+		\item \textbf{F1-micro} : qualité globale de la transcription
+		\hfill \textit{seuil $\geq 90\,\%$}
+		
+		\item \textbf{F1-macro} : généralisation sur l'ensemble du registre
+		\hfill \textit{métrique de suivi}
+		
+		\item \textbf{Subset Accuracy} : frames parfaitement transcrites
+		\hfill \textit{métrique de suivi}
 	\end{itemize}
 	
 	\vspace{0.2cm}
 	
-	\textbf{Métrique musicales}
+	\textbf{Métriques musicales}
 	\begin{itemize}
-		\item \textbf{Hamming Loss} : Taux d'erreur moyen par note et par frame.
-		\item \textbf{Pitch Tolerance Accuracy} : Notion de proximité musicale.
-		\item \textbf{Jitter} : Stabilité de la transcription.
+		\item \textbf{Hamming Loss} : erreur moyenne par note et par frame
+		\hfill \textit{à minimiser}
+		
+		\item \textbf{Pitch Tolerance Accuracy} : proximité musicale
+		\hfill \textit{à maximiser}
+		
+		\item \textbf{Jitter} : stabilité temporelle de la transcription
+		\hfill \textit{à minimiser}
 	\end{itemize}
+	
+	\vspace{0.2cm}
+	
+	\begin{block}{Critère de réussite du POC}
+		\centering
+		\textbf{F1-micro $\geq 90\,\%$}
+	\end{block}
 \end{frame}
 
 \begin{frame}{Architecture du modèle MLP}
